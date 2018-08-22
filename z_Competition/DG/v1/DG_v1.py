@@ -45,6 +45,7 @@ def importData():
     import pandas as pd
     import datetime
     # 导入数据: 改为只导入10,000个数据（10%）
+    dataAddr = ''
     starttime = datetime.datetime.now()
     df_train = pd.read_csv('train_set.csv', nrows=1000)
     df_train.drop(columns = ['article', 'id'], inplace = True)
@@ -55,6 +56,20 @@ def importData():
     lasttime = datetime.datetime.now() - starttime
     print('import finish! last time = {}s'.format(lasttime.seconds))
     return df_train, df_test
+
+def importData_2():  # pd.read_csv()的循环导入方法: 该方法跟我用的直接读入指定行数什么区别？
+    chunks = pd.read_csv('train_Set.csv', iterator = True)
+    df_train = chunks.get_chunk(10000)
+    
+    chunk = []
+    loop = True
+    chunksize = 5000
+    while loop:
+        try:
+            chunk = df_train.get_chunk(chunksize)
+            chunk.drop
+        except StopIteration:
+            loop = False
 
 
 def featureEngineering(df_train, df_test):
