@@ -12,36 +12,36 @@ import matplotlib.pyplot as plt
 
 def loadDataSet(filename):
     df = pd.read_table(filename,header = None)
-    X = df.iloc[:,0:2].values
+    x = df.iloc[:,0:2].values
     y = df.iloc[:,-1].values
-    return X, y
+    return x, y
 
 
 def sigmoid(x):
     return 1.0/(1+np.exp(-x))
 
 
-def BGA(data, labels, alpha=0.001):
+def BGA(data, labels, alpha=0.001):  # batch gradient ascent 批量梯度上升
 # alpha 为学习率
 # 内定最大循环次数为500次
     data = np.mat(data)
-    x0 = np.ones((data.shape[0],1))
+    x0 = np.ones((data.shape[0],1)) # 增加首列全1，用于匹配thetas首列的偏置b
     data = np.hstack((x0, data))
     
     maxCycles = 500
     labels = np.mat(labels).T
     m, n = data.shape
-    thetas = np.ones([n,1]) # 循环多少次就存多少次thetas，看看每次出来曲线长什么样子
+    thetas = np.ones([n,1]) # 新建thetas,默认为全1列表
         
     for i in range(maxCycles):
-        hxi = sigmoid(data * (thetas))  # mat格式下*代表叉乘
-        error = labels - hxi
-        thetas += alpha * data.T * error   #???
+        hxi = sigmoid(data * (thetas))  # mat格式下*代表叉乘, sigmoid()可以计算矢量
+        error = labels - hxi            # labels, hxi, error都是一列矢量
+        thetas += alpha * data.T * error   #迭代求解theta
         
     return thetas
 
 
-def BGA2(data, labels, alpha=0.001):
+def BGA2(data, labels, alpha=0.001):  # 批量提取上升，并保留每次theta用于可视化梯度变化
 # BGA2用来查看回归曲线的变化情况
 # 保存每次循环theta的值
     data = np.mat(data)
@@ -51,22 +51,32 @@ def BGA2(data, labels, alpha=0.001):
     maxCycles = 500
     labels = np.mat(labels).T
     m, n = data.shape
-    thetas = np.ones([n,maxCycles]) # 循环多少次就存多少次thetas
+    thetas = np.ones([n,maxCycles]) # 修改：循环多少次就存多少次thetas
         
     for i in range(maxCycles):
-        hxi = sigmoid(data * (thetas[:,i].reshape(-1,1)))  # mat格式下*代表叉乘
+        hxi = sigmoid(np.dot(data, thetas[:,i].reshape(-1,1)))  # 修改：
         error = labels - hxi
-        thetas[:,i] += alpha * data.T * error   #???
+        # numpy的奇葩更新方式：矩阵某列(3,) = 行向量(1,3), 不能等于列向量，
+        # 否则报错，所以加了一个转秩
+        # 同时累加格式+=不支持，只能改为thetas = thetas + xxx...
+        # 同时为了累加，每次把更新值填充i之后的所有列。
+        for j in range(i, maxCycles):
+            thetas[:,j] = thetas[:,j] + np.array(alpha * data.T * error).T # 修改：
         
     return thetas
 
 
-def SGA(data, labels, alpha):
-    pass
+def SGA(data, labels, alpha):  # 随机梯度上升: 效果跟BGA类似，但占用更少资源
+    m, n = np.shape(data)
+    thetas = np.ones(n)
     
-
-def BGD():
-    pass
+    maxCycles = 500
+    
+    for i in range(m):
+        hxi = sigmoid(sum(data[i]*thetas)) # hxi为向量
+        error = labels - hxi
+        thetas += alpha * error * data[i]
+    return thetas
 
 
 def plotFitCurve(data, labels, thetas):
@@ -78,7 +88,9 @@ def plotFitCurve(data, labels, thetas):
     colour = [c*30+60 for c in labels]
     plt.figure(figsize = (6,4), dpi=80)
     plt.scatter(data[:,0],data[:,1],c=colour)
-    y = (-thetas[0] - thetas[1] * x) / thetas[2] # 
+    # theta0*1+theta1*x1+theta2*x2=0
+    # x2 = (-theta0 - theta1*x1)/theta2
+    y = (-thetas[0] - thetas[1] * x) / thetas[2] 
     plt.plot(x,y)
     
 def plotFitCurve2(data, labels, thetas):
@@ -92,12 +104,41 @@ def plotFitCurve2(data, labels, thetas):
     plt.scatter(data[:,0],data[:,1],c=colour)
     y = []
     for i in range(5):
-        y[i] = (-thetas[0,i*100] - thetas[1,i*100] * x) / thetas[2,i*100] # 
+        y[i] = (-thetas[0,i*99] - thetas[1,i*99] * x) / thetas[2,i*99] # 
         plt.plot(x,y[i])
 
-# -------main-----------
-data, labels = loadDataSet('testSet.txt')  # X, y都是np.array
 
-thetas = BGA(data, labels, 0.001)
+def classify(x, thetas):  # 
+    x = np.hstack((1,x))  # 在BGA训练时x需要加一列1，在新样本分类数据之前也需要加一列1
+    p = sigmoid(sum(np.dot(x,thetas)))  # 计算逻辑函数的值，大于0.5代表概率大于50%判定为1
+    if p >= 0.5:
+        return 1.0
+    else: return 0.0
 
-plotFitCurve(data, labels, thetas)
+
+def classifyMultiClass():
+    # 逻辑回归默认只能进行二分类问题，如果要做多分类，比如手写数字识别，需要修改
+    # 方式1: 一对多。假设有k个分类，则需要建立k+1个二分类器，
+    # 方式2: 调整算法适应多分类，比如采用softmax分类算法
+    pass
+
+
+# libLoR测试函数运行方式： import libLoR; libLoR.test()
+def test(sample):  # 简单样本实例：sample = [0,1]这种list类型
+    x, y = loadDataSet('testSet.txt')  
+    thetas = BGA2(x, y)       # 在训练数据x,y中得到模型参数thetas
+    plotFitCurve2(x, y, thetas)      # 对模型参数和回归曲线进行可视化
+    
+    result = classify(sample, thetas)
+    print('the sample {} belong to class {}'.format(sample, result))
+    return thetas, result   # 根据训练数据，分界线以上为0，分界线以下为1
+    
+    
+def test_Colic():  # 疝气病实例
+    pass
+    
+
+thetas, result = test([0,-100])
+
+
+
