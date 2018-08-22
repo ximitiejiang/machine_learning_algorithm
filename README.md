@@ -1,18 +1,20 @@
 # MyCodeForML
 
-machine learning algorithm by python
+Machine learning algorithm by python
 this is a summary of my machine learning coding practice, including most of the main stream machine learning algorithms.
 
-reference:
+Reference:
   - Machine Learning in Action, Peter Harrington
   - Python机器学习算法，赵智勇
+  - Deep learning from scratch, 斋藤康毅
 
 **Classify**
 1. KNN: k-nearest neighbors
 2. LoR: logistic regression
-3. DT: decision tree
-4. NB: naive bayes
-5. SVM: support vector machine
+3. SR: softmax regression
+4. DT: decision tree
+5. NB: naive bayes
+6. SVM: support vector machine
 
 **Regression**
 1. LiR: linear regression
@@ -20,7 +22,7 @@ reference:
 3. lasso regression - tbf
 4. CART tree regression - tbf
 
-**Claster**
+**Cluster**
 1. K-mean
 
 **Deep Learning**
