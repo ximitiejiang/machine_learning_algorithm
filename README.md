@@ -11,10 +11,17 @@ Reference:
 **Classify**
 1. KNN: k-nearest neighbors
 2. LoR: logistic regression
+  - BGA/BGD
+  - SGA/SGD
 3. SR: softmax regression
 4. DT: decision tree
 5. NB: naive bayes
+  - Word2Vec
 6. SVM: support vector machine
+  - linearKernel
+  - polyKernel
+  - rbfKernel
+  - SMO
 
 **Regression**
 1. LiR: linear regression
