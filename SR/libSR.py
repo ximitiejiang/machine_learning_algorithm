@@ -12,60 +12,37 @@ import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
 
-def GA(data, labels, maxCycle, alpha):  # alpha为学习率
-    data = np.mat(data)
-    m, n = data.shape
+def BGD(data, labels, maxCycles, alpha):  # alpha为学习率
     k = len(set(labels))  # k为k个类别
     
+    data = np.mat(data)
+    labels = np.mat(labels).T
+    x0 = np.ones((data.shape[0],1))
+    data = np.hstack((x0, data))
+    
+    m, n = data.shape    
     thetas = np.mat(np.ones((n,k)))  # 初始化参数thetas, k个类别就是k列
     
     for i in range(maxCycles):
-        err = np.exp(data * thetas)  # 计算mat点积
-        rowsum = -err.sum(axis = 1)  # 计算每行求和
-        rowsum = rowsum.repeat(k, axis=1)  # 横向赋值扩展
+        edot = np.exp(data * thetas)  # 计算mat点积 exp(data*thetas)
+        rowsum = edot.sum(axis = 1)  # 计算每行求和
+        rowsum = rowsum.repeat(k, axis=1)  # 横向赋值扩展成k列，每类一列备用
         
-        err = err/rowsum
+        p = - edot/rowsum  # 计算softmax函数，等效于每个样本在每个类别的概率，k列
+                           # 加负号是为了下一步算 1-p方便
         for j in range(m):
-            err[j, labels[j,0]] += 1
-        # thetas = thetas + alpha*data.T*error
-        thetas = thetas + (alpha / m) * data.T * err
+            p[j, labels[j,0]] += 1  # 计算(1-p),只在该样本属于类的那列计算1-p
+        # thetas = thetas + (alpha/m) * X.T * (1-p)
+        thetas = thetas + (alpha / m) * data.T * p
         
-        # -------------------------------
-        value = np.exp(train_x * weights)  
-        rowsum = value.sum(axis = 1)   # 横向求和
-        rowsum = rowsum.repeat(k, axis = 1)  # 横向复制扩展
-        err = - value / rowsum  #计算出每个样本属于每个类别的概率
-        for j in range(numSamples):     
-             err[j, train_y[j]] += 1
-        weights = weights + (alpha / numSamples) * (train_x.T * err)
-        #-------------------------------
-                                                      
-
-def BGA(data, labels, alpha=0.001):  # batch gradient ascent 批量梯度上升
-# alpha 为学习率
-# 内定最大循环次数为500次
-    data = np.mat(data)
-    x0 = np.ones((data.shape[0],1)) # 增加首列全1，用于匹配thetas首列的偏置b
-    data = np.hstack((x0, data))
-    
-    maxCycles = 500
-    labels = np.mat(labels).T
-    m, n = data.shape
-    thetas = np.ones([n,1]) # 新建thetas,默认为全1列表
-        
-    for i in range(maxCycles): # 每次都使用整个数据集data计算一列hxi,得到一列thetas
-        hxi = sigmoid(data * (thetas))  # mat格式下*代表叉乘, sigmoid()可以计算矢量
-        error = labels - hxi            # labels, hxi, error都是一列矢量
-        thetas += alpha * data.T * error   # 整个data更新一组thetas
-        
-    return thetas
+    # cost计算    
+    return thetas                                                 
 
 
 def cost(err, labels):
     m = err.shape[0]
     sum_cost = 0.0
     pass
-
 
 
 def loadDataSet(filename):
@@ -95,3 +72,4 @@ if __name__ == '__main__':
     data, labels = loadDataSet(inputfile)
     
     plotFitCurve(data,labels)
+    thetas = BGD(data, labels, 200, 0.01)
