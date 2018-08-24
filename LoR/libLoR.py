@@ -33,10 +33,10 @@ def BGA(data, labels, alpha=0.001):  # batch gradient ascent 批量梯度上升
     m, n = data.shape
     thetas = np.ones([n,1]) # 新建thetas,默认为全1列表
         
-    for i in range(maxCycles):
+    for i in range(maxCycles): # 每次都使用整个数据集data计算一列hxi,得到一列thetas
         hxi = sigmoid(data * (thetas))  # mat格式下*代表叉乘, sigmoid()可以计算矢量
         error = labels - hxi            # labels, hxi, error都是一列矢量
-        thetas += alpha * data.T * error   #迭代求解theta
+        thetas += alpha * data.T * error   # 整个data更新一组thetas
         
     return thetas
 
@@ -66,32 +66,35 @@ def BGA2(data, labels, alpha=0.001):  # 批量提取上升，并保留每次thet
     return thetas
 
 
-def SGA(data, labels, alpha):  # 随机梯度上升: 效果跟BGA类似，但占用更少资源
+
+def SGA(data, labels, alpha=0.001):  # 随机梯度上升: 效果跟BGA类似，但占用更少资源
     m, n = np.shape(data)
     thetas = np.ones(n)
     
-    maxCycles = 500
+    data = np.mat(data)
+    x0 = np.ones((data.shape[0],1)) # 增加首列全1，用于匹配thetas首列的偏置b
+    data = np.hstack((x0, data))
     
-    for i in range(m):
-        hxi = sigmoid(sum(data[i]*thetas)) # hxi为向量
-        error = labels - hxi
-        thetas += alpha * error * data[i]
+    for i in range(m):   # 每次只用1行样本计算一个hxi/error,得到一列thetas的更新
+        hxi = sigmoid(sum(data[i]*thetas)) # hxi为数值
+        error = labels[i] - hxi
+        thetas = thetas + alpha * error * data[i] # 一行样本更新一组thetas
     return thetas
 
 
-def plotFitCurve(data, labels, thetas):
-    
+def plotFitCurve(data, labels, thetas):    
     xmin = np.min(data[:,0])-1
     xmax = np.max(data[:,0])+1
-    x = np.arange(xmin, xmax, 0.1)
+    xi = np.arange(xmin, xmax, 0.1)
     
     colour = [c*30+60 for c in labels]
     plt.figure(figsize = (6,4), dpi=80)
     plt.scatter(data[:,0],data[:,1],c=colour)
     # theta0*1+theta1*x1+theta2*x2=0
     # x2 = (-theta0 - theta1*x1)/theta2
-    y = (-thetas[0] - thetas[1] * x) / thetas[2] 
-    plt.plot(x,y)
+    yi = (-thetas[0] - thetas[1] * xi) / thetas[2] 
+    plt.plot(xi,yi)
+
     
 def plotFitCurve2(data, labels, thetas):
     
@@ -104,7 +107,8 @@ def plotFitCurve2(data, labels, thetas):
     plt.scatter(data[:,0],data[:,1],c=colour)
     y = []
     for i in range(5):
-        y[i] = (-thetas[0,i*99] - thetas[1,i*99] * x) / thetas[2,i*99] # 
+        y.append((-thetas[0,100*i] - thetas[1,100*i] * x) / thetas[2,120*i]) # 
+        
         plt.plot(x,y[i])
 
 
@@ -116,29 +120,54 @@ def classify(x, thetas):  #
     else: return 0.0
 
 
-def classifyMultiClass():
+def classify_OvsO():  # 一对一：每一个类跟其他每类建立一个分类器(共k!个)，最后投票正确类肯定多1票
     # 逻辑回归默认只能进行二分类问题，如果要做多分类，比如手写数字识别，需要修改
-    # 方式1: 一对多。假设有k个分类，则需要建立k+1个二分类器，
-    # 方式2: 调整算法适应多分类，比如采用softmax分类算法
+    # 一对一: 需要的模型多，但每个模型训练样本少，适合巨量样本
+    # 如果分类互斥，用softmax；如果分类可同时存在，用OvsO或OvsR
     pass
 
 
+def classify_OvsR():  # 一对剩余：每一个类跟剩余类建立一个分类器(共k个)，最后投票唯一不同的票就是正确类
+    # 一对剩余：需要的模型少，但每个模型训练样本数多
+    # 一般来说一对剩余相对高效点。但总体差别不大。
+    pass
+
+#----------------------------------------------------------------
 # libLoR测试函数运行方式： import libLoR; libLoR.test()
 def test(sample):  # 简单样本实例：sample = [0,1]这种list类型
     x, y = loadDataSet('testSet.txt')  
-    thetas = BGA2(x, y)       # 在训练数据x,y中得到模型参数thetas
-    plotFitCurve2(x, y, thetas)      # 对模型参数和回归曲线进行可视化
+    thetas = BGA(x, y)       # 在训练数据x,y中得到模型参数thetas
+    plotFitCurve(x, y, thetas)      # 对模型参数和回归曲线进行可视化
     
     result = classify(sample, thetas)
     print('the sample {} belong to class {}'.format(sample, result))
     return thetas, result   # 根据训练数据，分界线以上为0，分界线以下为1
+
+def test_1(sample):  # 
+    x, y = loadDataSet('testSet.txt')  
+    thetas = BGA2(x, y)         # 改用记录每次thetas的BGA
+    plotFitCurve2(x, y, thetas) # 改用可以画出每100个循环一根的分界线
     
+    result = classify(sample, thetas)
+    print('the sample {} belong to class {}'.format(sample, result))
+    return thetas, result   # 根据训练数据，分界线以上为0，分界线以下为1
+
+def test_3(sample):  # 改用SGA
+    x, y = loadDataSet('testSet.txt')  
+    thetas = SGA(x, y)       # 在训练数据x,y中得到模型参数thetas
+    plotFitCurve(x, y, thetas)      # 对模型参数和回归曲线进行可视化
+    
+    result = classify(sample, thetas)
+    print('the sample {} belong to class {}'.format(sample, result))
+    return thetas, result   # 根据训练数据，分界线以上为0，分界线以下为1        
     
 def test_Colic():  # 疝气病实例
     pass
     
 
-thetas, result = test([0,-100])
+#thetas, result = test([0,-100])    # BGA
+#thetas, result = test_1([0,-100])  # BGA2
+thetas, result = test_3([0,-100])   # SGA
 
 
 
