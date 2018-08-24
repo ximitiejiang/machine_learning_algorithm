@@ -41,16 +41,16 @@ fit finish! last time = 636s
 
 
 
-def importData():
+def importData(row_num):
     import pandas as pd
     import datetime
     # 导入数据: 改为只导入10,000个数据（10%）
     dataAddr = ''
     starttime = datetime.datetime.now()
-    df_train = pd.read_csv('train_set.csv', nrows=1000)
+    df_train = pd.read_csv('train_set.csv', nrows=row_num)
     df_train.drop(columns = ['article', 'id'], inplace = True)
     
-    df_test = pd.read_csv('test_set.csv', nrows=1000)
+    df_test = pd.read_csv('test_set.csv', nrows=row_num)
     df_test.drop(columns = ['article'], inplace = True)
     
     lasttime = datetime.datetime.now() - starttime
@@ -129,11 +129,19 @@ def modelsFit(x_train, y_train):
     return models, results
 
 
-def paraCompare(models):
-    
+def paraCompare(data, labels):
+    # 发现逻辑回归依然最高，那就继续逻辑回归调参
     from sklearn.linear_model import LogisticRegression
-    model = LogisticRegression()  # 
-    pass
+    # 引入参数选择工具
+    from sklearn.model_selection import GridSearchCV
+    
+    parameters={'penalty':('l1','l2'),'C':[0.1,1,10,100]}
+    LoR = LogisticRegression()
+    clf = GridSearchCV(LoR, parameters)
+    clf.fit(data, labels)
+    
+    print(clf.best_estimator_)
+
 
 
 def learningCurve(X,y,model):
@@ -163,6 +171,12 @@ def learningCurve(X,y,model):
     plt.legend(loc="best")
     
 
+def test():
+    df_train, df_test = import data(10000) # row_num = 10,000
+    featureEngineering(df_train, df_test)
+    
+    from sklearn.linear_model import LogisticRegression
+    clf = LogisticRegression()
 
 
 '''
