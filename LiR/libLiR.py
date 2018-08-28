@@ -14,7 +14,7 @@ import pandas as pd
 def loadDataSet(filename):
     df = pd.read_table(filename,header = None)
     x = df.iloc[:,:-1].values
-    y = df.iloc[:,-1].values
+    y = df.iloc[:,-1].values     # 假定所有数据最后一列都是label
     return x, y
 
 
@@ -36,9 +36,11 @@ def ridgeRegres(data, label, lam = 0.2):  # 没有用lambda是因为这个关键
     xTx = data.T * data
     xTx_ridge = xTx + np.eye(data.shape[1])*lam
     
-    theta = xTx 
-    
-    
+    if np.linalg.det(xTx) == 0:
+        print('matrix can not inverse')
+        return    
+    theta = xTx_ridge.I * (data.T*label)
+    return theta    
     
 
 def plotRegresCurve(data, label, theta):
@@ -59,10 +61,19 @@ def test():
     theta = linearRegres(data, label)
     plotRegresCurve(data, label, theta)
 
-
+# 实例：预测鲍鱼的年龄
 filename = 'abalone.txt'
 data, label = loadDataSet(filename)
-#theta = linearRegres(data, label)
+
+
+data = np.mat(data)      # data没有增加一列1，会出错吧？
+label = np.mat(label).T  # 这里提前处理了，后边在ridgeRegres里边二次处理会出错把？
+# 数据标准化
+y_mean = np.mean(label,0)
+y_norm = label - y_mean
+
+
+theta = ridgeRegres(data, label)
 
     
 '''
