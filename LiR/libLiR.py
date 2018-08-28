@@ -5,16 +5,67 @@ Created on Fri Aug  3 09:04:41 2018
 
 @author: suliang
 
-libLiR线性回归库文件解释(参考了github上面lawlite19的源码)
-    - clf(data, alpha=0.01, num_iters=400), 线性回归分类器核心算法
-    - BGD(X,y,theta,alpha,num_iters), 批量梯度下降算法BGD
-    - 
 """
 
-import numpy as npa
+import numpy as np
 import pandas as pd
 
 
+def loadDataSet(filename):
+    df = pd.read_table(filename,header = None)
+    x = df.iloc[:,:-1].values
+    y = df.iloc[:,-1].values
+    return x, y
+
+
+def linearRegres(data, label):
+    data = np.mat(data)   # 这里要求data第一列为1，来配合求解theta0这个偏置数
+    label = np.mat(label).T
+    xTx = data.T * data
+    if np.linalg.det(xTx) == 0:
+        print('matrix can not inverse')
+        return
+    theta = xTx.I * (data.T*label)  
+    # 计算线性方程的系数theta = (xT*x).Inverse *(xT*Y)
+    return theta
+
+
+def ridgeRegres(data, label, lam = 0.2):  # 没有用lambda是因为这个关键是python保留的
+    data = np.mat(data)   # 这里要求data第一列为1，来配合求解theta0这个偏置数
+    label = np.mat(label).T
+    xTx = data.T * data
+    xTx_ridge = xTx + np.eye(data.shape[1])*lam
+    
+    theta = xTx 
+    
+    
+    
+
+def plotRegresCurve(data, label, theta):
+    import matplotlib.pyplot as plt
+    
+    x_copy = data.copy()  # 复制一个数据不能简单的变量名复制，这样指针会指向同一地方
+    x_copy.sort(axis = 0)
+    y_regres = x_copy * theta  # 计算预测值 y = theta * x
+    
+    fig = plt.figure()
+    plt.scatter(data[:,1], label)
+    plt.plot(x_copy[:,1],y_regres, 'r--')
+
+
+def test():
+    filename = 'ex0.txt'
+    data, label = loadDataSet(filename)
+    theta = linearRegres(data, label)
+    plotRegresCurve(data, label, theta)
+
+
+filename = 'abalone.txt'
+data, label = loadDataSet(filename)
+#theta = linearRegres(data, label)
+
+    
+'''
 # 线性回归算法，输入data为array数组，alpha为梯度学习的学习率，num_iters为梯度学习的最大迭代次数
 def clf(data, alpha=0.01, num_iters=400):
     
@@ -32,8 +83,8 @@ def clf(data, alpha=0.01, num_iters=400):
     theta,J_history = BGD(X, y, theta, alpha, num_iters)
     plotJ(J_history, num_iters)
     
-    return mu,sigma,theta   #返回均值mu,标准差sigma,和学习的结果theta
-
+    return sigma,theta   #返回均值mu,标准差sigma,和学习的结果theta
+ 
 # BGD批量梯度下降算法
 # 输入: X为训练数据，y为labels, alpha为学习率，num_iters为最大迭代次数
 def BGD(X,y,theta,alpha,num_iters):
@@ -80,9 +131,9 @@ def autonorm(data):  # 传入一个array而不是dataframe
 def plotJ(J_history,num_iters):
     x = np.arange(1,num_iters+1)
     plt.plot(x,J_history)
-    plt.xlabel(u"迭代次数",fontproperties=font) # 注意指定字体，要不然出现乱码问题
-    plt.ylabel(u"代价值",fontproperties=font)
-    plt.title(u"代价随迭代次数的变化",fontproperties=font)
+    plt.xlabel("iter time") # 注意指定字体，要不然出现乱码问题
+    plt.ylabel("cost")
+    plt.title("times vs. cost")
     plt.show()
 
 # 测试linearRegression函数
@@ -128,3 +179,4 @@ b = np.array([4,5,6])
 c1 = np.stack((a,b), axis =0)
 c2 = np.hstack((a,b))
 c3 = np.vstack((a,b))
+'''
