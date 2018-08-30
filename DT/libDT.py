@@ -6,6 +6,7 @@ Created on Sat Aug 18 11:57:50 2018
 @author: suliang
 """
 import numpy as np
+import pandas as pd
 
 def creatDataSets():
     # 这个数据集是一个鱼特征数据集，第一列代表no surfacing特征, 第二列代表flippers特征
@@ -18,6 +19,13 @@ def creatDataSets():
     featName = ['no surfacing',
               'flippers']
     return data, featName
+
+
+def loadDataSet(filename):  # 载入数据，data是包含label的数据
+    fr = open(filename)
+    data = [inst.strip().split('\t') for inst in fr.readlines()]
+    label = ['age', 'prescript', 'astigmatic','tearRate']
+    return data, label
 
 
 def calcShannonEnt(data):  # 计算一个数据集的信息熵
@@ -43,10 +51,10 @@ def splitDataSet(data, axis, value):
     # 划分数据集，输入数据集data, 特征列号axis，对应特征列的特征值
     # 比如splitDataSet(data,0,1)代表第0列特征值为1的数据子集
     subDataSet = []
-    for line in data:
-        if line[axis] == value:
-            reducedFeatVec = line[:axis]    # 取出axis列左的数据(不包括axis列)
-            reducedFeatVec.extend(line[axis+1:]) # 取出axis列右的数据(不包括axis列)
+    for row in data:
+        if row[axis] == value:
+            reducedFeatVec = row[:axis]    # 取出axis列左的数据(不包括axis列)
+            reducedFeatVec.extend(row[axis+1:]) # 取出axis列右的数据(不包括axis列)
             
             subDataSet.append(reducedFeatVec) 
             # extend是在一个元素内操作，append是在大的list操作不同元素
@@ -81,7 +89,7 @@ def chooseBestFeatureToSplit(data):
             bestFeature = i
     return bestFeature
 
-
+'''
 def majorityCount(classList):  # 该子程序只用来统计当剩下最后一列时，最多label出现次数
     import operator
     
@@ -96,14 +104,20 @@ def majorityCount(classList):  # 该子程序只用来统计当剩下最后一�
     sortedClassCount = sorted(classCount.iteritems(), \
                               key = operator.itemgetter(1), reverse =True)
     return sortedClassCount[0][0]
+'''
+
+def majorityCount(classList):  # 采用一种更优雅的写法来获得最多label的出现次数
+    from collections import Counter
+    num_count = Counter(classList)
+    max_count = max(zip(num_count.values(), num_count.keys()))[0]
+    return max_count
         
 
-def createTree(data, featName):
+def createTree(data, featName):  # 创建树输入data必须是带label的数据：本质上创建树是把所有数据存储起来了
     featColumnName = featName[:]  # 在函数体内修改了featName,为了防止对体外同名变量的影响，
-    classList = [example[-1] for example in data] # classlist为所有的标签值
-    # 这种取list data标签的方式还真是累，之前就把数据处理成array，后边处理不是更方便？
-    
-    if classList.count(classList[0])==len(classList):  # 如果所有标签值相同，就返回
+    classList = np.array(data)[:,-1].tolist()  # 取出最后一列的标签值
+       
+    if classList.count(classList[0])==len(classList):  # 如果所有标签值相同，说明只有唯一分类，可退出循环
         return classList[0]
     if len(data[0])==1:   # 如果是遍历到了最后，data[0]就是
         return majorityCount(classList)  # 就返回次数最多的分类值
@@ -111,19 +125,16 @@ def createTree(data, featName):
     bestFeat = chooseBestFeatureToSplit(data)
     bestfeatName = featColumnName[bestFeat]
     
-    myTree = {bestfeatName:{}}
+    myTree = {bestfeatName:{}}  # 更新树的key
     del(featColumnName[bestFeat])  # 已经split过的特征名称就去掉,就是此处修改了形参
     
     featValues = [example[bestFeat] for example in data] # 获得最佳特征的列
     uniqueValues = set(featValues)  # 去除重复值
     for value in uniqueValues:  #
         subLabels = featColumnName[:]
-        
-        # 这句是整个createTree的核心：循环创建 特征树(即以特征为key，特征数值为value的字典)
-        # 该特征树用字典表示如下：
-        # {特征名称：{特征数值1:{下一棵子树},特征数值2:{下一棵子树}}}
-        myTree[bestfeatName][value] = \
-        createTree(splitDataSet(data,bestFeat,value), subLabels)
+        # 更新树的value = {特征取值1:{下级子树}，特征取值2:{下级子树}，特征取值3:{下级子树}...}
+        # 每一级子树的输入：子数据集(splitc出来)，子特征名
+        myTree[bestfeatName][value] = createTree(splitDataSet(data,bestFeat,value), subLabels)
     
     return myTree
 
@@ -144,12 +155,18 @@ def classify(myTree, featName, testVec):  # 决策树用于分类
 
 
 # ------main-----------
-data, featName = creatDataSets()  # 创建数据
+def test():
+    data, featName = creatDataSets()  # 创建数据
+    myTree = createTree(data, featName)  # 创建一棵树
+    result = classify(myTree, featName, [1,1])  # 基于已有一棵树进行新数据的分类
+    print('the predict result is: {}'.format(result))
 
-myTree = createTree(data, featName)  # 创建一棵树
 
-result = classify(myTree, featName, [1,1])  # 基于已有一棵树进行新数据的分类
-
+def test_lenses():
+    filename = 'lenses.txt'
+    data, label = loadDataSet(filename)
+    myTree = createTree(data, label)
+    print('the lenses Tree is: {}'.format(myTree))
 
 
     
