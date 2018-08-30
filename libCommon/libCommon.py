@@ -11,6 +11,7 @@ Created on Sun Aug  5 10:00:32 2018
 """
 import numpy as np
 import pandas as pd
+import matplotlib.pyplot as plt
 import math
 
 # 这个numpy自带的求分位数的函数计算出来跟浙大版《概率论与数理统计》的计算方法不同
@@ -52,6 +53,84 @@ def box0(df):
     plt.show()
 
 
+# 数据预处理
+def preProcessing(data):
+
+    # 空值检测
+    print('-'*10+'original null: \n{}'.format((data.isnull()).sum()))
+    data['Item_Weight'] = data['Item_Weight'].fillna(data['Item_Weight'].mean())
+    data['Outlet_Size'] = data['Outlet_Size'].fillna(data['Outlet_Size'].mode()[0])
+    print('-'*10+'new null: \n{}'.format((data.isnull()).sum()))
+    
+    # 0值检测
+    print('original visibility zero num: {}'.format((data['Item_Visibility']==0).sum()))
+    data.loc[data['Item_Visibility'] == 0, 'Item_Visibility'] = data['Item_Visibility'].mean()
+    print('new visibility zero num: {}'.format((data['Item_Visibility']==0).sum()))
+    
+    return data
+
+
+def abnomalPointsProcessing():
+    pass
+
+
+# 特征收缩
+def featShrink(train, label):
+    import numpy as np
+    import pandas as pd
+    import matplotlib.pyplot as plt
+    
+    # 缺失值比率判断: 去除缺失值太多的特征
+    a = train.isnull().sum()/len(train)*100  # 计算每个变量缺失值比例
+    variables = train.columns
+    variable = []
+    for i in range(0, len(variables)):
+        if a[i] <= 20:         # 如果缺失值比例不超过20%则保留在variable list里边
+            variable.append(variables[i])  
+    
+    dropItem = [train.columns[n] for n in nn if n != 0] # 代码还没想好怎么写
+    train.drop(['dropItem'], axis = 1, implace = True)  # 更新train
+    
+    # 低方差滤波：去除方差很小的特征
+    # 方差受数据范围影响，所以需要先做数据归一化，再做方差分析
+    variables = train[['Item_Weight', 'Item_Visibility','Item_MRP', 'Outlet_Establishment_Year']]
+    featVar = variables.var()
+    variables = variables.columns
+    variable = []
+    for i in range(0, len(featVar)):
+        if featVar[i] >= 10:   # 如果方差大于10则保留在variable 里边
+            variable.append(variables[i])
+    
+    # 高相关滤波
+    variables = train[['Item_Weight', 'Item_Visibility','Item_MRP', 'Outlet_Establishment_Year']]
+    featCorr = variables.corr()  # 如果相关性超过0.5-0.6，则考虑删除一列
+    
+    # 随机森林评估特征重要性
+    from sklearn.ensemble import RandomForestRegressor
+    train = train.drop(['Item_Identifier', 'Outlet_Identifier'], axis =1)
+    
+    train = pd.get_dummies(train)  # 先全部数字化
+    
+    model = RandomForestRegressor(random_state = 1, max_depth = 10)
+    model.fit(train, label)
+    
+    features = train.columns
+    importances = model.feature_importances_
+    indices = np.argsort(importances[0:10])     # 前10个重要特征
+    plt.title('feature importance')
+    plt.barh(range(len(indices)), importances[indices], color = 'b', align = 'center')
+    plt.yticks(range(len(indices)), [features[i] for i in indices])
+    plt.xlabel('relative importance')
+    plt.show()
+    
+    from sklearn.feature_selection import SelectFromModel  # 也可用sklearn的模型选择，根据权重选择特征
+    feature = SelectfromModel(model)
+    Fit = feature.fit_transform(train, label)
+    
+    # 主成分分析PCA
+
+
+
 def modelsFit(x_train, y_train):    
     from sklearn.neighbors import KNeighborsClassifier
     from sklearn.linear_model import LogisticRegression
@@ -89,9 +168,15 @@ def modelsFit(x_train, y_train):
 
     lasttime = datetime.datetime.now() - starttime
     print('fit finish! last time = {}s'.format(lasttime.seconds))
-    return models, results
+    return models, results    
 
 
+# 单个模型调参
+def modelParameterJustifier():
+    pass
+
+
+# 学习曲线绘制：评估模型的收敛性    
 def learningCurve(X,y,model):
     from sklearn.model_selection import learning_curve
     import numpy as np
@@ -116,10 +201,21 @@ def learningCurve(X,y,model):
     plt.plot(train_sizes, train_scores_mean, 'o--', color="r",label="Training score")
     plt.plot(train_sizes, test_scores_mean, 'o-', color="g",label="Cross-validation score")
     plt.grid()
-    plt.legend(loc="best")
-
+    plt.legend(loc="best")   
+    
+    
+    
 # ---------------测试程序----------------------------    
-def test():
+def test_featShrink():
+    input = pd.read_csv('Train_big_mart_III.csv')
+    input = preProcessing(input)
+    train = input.iloc[:,0:-1]
+    label = input.iloc[:,-1]
+    
+    featShrink(train, label)
+
+
+def test1():
     a = np.array([1,2,3,4,5,6,7,8,9,10])
     b = np.array([122,126,133,140,145,145,149,150,157,
                   162,166,175,177,177,183,188,199,212])
