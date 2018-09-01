@@ -4,10 +4,20 @@
 Created on Wed Aug 29 14:21:05 2018
 
 @author: suliang
+
+一些教训：
+源程序使用了很多mat格式进行运算，我的理解是mat格式做矩阵运算跟matlab相近，点积写法简单不用写dot
+但mat引入后我的程序中大量的set()出错，因为mat嵌套后都不是iterable.
+而核心原因就在于array和mat两种格式在切片以后输出不一样
+arr[:,-1]输出的是一维array
+mat[:,-1]输出的是二维matrix, 而这个二维matrix是unhashable的
+源程序也碰到这类问题了，源办法是mat.T.tolist()[0]，如果是array同样操作后结果却不一样
+所以用mat就不要跟array混用，不然在这点上会把子集搞混乱。
 """
 
 import numpy as np
 import pandas as pd
+import matplotlib.pyplot as plt
 
 def loadDataSet(filename):
     data = pd.read_table(filename,header = None)
@@ -23,20 +33,47 @@ def binSplitDataSet(data, feature, value):  #
     mat1 = data[np.nonzero(data[:,feature] <= value)[0], :] # 小于等于value的行
     return mat0, mat1
 
-
+# 此处采用取平均的方式生成叶子结点
 def regLeaf(data):  # 生成回归叶子结点: 此处是做回归模型，所以就取的是该子集的平均值
     return np.mean(data[:,-1])
 
-
+# 此处采用均方误差计算切分后每个子集的均方误差
 def regErr(data):  # 生成均方误差
     return np.var(data[:,-1]) * data.shape[0]
+
+# 此处采用线性回归模型来拟合叶子结点的所有点
+def linearSolve(data):
+    m, n = data.shape
+    X = np.mat(np.ones((m,n)))
+    y = np.mat(np.ones((m,1)))
+    X[:,1:n] = data[:,0:n-1]  # 第一列已经取1，说明对应的是截距，theta=[theta0, theta1]
+    y = data[:,-1].reshape(-1,1)
+    
+    xTx = X.T * X
+    if np.linalg.det(xTx) == 0:
+        print('matrix can not inverse')
+        return
+    theta = xTx.I * (X.T * y)
+    return theta, X,y    
+# 此处采用线性回归模型来生成叶子结点
+def modelLeaf(data):
+    theta, *rest = linearSolve(data) 
+    return theta
+# 此处采用方差之和作为误差评价
+def modelErr(data):
+    theta, X, y = linearSolve(data)
+    y_test = X*theta
+    error = sum(np.power(y - y_test, 2))
+    return error    
 
 
 def chooseBestSplit(data, leafType=regLeaf, errType = regErr, ops = (1,4)):
     tolS = ops[0]   # 容许的误差下降值阀值为1
     tolN = ops[1]   # 切分的最少样本数阀值为4
-    if len(set(data[:,-1].T.tolist())) == 1:  # 如果最后分类标签值一样，则退出
-        return None, leafType(data)  # 返回none, 函数值regLeaf(data)
+    data = np.mat(data)
+    if len(set(data[:,-1].T.tolist()[0])) == 1:  
+    # 这句语法较复杂，最后一列转秩转list为一个list嵌套list，set不认嵌套，所以取第0个元素
+        return None, leafType(data) # 如果子数据集分类标签值一样则不再迭代，返回该子数据集的均值作为叶结点
     m,n = data.shape
     S = errType(data)  # 计算均方误差
     bestS = np.inf   # 初始均方误差为无穷大
@@ -44,8 +81,8 @@ def chooseBestSplit(data, leafType=regLeaf, errType = regErr, ops = (1,4)):
     bestValue = 0
     
     for featIndex in range(n-1):   # 外循环：所有特征向量（取到n-1是因为最后一列是标签）
-        for splitVal in set(data[:, featIndex]): # 内循环：在该特征列循环取每一个值 
-            
+        for splitVal in set(data[:, featIndex].T.tolist()[0]): # 内循环：在该特征列循环取每一个值 
+            # 内循环的语法有点复杂，因为取出该列后是一个嵌套list的matrix，无法set,只能转秩转list取第0个元素才iterable
             mat0, mat1 = binSplitDataSet(data, featIndex, splitVal)  #划分两个子数据集
             if (mat0.shape[0] < tolN) or (mat1.shape[0] < tolN): #如果数据集内样本个数少于设定值，退出
                 continue
@@ -130,18 +167,42 @@ def prune(tree, testData):  # 剪枝函数：输入待剪枝的树，和测试�
         else: return tree
     else: return tree
 
-
-def regTreeEval():
-    return
+# 只有预测函数singlePointForcase迭代到叶子结点，才会调用如下两个预测值计算函数
+# 此为针对普通CART树的评价函数: 输入树和单点数值，直接返回叶子结点值(因为回归树的叶子结点存的就是平均值)
+def regTreeEval(model, inDat):
+    return float(model)
+# 此为针对CART模型树的评价函数: 输入树和单点数值，此时树已经是一个线性模型，则返回线性模型计算的
+def modelTreeEval(model, inDat):
+    n = inDat.shape[1]
+    X = np.mat(np.ones((1, n+1)))  
+    X[:,1:n+1] = inDat   # 把数据inDat处理成线性回归模型认可的数据格式，首列为1
+    return float(X*model)  # 返回计算出了y = theta * X
 
 # 用CART回归做预测
-def singlePointForcast(tree, inX, modelEval = regTreeEval):
-    if not isTree(tree):
-        return modelEval(tree, inX)
+def singlePointForcast(tree, inData, modelEval = regTreeEval):
+    if not isTree(tree):  # 如果不是一棵树，则调用叶子结点预测值计算公式
+        return modelEval(tree, inX)    
+    # 如果是树，且如果测试数据的第0个值(即x值)大于树结点的切分值，则说明测试数据属于左子树
+    # 由于inData是matrix嵌套list，要取到第一个元素值，需要tolist()以后取第0个位置才能取消嵌套再取0元素
+    if inData.tolist()[0][tree['spInd']] > tree['spVal']: 
+        if isTree(tree['left']): # 如果左子树还是树，继续迭代
+            return singlePointForcast(tree['left'], inData, modelEval)
+        else:  # 如果左子树是叶子结点，返回
+            return modelEval(tree['left'], inData)    
+    # 如果是树，且如果测试数据的第0个值(即x值)小于树结点的切分值，则说明测试属于属于右子树
+    else:
+        if isTree(tree['right']):
+            return singlePointForcast(tree['right'], inData, modelEval)
+        else:
+            return modelEval(tree['right'], inData)
+
     
-    
-def forcast(tree, testData, modelEval = regTreeEval):
-    pass
+def groupPointsForcast(tree, testData, modelEval = regTreeEval):
+    m = len(testData)
+    y_test = np.mat(np.zeros((m,1)))
+    for i in range(m):   # 循环计算每一个测试点的预测值
+        y_test[i,0] = singlePointForcast(tree, np.mat(testData[i]), modelEval)
+    return y_test
 
 # -----------test()-----------
 def test_ex00():    # 简单看看数的结构
@@ -175,12 +236,46 @@ def test_prune():  # 采用ex2训练样本，和ex2test验证样本，因为这�
     
     return data, biggestTree, newTree
 
+def test_modelTree():  # 采用exp2.txt的数据检查CART模型树的效果
+    filename = 'exp2.txt'
+    data = loadDataSet(filename)
+    modelTree = createTree(data, leafType = modelLeaf, errType = modelErr, ops = (1,10))  # 创建一棵误差下降阀值为1，最少样本数为10的树
+    return data, modelTree
+    
 
-def test_bike():
-    pass
+def test_bike():   # 采用自行车与智商数据，进行几种不同树的性能对比，同时完成预测，以及可视化
+    filename1 = 'bikeSpeedVsIq_train.txt'
+    filename2 = 'bikeSpeedVsIq_test.txt'
+    trainMat = np.mat(loadDataSet(filename1))
+    testMat = np.mat(loadDataSet(filename2))
 
-# ---------运行区-------------
-data, biggestTree, newTree = test_prune()
+    # 创建一棵CART普通回归树
+    regTree = createTree(trainMat, leafType = regLeaf, errType = regErr, ops = (1,20))  
+    #y_temp = singlePointForcast(regTree, testMat[0], modelEval = regTreeEval)    
+    y_test = groupPointsForcast(regTree, testMat[:,0])    
+    plt.figure(figsize = (6,4), dpi=80)
+    plt.scatter(np.array(trainMat)[:,0],np.array(trainMat)[:,1], c = 'g')
+    z = sorted(zip(np.array(testMat)[:,0], np.array(y_test)))  # 排序从小到大
+    z = np.array(z)
+    plt.plot(z[:,0],z[:,1], c = 'b')
+
+    # 创建一棵CART模型树
+    modelTree = createTree(trainMat, leafType = modelLeaf, errType = modelErr, ops = (1,20))
+    y_test2 = groupPointsForcast(modelTree, testMat[:,0],modelEval = modelTreeEval) 
+    plt.figure(figsize = (6,4), dpi=80)
+    plt.scatter(np.array(trainMat)[:,0],np.array(trainMat)[:,1], c = 'g')
+    z = sorted(zip(np.array(testMat)[:,0], np.array(y_test2)))  # 排序从小到大
+    z = np.array(z)
+    plt.plot(z[:,0],z[:,1], c = 'b')
+    
+    return trainMat, testMat, regTree, y_test
+
+# ------运行区(去掉其中一个语句之前的#即可运行，或导入后命令行运行test函数)--------
+#data, biggestTree, newTree = test_prune()
+#data, modelTree = test_modelTree()
+trainMat, testMat, regTree, y_test = test_bike()
+
+
 
 
 
