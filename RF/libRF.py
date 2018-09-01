@@ -8,7 +8,11 @@ Created on Thu Aug 30 22:24:51 2018
 
 # RF = Random Forest
 
-class node:
+def loadDataSets():
+    pass
+
+
+class node:  # 定义一个类，作为树的数据结构
     def __init__(self, fea = -1, value = None, results = None, right = None, left = None):
         self.fea = fea  # 列索引
         self.value = value  # 划分值
@@ -16,8 +20,37 @@ class node:
         self.right = right   # 右子树
         self.left = left    # 左子树
 
-def build_tree():
-    if len(data) == 0:
+
+def label_uniq_cnt(data):
+    label_uniq_cnt = {}
+    for x in data:
+        label = x[len(x) - 1]
+        if label not in label_uniq_cnt:
+            label_uniq_cnt[label] = 0
+        label_uniq_cnt[label] = label_uniq_cnt[label] + 1
+    return label_uniq_cnt
+    
+
+def cal_gini_index(data):
+    total_sample = len(data)
+    if len(data) ==0:
+        return 0
+    label_counts = label_uniq_cnt(data)
+    
+    gini = 0
+    for label in label_counts:
+        gini = gini + pow(label_counts[label], 2)
+    
+    gini = 1 - float(gini) / pow(total_sample, 2)
+    return gini
+
+
+def split_tree():
+    pass
+
+
+def build_tree(data):  # 基于CART分类模型创建分类树
+    if len(data) == 0:   # 如果
         return node
     currentGini = cal_gini_index(data)
     
@@ -51,7 +84,18 @@ def build_tree():
     else:
         return node(results = label_uniq_cnt(data))
         
+    
+def predict():
+    pass
 
-
+#------test-------------
+def test_buildTree():
+    loadDataSets()
+    build_tree()
         
-        
+#------运行区-------------
+test_buildTree()
+    
+    
+    
+    
