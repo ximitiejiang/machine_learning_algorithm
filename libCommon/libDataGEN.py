@@ -85,6 +85,61 @@ def linnerudData():
     return linnerud.data, linnerud.target
     
 
+# 著名数据集：MNIST，一个大型手写数字图片集。来自：http://yann.lecun.com/exdb/mnist/
+# 每张图片28 x 28，展开放在1行784个特征即代表一个图片
+# 训练数据集：train-images.idx3-ubyte，train-labels.idx1-ubyte，包括60，000个样本
+# 验证数据集：t10k-images.idx3-ubyte，t10k-labels.idx1-ubyte，包括10，000个样本
+def MNISTData():
+    import os
+    import struct
+    import numpy as np
+    import matplotlib.pyplot as plt
+    
+    # 用sudo find / -name xxx 查找xxx的绝对路径
+    # 查看当前路径：os.getcwd()
+    path = '/Users/suliang/MyDatasets/MNIST/'
+    kind = 'train'
+    labels_path = os.path.join(path,'%s-labels.idx1-ubyte'%kind)
+    images_path = os.path.join(path,'%s-images.idx3-ubyte'%kind)
+    
+    with open(labels_path, 'rb') as lbpath:
+        magic, n = struct.unpack('>II', lbpath.read(8))
+        labels = np.fromfile(lbpath, dtype=np.uint8)
+
+    with open(images_path, 'rb') as imgpath:
+        magic, num, rows, cols = struct.unpack('>IIII', imgpath.read(16))
+        images = np.fromfile(imgpath, dtype=np.uint8).reshape(len(labels), 784)
+    
+    X_train = images
+    y_train = labels
+    
+    #--------可视化1------------
+    fig, ax = plt.subplots(nrows=2,ncols=5,sharex=True,sharey=True)
+    ax = ax.flatten()
+    for i in range(10):
+        img = X_train[y_train == i][0].reshape(28, 28)
+        ax[i].imshow(img, cmap='Greys', interpolation='nearest')
+    
+    ax[0].set_xticks([])
+    ax[0].set_yticks([])
+    plt.tight_layout()
+    plt.show()
+    
+    #--------可视化2------------
+    fig, ax = plt.subplots(nrows=5,ncols=5,sharex=True,sharey=True)
+    ax = ax.flatten()
+    for i in range(25):
+        img = X_train[y_train == 7][i].reshape(28, 28)
+        ax[i].imshow(img, cmap='Greys', interpolation='nearest')
+    
+    ax[0].set_xticks([])
+    ax[0].set_yticks([])
+    plt.tight_layout()
+    plt.show()
+    
+    return X_train, y_train
+
+
 # 数据可视化
 def plotCurve(X,y,*args):
     plt.scatter(X,y,c='b')
@@ -94,10 +149,13 @@ def plotCurve(X,y,*args):
 
 # -----运行区----------
 #X, labels = classifyData_2()
-#X,labels = irisData()
-X, labels =linnerudData()        
-#X,labels,images = digitsData()
-plotCurve(X[:,0],X[:,1])
+#X, labels = irisData()
+#X, labels =linnerudData()        
+#X, labels,images = digitsData()
+#plotCurve(X[:,0],X[:,1])
+
 #X,y,coef = regressionData()
 #plotCurve(X,y,coef)
+
+#X_train, y_train = MNISTData()
 
