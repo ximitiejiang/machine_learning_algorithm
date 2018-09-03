@@ -9,23 +9,40 @@ libPP = lib of preprocessing
 数据预处理
 """
 
-# 数据标准化：变为均值为0，方差为1的高斯标准正态分布
-# 数据标准化目的：
-# 数据标准化方法：
-def dataStandard(X_train):   #
+'''
+标准化：也叫z-score, 变为均值为0，方差为1的高斯标准正态分布
+标准化方法：xhat = (x - mu)/theta (减均值，除方差)
+标准化特点：改变不同特征维度到
+'''
+def dataStandard(X):   #
     from sklearn import preprocessing
     import numpy as np
     
+    X = np.array([[ 1., -1.,  200.],
+                 [ 2.,  0.,  100.],
+                 [ 0.,  1., -100.]])
     X_scaled = preprocessing.scale(X_train)
-    
+
     X_scaled.mean(axis=0)
     X_scaled.std(axis=0)
     
     return X_scaled
     
-# 数据归一化
+
+'''
+归一化：也叫min-max normalization
+归一化方法：xhat = (x - min)/(max - min)
+归一化特点：改变不同特征的维度到(0,1)之间，优点是提高迭代速度和精度，缺点是容易受异常点影响，鲁棒性差
+'''
 def dataNormalize():
-    pass
+    from sklearn import preprocessing
+    import numpy as np
+    X = np.array([[ 1., -1.,  200.],
+                 [ 2.,  0.,  100.],
+                 [ 0.,  1., -100.]])
+    X_normalized = preprocessing.normalize(X, norm='l2')
+    
+    return X_normalized
 
 
 # 数据二值化
@@ -41,7 +58,5 @@ def d():
     
     
 #----运行区--------
-X_train = np.array([[ 1., -1.,  2.],
-                    [ 2.,  0.,  0.],
-                    [ 0.,  1., -1.]])
+
 X_scaled = dataStandard(X_train)

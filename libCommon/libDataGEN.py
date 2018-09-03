@@ -8,6 +8,14 @@ Created on Sat Sep  1 20:10:25 2018
 import numpy as np
 import matplotlib.pyplot as plt
 
+# 随机数据的创建
+def randomData():
+    from numpy.random import RandomState  # numpy的RandomState会比python自带的有更多方法
+    rdm = RandomState(1)   # ???
+    m, n = [128, 2]
+    X = rdm.rand(m, n)  # 生成两组随机矢量(x1, x2)，用来做噪声，(128行，2列)
+    return X
+
 
 # 分类数据创建器
 def classifyData_1():
@@ -26,6 +34,10 @@ def classifyData_2():
     X,labels=make_circles(n_samples=200,noise=0.2,factor=0.2,random_state=1)
     return X, labels
 
+# 生成螺旋形分布的分类数据
+def classifyData_3():
+    
+
 
 # 回归数据创建器        
 def regressionData():
@@ -37,7 +49,7 @@ def regressionData():
     return X, y, coef
 
 
-# 聚类数据创建器
+# 聚类数据创建器(也可以用作分类数据集的创建)
 def clusterData_1():
     from sklearn.datasets.samples_generator import make_blobs
     center=[[1,1],[-1,-1],[1,-1]]  # 指定三个分类的中心点
@@ -77,7 +89,7 @@ def diabetesData():
     
     return diabetes.data, diabetes.target
 
-# 多元回归数据集：linnerud, 包括3个特征，和3个目标值向量
+# 多元回归数据集：体能训练数据集linnerud, 包括3个特征，和3个目标值向量
 def linnerudData():
     from sklearn.datasets import load_linnerud
     linnerud = load_linnerud()
