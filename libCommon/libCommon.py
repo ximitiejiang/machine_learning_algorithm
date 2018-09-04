@@ -74,58 +74,7 @@ def abnomalPointsProcessing():
     pass
 
 
-# 特征收缩
-def featShrink(train, label):
-    import numpy as np
-    import pandas as pd
-    import matplotlib.pyplot as plt
-    
-    # 缺失值比率判断: 去除缺失值太多的特征
-    a = train.isnull().sum()/len(train)*100  # 计算每个变量缺失值比例
-    variables = train.columns
-    variable = []
-    for i in range(0, len(variables)):
-        if a[i] <= 20:         # 如果缺失值比例不超过20%则保留在variable list里边
-            variable.append(variables[i])  
-    
-    dropItem = [train.columns[n] for n in nn if n != 0] # 代码还没想好怎么写
-    train.drop(['dropItem'], axis = 1, implace = True)  # 更新train
-    
-    # 低方差滤波：去除方差很小的特征
-    # 方差受数据范围影响，所以需要先做数据归一化，再做方差分析
-    variables = train[['Item_Weight', 'Item_Visibility','Item_MRP', 'Outlet_Establishment_Year']]
-    featVar = variables.var()
-    variables = variables.columns
-    variable = []
-    for i in range(0, len(featVar)):
-        if featVar[i] >= 10:   # 如果方差大于10则保留在variable 里边
-            variable.append(variables[i])
-    
-    # 高相关滤波
-    variables = train[['Item_Weight', 'Item_Visibility','Item_MRP', 'Outlet_Establishment_Year']]
-    featCorr = variables.corr()  # 如果相关性超过0.5-0.6，则考虑删除一列
-    
-    # 随机森林评估特征重要性
-    from sklearn.ensemble import RandomForestRegressor
-    train = train.drop(['Item_Identifier', 'Outlet_Identifier'], axis =1)
-    
-    train = pd.get_dummies(train)  # 先全部数字化
-    
-    model = RandomForestRegressor(random_state = 1, max_depth = 10)
-    model.fit(train, label)
-    
-    features = train.columns
-    importances = model.feature_importances_
-    indices = np.argsort(importances[0:10])     # 前10个重要特征
-    plt.title('feature importance')
-    plt.barh(range(len(indices)), importances[indices], color = 'b', align = 'center')
-    plt.yticks(range(len(indices)), [features[i] for i in indices])
-    plt.xlabel('relative importance')
-    plt.show()
-    
-    from sklearn.feature_selection import SelectFromModel  # 也可用sklearn的模型选择，根据权重选择特征
-    feature = SelectfromModel(model)
-    Fit = feature.fit_transform(train, label)
+
     
     # 主成分分析PCA
 
@@ -137,33 +86,7 @@ def modelParameterJustifier():
     pass
 
 
-# 学习曲线绘制：评估模型的收敛性    
-def learningCurve(X,y,model):
-    from sklearn.model_selection import learning_curve
-    import numpy as np
-    plt.figure(figsize=(6,5), dpi = 80) # figsize定义的是(width, height),千万不要理解成行数列数，否则就编程高，宽了。
-    plt.title('Learning Curve (degrees ={},penalty={})'.format(degrees[1], penalty[0]))
-    plt.xlabel("Training examples")
-    plt.ylabel("Score")
-    plt.ylim([0.8,1.01])
-    from sklearn.model_selection import ShuffleSplit
 
-    # 核心语句1: 交叉验证生成器
-    cv = ShuffleSplit(n_splits=10, test_size=0.2, random_state=0) # 交叉验证生成器
-    # 核心语句2: 学习曲线参数生成器
-    train_sizes, train_scores, test_scores = \
-            learning_curve(model,   # 带参模型输入
-                           X, y,    # 完整数据集数据输入
-                           cv=cv,   # 交叉验证生成器用ShuffleSplit
-                           train_sizes=np.linspace(.1, 1.0, 5))# 取数据时的size相对位置
-
-    train_scores_mean  = np.mean(train_scores, axis=1)
-    test_scores_mean = np.mean(test_scores, axis=1)
-    plt.plot(train_sizes, train_scores_mean, 'o--', color="r",label="Training score")
-    plt.plot(train_sizes, test_scores_mean, 'o-', color="g",label="Cross-validation score")
-    plt.grid()
-    plt.legend(loc="best")   
-    
     
     
 # ---------------测试程序----------------------------    
