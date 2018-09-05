@@ -4,15 +4,15 @@
 Created on Tue Sep  4 13:17:51 2018
 
 @author: suliang
-教训1: mac上面下载4个数据文件后系统默认都是解压缩的，也就是不带gz后缀
+教训1: mac上面下载4个数据文件后系统默认都是自动解压缩的，也就是不带gz后缀
 但查看tensorflow源码mnist.py里边read_data_sets()和extract_images()这个文件子函数
 发现TF里边默认是要用gz后缀压缩文件的，如果不是压缩文件，读进去的magic number是0x1f8b0808
 只有gz文件读进去magic number才是正确的0x0803=2051，源代码说明了如果不等于2051就会报错。
 解决办法是：
-    * 把自己下载自动解压的文件增加后缀.gz
-    * 把自己下载自动解压的文件名修改为跟源码内文件名一致：(.idx3改为-idx3)
-    * 把input_data.read_data_sets(path, one_hot=True) 增加False一项，说明为fake data
-    从而不用重新下载。
+    * 把自己下载自动解压的文件增加后缀.gz（我测试发现失败了）
+    * 把自己下载自动解压的文件名修改为跟源码内文件名一致：(.idx3改为-idx3，我测试发现失败了)
+    * 修改safari的通用设置：不要打开安全文件。然后重新下载.gz非解压缩格式的文件
+    * 其他处理办法：直接不用TF的input_data模块，拷贝源码里边的逻辑，去掉下载和解压缩的代码段
 
 """
 
@@ -24,21 +24,26 @@ BATCH_SIZE = 100   # 每个训练batch中的训练数据个数
 LEARNING_RATE_BASE = 0.8  # 基础学习率
 LEARNING_RATE_DECAY = 0.99  # 衰减学习率：指数衰减
 REGULARIZATION_RATE = 0.0001  # 正则项系数？？
-TRAINING_STEPS = 30000   # 训练轮数
+TRAINING_STEPS = 20000   # 训练轮数
 MOVING_AVERAGE_DECAY = 0.99  # 滑动模型平均衰减率
 MODEL_SAVE_PATH="MNIST_model/"  
 MODEL_NAME="mnist_model"
 
 
 # 针对MNIST数据集
-INPUT_NODE = 784
-OUTPUT_NODE = 10
-LAYER1_NODE = 500
+INPUT_NODE = 784  # 输入层
+OUTPUT_NODE = 10  # 输出层
+LAYER1_NODE = 500 # 隐藏层，只有一层
 
+# 
 def get_weight_variable(shape, regularizer):
     weights = tf.get_variable("weights", shape, 
                               initializer=tf.truncated_normal_initializer(stddev=0.1))
-    if regularizer != None: tf.add_to_collection('losses', regularizer(weights))
+    # tf.get_variable()
+    # tf.truncated_normal_initializer()
+    if regularizer != None: 
+        tf.add_to_collection('losses', regularizer(weights))
+        # tf.add_to_collection()
     return weights
 
 
@@ -67,7 +72,7 @@ def train(mnist):
     
     # 创建正则计算项
     regularizer = tf.contrib.layers.l2_regularizer(REGULARIZATION_RATE)
-    # 计算
+    # 计算输出y = 
     y = inference(x, regularizer)
     global_step = tf.Variable(0, trainable=False)
 
