@@ -12,7 +12,7 @@ Created on Wed Aug 29 14:21:05 2018
 arr[:,-1]输出的是一维array
 mat[:,-1]输出的是二维matrix, 而这个二维matrix是unhashable的
 源程序也碰到这类问题了，源办法是mat.T.tolist()[0]，如果是array同样操作后结果却不一样
-所以用mat就不要跟array混用，不然在这点上会把子集搞混乱。
+所以用mat就不要跟array混用，不然在这点上会把自己搞混乱。
 """
 
 import numpy as np
@@ -268,13 +268,31 @@ def test_bike():   # 采用自行车与智商数据，进行几种不同树的�
     z = np.array(z)
     plt.plot(z[:,0],z[:,1], c = 'b')
     
-    return trainMat, testMat, regTree, y_test
+    return trainMat, testMat, regTree, modelTree, y_test
+    
 
-# ------运行区(去掉其中一个语句之前的#即可运行，或导入后命令行运行test函数)--------
-#data, biggestTree, newTree = test_prune()
-#data, modelTree = test_modelTree()
-trainMat, testMat, regTree, y_test = test_bike()
+# ------运行区------------------------------------------------------    
+if __name__ == '__main__':
+    
+    test_id = 4  # 程序运行前，需要指定test_id
+    
+    if test_id == 0:  # 简单数据集，测试最简单两层CART树的生成
+        data, myTree = test_ex00()
+    
+    elif test_id == 1: # 测试分支相对多的一棵CART树生成
+        data, myTree = test_ex0()
+    
+    elif test_id == 2:  # 测试剪后枝算法
+        data, biggestTree, newTree = test_prune()
 
+    elif test_id == 3:  # 测试CART模型树算法
+        data, modelTree = test_modelTree()  
+    
+    elif test_id == 4:  # 在自行车智商实例上对比普通CART回归和CART模型树回归
+        trainMat, testMat, regTree, modelTree, y_test = test_bike() 
+    
+    else:
+        print('Wrong test_id!')
 
 
 

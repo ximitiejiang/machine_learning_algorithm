@@ -6,20 +6,20 @@ Created on Thu Aug 30 22:24:51 2018
 @author: suliang
 """
 
-# RF = Random Forest
+# CART_clf = CART classify
 
 import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
 
 def loadDataSets():
-    from sklearn.datasets.samples_generator import make_classification
-    X,labels=make_classification(n_samples=200,n_features=2,n_redundant=0,
-                                 n_informative=2, random_state=1,
-                                 n_clusters_per_class=2)
-    rng=np.random.RandomState(2)
-    X+=2*rng.uniform(size=X.shape)
-    return X, labels
+    data = [[1,1,'yes'],
+            [1,1,'yes'],
+            [1,0,'no'],
+            [0,1,'no'],
+            [0,1,'no']]
+    featName = ['no surfacing','flippers']
+    return data, featName
 
 class Node:  # 定义一个类，作为树的数据结构
     def __init__(self, feat = -1, value = None, results = None, right = None, left = None):
@@ -30,27 +30,23 @@ class Node:  # 定义一个类，作为树的数据结构
         self.left = left    # 左子树
 
 
-def label_uniq_cnt(data):
-    label_uniq_cnt = {}
-    for x in data:
-        label = x[len(x) - 1]
-        if label not in label_uniq_cnt:
-            label_uniq_cnt[label] = 0
-        label_uniq_cnt[label] = label_uniq_cnt[label] + 1
+def label_uniq_cnt(data):    
+    from collections import Counter
+    label = data[:,-1]  # 假定最后一列是label
+    label_uniq_cnt = Counter(label)   # 使用Counter()函数，可以统计每个元素出现次数，返回list或dict
     return label_uniq_cnt
     
 
 def cal_gini_index(data):
-    total_sample = len(data)
-    if len(data) ==0:
+    m = data.shape[0]  # 样本数
+    if data.shape[0] ==0:
         return 0
-    label_counts = label_uniq_cnt(data)
+    label_counts = label_uniq_cnt(data)  # 取出不重复的数值
     
     gini = 0
-    for label in label_counts:
-        gini = gini + pow(label_counts[label], 2)
-    
-    gini = 1 - float(gini) / pow(total_sample, 2)
+    for label in label_counts:  # 取出每一个不重复的取值
+        gini = gini + label_counts[label]**2      
+    gini = 1 - float(gini) / pow(m, 2) # 计算每个取值的gini = 1-sum(p**2) 
     return gini
 
 
@@ -66,20 +62,21 @@ def split_tree(data, feat, value):
 
 
 def build_tree(data):  # 基于CART分类模型创建分类树
-    if len(data) == 0:   # 如果数据行数为0，则返回node
+    data = np.array(data)
+    if data.shape[0] == 0:   # 如果数据行数为0，则返回node
         return node
     
-    currentGini = cal_gini_index(data) # 计算当前数据集的gini
+    currentGini = cal_gini_index(data) # 计算当前数据集的gini = 1-sum(p**2)
     bestGain = 0.0
-    bestCriteria = None
-    bestSets = None
+    bestCriteria = None  # 元组存储(特征名称，最佳切分点)
+    bestSets = None  # 存储切分后的数据子集(CART只会切分成左右2个子集)
     
-    feature_num = len(data[0]) - 1
+    feature_num = data.shape[1] - 1  # 特征个数
     
     for feat in range(0, feature_num): # 外层循环，取出每一个特征
         feature_values = {}
         for sample in data:  # 内层循环，取出每一个样本
-            feature_values[sample[feat]] = 1
+            feature_values[sample[feat]] = 1  # 取得该特征列所有可能的取值
             
         for value in feature_values.keys():
             (set_1, set_2) = split_tree(data, feat, value)
@@ -132,24 +129,33 @@ def choose_samples(data, k):
     return data_samples, feature
 
 
-
-
-#------test-------------
-def test_buildTree():
+def test_simpleFishTree():
     node = Node()
-    X, labels = loadDataSets()
+    data, featName = loadDataSets()
     #labels = labels.reshape(-1,1)
-    color = labels*30+30
-    plt.scatter(X[:,0],X[:,1], c = color)
-    
-    data = np.hstack((X,labels.reshape(-1,1)))
+    # color = labels*30+30
+    #plt.scatter(data[:,0],data[:,1], c = color)
     myTree = build_tree(data)
-    
-    sample = [1,-1]
-    result = predict(sample ,myTree)
+    return data, featName
         
 #------运行区-------------
-myTree = test_buildTree()
+if __name__ == '__main__':
+    
+    test_id = 0    # 程序运行前，需要指定test_id
+    
+    if test_id == 0:  # 调试生成一个简单的CART分类树
+        data, featName = test_simpleFishTree()
+    
+    elif test_id == 1:
+        test_buildTree()
+    
+    elif test_id == 2:
+        test_buildTree()
+    
+    else:
+        print('Wrong test_id!')        
+    
+    
     
     
     
