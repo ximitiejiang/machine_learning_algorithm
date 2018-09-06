@@ -1,33 +1,50 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """
-Created on Thu Aug 30 22:24:51 2018
+Created on Thu Sep  6 15:45:23 2018
 
 @author: suliang
 """
-
-# CART_clf = CART classify
 
 import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
 
-def loadDataSets():
-    data = [[1,1,'yes'],
-            [1,1,'yes'],
-            [1,0,'no'],
-            [0,1,'no'],
-            [0,1,'no']]
-    featName = ['no surfacing','flippers']
-    return data, featName
+# 载入数据
+def classifyData_1():
+    from sklearn.datasets.samples_generator import make_classification
+    X,labels=make_classification(n_samples=200,n_features=2,n_redundant=0,
+                                 n_informative=2, random_state=1,
+                                 n_clusters_per_class=2)
+    rng=np.random.RandomState(1)
+    X += rng.uniform(size=X.shape)
+    
+    return X, labels
 
-class Node:  # 定义一个类，作为树的数据结构
-    def __init__(self, feat = -1, value = None, results = None, right = None, left = None):
-        self.feat = feat  # 列索引
-        self.value = value  # 划分值
-        self.results = results  # 所存储叶子结点所属类别
-        self.right = right   # 右子树
-        self.left = left    # 左子树
+# 从所有样本中有放回选出m x k的样本子集
+def choose_samples(data, k):
+    import random as rd
+    import math
+    
+    m,n = data.shape
+        
+    feature = []
+    for j in range(k):
+        feature.append(rd.randint(0, n-2))  # 随机选出k个特征的index
+        
+    index = []
+    for i in range(m):
+        index.append(rd.randint(0, m-1))  # 随机选出m个样本的index
+    
+    data_samples = []
+    for i in range(m):  # 循环m个样本
+        data_temp = []
+        for feat in feature: # 循环n个特征
+            data_temp.append(data[index[i]][feat]) #取到一个样本并放入data_temp
+            
+        data_temp.append(data[index[i]][-1])   # 取到
+        data_samples.append(data_temp)
+    return data_samples, feature  # 返回data_samples为list嵌套
 
 
 def label_uniq_cnt(data):    # 采用更简洁的counter写法进行技术
@@ -35,7 +52,7 @@ def label_uniq_cnt(data):    # 采用更简洁的counter写法进行技术
     label = data[:,-1]  # 假定最后一列是label
     label_uniq_cnt = Counter(label)   # 使用Counter()函数，可以统计每个元素出现次数，返回list或dict
     return label_uniq_cnt
-    
+
 
 def cal_gini_index(data):
     m = data.shape[0]  # 样本数
@@ -96,8 +113,8 @@ def build_tree(data):  # 基于CART分类模型创建分类树
         return node(feat=bestCriteria[0], value = bestCriteria[1], right=right, left = left)
     else:
         return node(results = label_uniq_cnt(data))
-        
-    
+
+
 def predict(sample, tree):
     if tree.results != None:
         return tree.results
@@ -108,53 +125,49 @@ def predict(sample, tree):
             branch = tree.right
         else:
             branch = tree.left
-        return predict(sample, branch)
+        return predict(sample, branch)        
 
-
-def choose_samples(data, k):
-    m, n = np.shape(data)
-    feature = []
-    for j in range(k):
-        feature.append(rd.randint(0, n-2))
-    index = []
-    for i in range(m):
-        index.append(rd.randint(0, m-1))
-    data_samples = []
-    for i in range(m):
-        data_temp = []
-        for feat in feature:
-            data_tmp.append(data[index[i]][feat])
-        data_temp.append(data[index[i]][-1])
-        data.samples.append(data_temp)
-    return data_samples, feature
-
-
-def test_simpleFishTree():
-    node = Node()
-    data, featName = loadDataSets()
-    #labels = labels.reshape(-1,1)
-    # color = labels*30+30
-    #plt.scatter(data[:,0],data[:,1], c = color)
-    myTree = build_tree(data)
-    return data, featName
+    
+def randomForest_traing(data, num_tree):  # 训练数据， 需要构建的树的数量
+    import random as rd
+    import math    
+    
+    tree_result = []
+    tree_feature = []
+    
+    n = data.shape[1]
+    if n > 2:
+        k = int(math.log(n-1, 2)) + 1
+    else:
+        k = 1  # 如果只有2个特征，则取其中1个特征构建树
         
-#------运行区-------------
+    for i in range(num_tree):
+        data_samples, feature = choose_samples(data, k)
+        tree = build_tree(data)
+        tree_result.append(tree)
+        
+    tree_feature.append(feature)
+    
+    return tree_result, tree_feature
+
+
+#--------------------运行区-----------------------------------
 if __name__ == '__main__':
     
-    test_id = 0    # 程序运行前，需要指定test_id
+    test_id = 1    # 程序运行前，需要指定test_id
     
-    if test_id == 0:  # 调试生成一个简单的CART分类树
-        data, featName = test_simpleFishTree()
+    if test_id == 0:  # 调试choose_sample子程序
+        k = 2
+        x,labels = classifyData_1()
+        data = np.hstack((x,labels.reshape(-1,1))) # 组合数据与标签
+        plt.scatter(data[:,0], data[:,1], c=labels*30 + 30)        
+        data_samples, feature = choose_samples(data, k)
+        
     
-    elif test_id == 1:
-        test_buildTree()
-
+    elif test_id == 1: # 完整调试
+        x,labels = classifyData_1()
+        data = np.hstack((x,labels.reshape(-1,1))) # 组合数据与标签
+        randomForest_traing(data, 2)
     
     else:
-        print('Wrong test_id!')        
-    
-    
-    
-    
-    
-    
+        print('Wrong test_id!')
