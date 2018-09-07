@@ -1,11 +1,11 @@
 # MyCodeForML
 
 Machine learning algorithm by python:
-This is a summary of my machine learning coding practice, including most of the main stream machine learning algorithms. Most of the coding are based on Peter's Machine learning in Action, this is a awesome book for the ML learner.
+This is a summary of my machine learning coding practice, including most of the main stream machine learning algorithms. Most of the coding are based on Peter's Machine Learning in Action(MLA), which is a awesome book for ML learners. Also added some other interesting algorithms that not included in MLA. hopes this material can help more people on learning ML, and anticipate your feedback.
 
 Reference:
   - Machine Learning in Action, Peter Harrington
-  - Python机器学习算法，赵智勇
+  - Python Machine learning Algorithm, Zhiyong Zhao
 
 ## Classify
 1. KNN: k-nearest neighbors
