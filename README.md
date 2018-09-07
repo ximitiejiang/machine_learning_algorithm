@@ -1,7 +1,7 @@
 # MyCodeForML
 
 Machine learning algorithm by python:
-This is a summary of my machine learning coding practice, including most of the main stream machine learning algorithms. Most of the coding are based on Peter's Machine Learning in Action(MLA), which is a awesome book for ML learners. Also added some other interesting algorithms that not included in MLA. hopes this material can help more people on learning ML, and anticipate your feedback.
+This is a summary of my machine learning coding practice, including most of the main stream machine learning algorithms. Most of the coding are based on Peter's Machine Learning in Action(MLA), which is a awesome book for ML learners. Also added some other interesting algorithms that not included in MLA. hopes this material can help more people on learning ML, and any suggestion is highly appriciated.
 
 Reference:
   - Machine Learning in Action, Peter Harrington
@@ -23,8 +23,8 @@ Reference:
     * rbfKernel
     * SMO
 8. AD: adaBoost with stump
-9. RF: random forest with CART tree - tbf
-10. 
+9. RanF: random forest with CART tree - tbf
+10. BPNN
 
 ## Regression
 11. LiR: linear regression
@@ -35,13 +35,15 @@ Reference:
 
 ## Cluster
 14. K-mean
+15. DBSCAN
 
 ## Deep Learning
-15. perception - tbf
-16. NN - tbf
-17. CNN - tbf
+16. perception - tbf
+17. NN - tbf
+18. CNN - tbf
 
 
 ## Common function for Data Analysis
 * Data generation
 * Data pre-processing
+* Model select&evaluation
