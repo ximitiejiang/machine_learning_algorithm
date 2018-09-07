@@ -5,8 +5,12 @@ Created on Sat Aug 18 11:57:50 2018
 
 @author: suliang
 """
+
+# DT = decision tree, 这里主要是用ID3实现
+
 import numpy as np
 import pandas as pd
+import matplotlib.pyplot as plt
 
 def creatDataSets():
     # 这个数据集是一个鱼特征数据集，第一列代表no surfacing特征, 第二列代表flippers特征
@@ -20,12 +24,29 @@ def creatDataSets():
               'flippers']
     return data, featName
 
+def loadDataSet1(filename):  # 用来加载<统计学习方法>中的贷款申请数据集
+    fr = open(filename)
+    data = [inst.strip().split('\t') for inst in fr.readlines()]
+    featName = ['age', 'job', 'house','credit']
+    return data, featName
+
 
 def loadDataSet(filename):  # 载入数据，data是包含label的数据
     fr = open(filename)
     data = [inst.strip().split('\t') for inst in fr.readlines()]
-    label = ['age', 'prescript', 'astigmatic','tearRate']
-    return data, label
+    featName = ['age', 'prescript', 'astigmatic','tearRate']
+    return data, featName
+
+
+def classifyData_1():  # 生成一个分类数据
+    from sklearn.datasets.samples_generator import make_classification
+    X,labels=make_classification(n_samples=200,n_features=2,n_redundant=0,
+                                 n_informative=2, random_state=1,
+                                 n_clusters_per_class=2)
+    rng=np.random.RandomState(1)
+    X+= rng.uniform(size=X.shape)
+    
+    return X, labels
 
 
 def calcShannonEnt(data):  # 计算一个数据集的信息熵
@@ -106,7 +127,7 @@ def majorityCount(classList):  # 该子程序只用来统计当剩下最后一�
     return sortedClassCount[0][0]
 '''
 
-def majorityCount(classList):  # 采用一种更优雅的写法来获得最多label的出现次数
+def majorityCount(classList):  # 采用一种更简洁优雅的写法来获得最多label的出现次数
     from collections import Counter
     num_count = Counter(classList)
     max_count = max(zip(num_count.values(), num_count.keys()))[0]
@@ -154,19 +175,52 @@ def classify(myTree, featName, testVec):  # 决策树用于分类
     return classLabel    
 
 
-# ------main-----------
 def test():
     data, featName = creatDataSets()  # 创建数据
     myTree = createTree(data, featName)  # 创建一棵树
     result = classify(myTree, featName, [1,1])  # 基于已有一棵树进行新数据的分类
     print('the predict result is: {}'.format(result))
+    return data, myTree, result
 
 
 def test_lenses():
     filename = 'lenses.txt'
-    data, label = loadDataSet(filename)
-    myTree = createTree(data, label)
-    print('the lenses Tree is: {}'.format(myTree))
+    data, featName = loadDataSet(filename)
+    myTree = createTree(data, featName)
+    
+    return data, featName, myTree
 
 
+def test_ID3classifyCurve():    #  待调试
+    data, labels = classifyData_1()
+    c = labels*30 + 60
+    plt.scatter(data[:,0],data[:,1], c=c)
+    
+    featName = ['x1', 'x2']
+    myTree = createTree(data, featName)
+    
+    
+    return data, labels
+
+# -------------测试区-------------------------------------------------
+if __name__ == '__main__':
+    
+    test_id = 4    # 程序运行前，需要指定test_id
+    
+    if test_id == 0:  # 调试生成一个简单的树，对鱼的分类进行树构建，并对一个点进行分类预测
+        data, myTree, result = test()
+    
+    elif test_id == 2: # 对lenses隐形眼镜数据进行决策树生成
+        data, featName, myTree = test_lenses()
+    
+    elif test_id == 3: # 对一个常规二维点数据进行分类
+        data, labels = test_ID3classifyCurve()
+        
+    elif test_id == 4: # 对统计学习方法中的loan数据集进行构建树
+        filename = 'loan.txt'
+        data, featName = loadDataSet1(filename)
+        myTree = createTree(data, featName)
+    
+    else:
+        print('Wrong test_id!')
     

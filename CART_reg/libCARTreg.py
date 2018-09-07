@@ -290,6 +290,7 @@ if __name__ == '__main__':
     
     elif test_id == 4:  # 在自行车智商实例上对比普通CART回归和CART模型树回归
         trainMat, testMat, regTree, modelTree, y_test = test_bike() 
+        
     
     else:
         print('Wrong test_id!')

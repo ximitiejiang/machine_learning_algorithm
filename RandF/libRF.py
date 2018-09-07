@@ -164,7 +164,10 @@ if __name__ == '__main__':
         data_samples, feature = choose_samples(data, k)
         
     
-    elif test_id == 1: # 完整调试
+    elif test_id == 1: 
+        pass
+    
+    elif test_id == 2: # 完整调试
         x,labels = classifyData_1()
         data = np.hstack((x,labels.reshape(-1,1))) # 组合数据与标签
         randomForest_traing(data, 2)

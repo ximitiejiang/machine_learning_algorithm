@@ -12,6 +12,33 @@ import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
 
+
+def loadDataSet1(filename):  # 用来加载<统计学习方法>中的贷款申请数据集
+    fr = open(filename)
+    data = [inst.strip().split('\t') for inst in fr.readlines()]
+    featName = ['age', 'job', 'house','credit']
+    return data, featName
+
+
+def loadDataSet(filename):  # 用来加载隐形眼睛数据集
+    fr = open(filename)
+    data = [inst.strip().split('\t') for inst in fr.readlines()]
+    featName = ['age', 'prescript', 'astigmatic','tearRate']
+    return data, featName
+
+
+def classifyData_1():
+    from sklearn.datasets.samples_generator import make_classification
+    X,labels=make_classification(n_samples=200,n_features=2,n_redundant=0,
+                                 n_informative=2, random_state=1,
+                                 n_clusters_per_class=2)
+    rng=np.random.RandomState(1)
+    X += rng.uniform(size=X.shape)
+    
+    data = np.hstack((X,labels.reshape(-1,1))) 
+    return data
+
+
 def loadDataSets():
     data = [[1,1,'yes'],
             [1,1,'yes'],
@@ -21,7 +48,8 @@ def loadDataSets():
     featName = ['no surfacing','flippers']
     return data, featName
 
-class Node:  # 定义一个类，作为树的数据结构
+
+class node:  # 定义一个类，作为树的数据结构
     def __init__(self, feat = -1, value = None, results = None, right = None, left = None):
         self.feat = feat  # 列索引
         self.value = value  # 划分值
@@ -38,6 +66,7 @@ def label_uniq_cnt(data):    # 采用更简洁的counter写法进行技术
     
 
 def cal_gini_index(data):
+    data = np.array(data)
     m = data.shape[0]  # 样本数
     if data.shape[0] ==0:
         return 0
@@ -76,11 +105,12 @@ def build_tree(data):  # 基于CART分类模型创建分类树
     for feat in range(0, feature_num): # 外层循环，取出每一个特征
         feature_values = {}
         for sample in data:  # 内层循环，取出每一个样本
-            feature_values[sample[feat]] = 1  # 取得该特征列所有可能的取值
+            feature_values[sample[feat]] = 1  # 取得该特征列所有不重复的取值
             
-        for value in feature_values.keys():
+        for value in feature_values.keys():  # 取出每一个不重复的值
             (set_1, set_2) = split_tree(data, feat, value)
             
+            # 计算划分以后的基尼值
             nowGini = float(len(set_1)*cal_gini_index(set_1) + 
                             len(set_2)*cal_gini_index(set_2))/ len(data)
             gain = currentGini - nowGini
@@ -111,24 +141,6 @@ def predict(sample, tree):
         return predict(sample, branch)
 
 
-def choose_samples(data, k):
-    m, n = np.shape(data)
-    feature = []
-    for j in range(k):
-        feature.append(rd.randint(0, n-2))
-    index = []
-    for i in range(m):
-        index.append(rd.randint(0, m-1))
-    data_samples = []
-    for i in range(m):
-        data_temp = []
-        for feat in feature:
-            data_tmp.append(data[index[i]][feat])
-        data_temp.append(data[index[i]][-1])
-        data.samples.append(data_temp)
-    return data_samples, feature
-
-
 def test_simpleFishTree():
     node = Node()
     data, featName = loadDataSets()
@@ -141,14 +153,28 @@ def test_simpleFishTree():
 #------运行区-------------
 if __name__ == '__main__':
     
-    test_id = 0    # 程序运行前，需要指定test_id
+    test_id = 4    # 程序运行前，需要指定test_id
     
     if test_id == 0:  # 调试生成一个简单的CART分类树
-        data, featName = test_simpleFishTree()
+        data = classifyData_1()
+        myTree = build_tree(data)
     
-    elif test_id == 1:
-        test_buildTree()
+    elif test_id == 1:  # 测试split tree - 通过
+        data = classifyData_1()
+        (set_1, set_2) = split_tree(data, 0, 1)
+        
+    elif test_id == 2:  # 测试一个最简单数据集分类
+        data, featName = loadDataSets()
+        myTree = build_tree(data)
 
+    elif test_id == 3: # 加载隐形眼睛数据集
+        filename = 'lenses.txt'
+        data, featName = loadDataSet(filename)
+    
+    elif test_id == 4: # 用来加载<统计学习方法>中的贷款申请数据集
+        filename = 'loan.txt'
+        data, featName = loadDataSet1(filename)    
+    
     
     else:
         print('Wrong test_id!')        
