@@ -21,7 +21,15 @@ def classifyData_1():
     
     return X, labels
 
-# 从所有样本中有放回选出m x k的样本子集
+
+def loadDataSet1(filename):  # 用来加载<统计学习方法>中的贷款申请数据集
+    fr = open(filename)
+    data = [inst.strip().split('\t') for inst in fr.readlines()]
+    featName = ['age', 'job', 'house','credit']
+    return data, featName
+
+
+# 从所有样本中有放回选出m x k的样本子集：m行，k列
 def choose_samples(data, k):
     import random as rd
     import math
@@ -47,72 +55,102 @@ def choose_samples(data, k):
     return data_samples, feature  # 返回data_samples为list嵌套
 
 
-def label_uniq_cnt(data):    # 采用更简洁的counter写法进行技术
+def majorityCount(classList):  # 采用一种更简洁优雅的写法来获得最多label的出现次数
     from collections import Counter
-    label = data[:,-1]  # 假定最后一列是label
-    label_uniq_cnt = Counter(label)   # 使用Counter()函数，可以统计每个元素出现次数，返回list或dict
-    return label_uniq_cnt
+    num_count = Counter(classList)
+    max_count = max(zip(num_count.values(), num_count.keys()))[0]
+    return max_count
 
 
-def cal_gini_index(data):
-    m = data.shape[0]  # 样本数
-    if data.shape[0] ==0:
-        return 0
-    label_counts = label_uniq_cnt(data)  # 取出不重复的数值
+def calcGini(data):  # 计算一个数据集的基尼指数，计算基尼指数只跟数据集的标签列相关，所以只要data传入
+    from collections import Counter
+    numEntries = len(data)
+    labelCounts = Counter(np.array(data)[:,-1])
     
-    gini = 0
-    for label in label_counts:  # 取出每一个不重复的取值
-        gini = gini + label_counts[label]**2      
-    gini = 1 - float(gini) / pow(m, 2) # 计算每个取值的gini = 1-sum(p**2) 
+    gini = 1.0
+    for key in labelCounts:        
+        gini = gini - pow(labelCounts[key]/numEntries,2)
     return gini
 
 
-def split_tree(data, feat, value):
-    set_1 = []
-    set_2 = []
-    for x in data:
-        if x[feat] >=value:
-            set_1.append(x)
+def splitDataSet(spdata, axis, value):  
+    # 划分数据集，输入数据集data, 特征列号axis，对应特征列的特征值
+    # 比如splitDataSet(data,0,1)代表第0列特征值为1的数据子集
+    import copy
+    subDataSet = []
+    restDataSet = copy.deepcopy(spdata)
+    deltimes = 0
+    for i, row in enumerate(spdata):   # 循环每行
+        if row[axis] == value:  # 如果该行对应列等于划分值则取出该行
+            reducedFeatVec = row[:axis]    # 取出axis列左的数据(不包括axis列)
+            reducedFeatVec.extend(row[axis+1:]) # 取出axis列右的数据(不包括axis列)
+            subDataSet.append(reducedFeatVec)
+            # 每删除一行，计算行的起点就往回调1
+            del restDataSet[i-deltimes]
+            deltimes += 1    
+    # 去除该特征列
+    for i in range(len(restDataSet)):
+        del restDataSet[i][axis] # 
+    # 这个地方实现掉进无数坑了：如果同步删除某列，结果删除后的行不对了
+    # 如果一次性删除首列后做差集，又因为有相同行，差集数据又不对    
+    return subDataSet, restDataSet   # 返回指定划分的2个数据集
+
+
+def chooseBestFeatureToSplit(data):  
+    numFeatures = len(data[0]) - 1   # 获得特征个数，label不算所以减一
+    baseGini = calcGini(data)
+    bestGiniGain = 0.0
+    bestFeature = -1
+    bestValue = -1
+    
+    for i in range(numFeatures):  # 外循环定义特征i
+        featList = [sample[i] for sample in data] # 取出第i列特征
+        uniqueVals = set(featList)  # set函数是获得不重复的值（即去除重复）
+        
+        newGini = 0.0
+        for value in uniqueVals:  # 内循环定义该特征i的取值种类
+            subDataSet, restDataSet = splitDataSet(data, i, value) # 得到该特征该值划分的2个子集        
+            p1 = len(subDataSet)/float(len(data))
+            p2 = len(restDataSet)/float(len(data))
+            newGini = p1*calcGini(subDataSet) + p2*calcGini(restDataSet) # 计算划分子数据集的熵
+        
+            giniGain = baseGini - newGini # 计算特征i划分的基尼增益(用增益判断就不用记下所有数据做排序)
+            if (giniGain > bestGiniGain): # 如果特征i的增益最大，则以该特征i为最优特征
+                bestGiniGain = giniGain
+                bestFeature = i
+                bestValue = value
+                
+    return bestFeature, bestValue
+
+
+def createTree(data, featName):  # 创建树输入data必须是带label的数据：本质上创建树是把所有数据存储起来了
+    featColumnName = featName[:]  
+    # 在函数体内修改了形参featName,为了防止对体外同名变量的影响需要复制
+    # 由于featName只是一个单层list,采用浅拷贝就够了    
+    classList = np.array(data)[:,-1].tolist()  # 取出最后一列的标签值
+       
+    if classList.count(classList[0])==len(classList):  # 如果所有标签值相同，说明只有唯一分类，可退出循环
+        return classList[0]
+    if len(data[0])==1:   # 如果是遍历到了最后，data[0]就是
+        return majorityCount(classList)  # 就返回次数最多的分类值
+    
+    bestFeat, bestValue = chooseBestFeatureToSplit(data)
+    bestfeatName = featColumnName[bestFeat]
+    
+    myTree = {bestfeatName:{}}  # 更新树的key
+    del(featColumnName[bestFeat])  # 已经split过的特征名称就去掉,就是此处修改了形参
+    
+    subSet, restSet = splitDataSet(data, bestFeat, bestValue)
+    featValues = [example[bestFeat] for example in data] # 获得最佳特征的列
+    uniqueValues = set(featValues)  # 去除重复值
+    
+    for value in uniqueValues:  #
+        if value==bestValue:
+            myTree[bestfeatName][value]=createTree(subSet,featColumnName)
         else:
-            set_2.append(x)
-    return (set_1, set_2)
-
-
-def build_tree(data):  # 基于CART分类模型创建分类树
-    data = np.array(data)
-    if data.shape[0] == 0:   # 如果数据行数为0，则返回node
-        return node
-    
-    currentGini = cal_gini_index(data) # 计算当前数据集的gini = 1-sum(p**2)
-    bestGain = 0.0
-    bestCriteria = None  # 元组存储(特征名称，最佳切分点)
-    bestSets = None  # 存储切分后的数据子集(CART只会切分成左右2个子集)
-    
-    feature_num = data.shape[1] - 1  # 特征个数
-    
-    for feat in range(0, feature_num): # 外层循环，取出每一个特征
-        feature_values = {}
-        for sample in data:  # 内层循环，取出每一个样本
-            feature_values[sample[feat]] = 1  # 取得该特征列所有可能的取值
-            
-        for value in feature_values.keys():
-            (set_1, set_2) = split_tree(data, feat, value)
-            
-            nowGini = float(len(set_1)*cal_gini_index(set_1) + 
-                            len(set_2)*cal_gini_index(set_2))/ len(data)
-            gain = currentGini - nowGini
-            
-            if gain >bestGain and len(set_1)>0 and len(set_2) >0:
-                bestGain = gain
-                bestCriteria = (feat, value)
-                bestSets = (set_1, set_2)
-    
-    if bestGain > 0:
-        right = build_tree(bestSets[0])
-        left = build_tree(bestSets[1])
-        return node(feat=bestCriteria[0], value = bestCriteria[1], right=right, left = left)
-    else:
-        return node(results = label_uniq_cnt(data))
+            myTree[bestfeatName][value]=createTree(restSet,featColumnName)
+        
+    return myTree
 
 
 def predict(sample, tree):
@@ -151,26 +189,32 @@ def randomForest_traing(data, num_tree):  # 训练数据， 需要构建的树�
     return tree_result, tree_feature
 
 
-#--------------------运行区-----------------------------------
+
+# -------------------运行区-------------------------------------------
 if __name__ == '__main__':
     
-    test_id = 1    # 程序运行前，需要指定test_id
+    test_id = 2    # 程序运行前，需要指定test_id
     
-    if test_id == 0:  # 调试choose_sample子程序
-        k = 2
-        x,labels = classifyData_1()
-        data = np.hstack((x,labels.reshape(-1,1))) # 组合数据与标签
-        plt.scatter(data[:,0], data[:,1], c=labels*30 + 30)        
-        data_samples, feature = choose_samples(data, k)
+    if test_id == 0:  # 调试划分数据集子函数
+        filename = 'loan.txt'
+        data, featName = loadDataSet1(filename)
+        sub, rest = splitDataSet(data, 2, 'yes')
+    
+    elif test_id == 1:  # 调试选择最优特征
+        filename = 'loan.txt'
+        data, featName = loadDataSet1(filename) # 测试最优特征选择
+        bestFeature, bestValue = chooseBestFeatureToSplit(data)
         
-    
-    elif test_id == 1: 
-        pass
-    
-    elif test_id == 2: # 完整调试
-        x,labels = classifyData_1()
-        data = np.hstack((x,labels.reshape(-1,1))) # 组合数据与标签
-        randomForest_traing(data, 2)
-    
+    elif test_id == 2: # 整体调试CART_clf
+        filename = 'loan.txt'
+        data, featName = loadDataSet1(filename) # 测试最优特征选择
+        myTree = createTree(data, featName)
+        
+    elif test_id == 3:  # 调试随机抽选样本
+        filename = 'loan.txt'
+        data, featName = loadDataSet1(filename) # 测试最优特征选择
+        choose_samples(data, k)  # 
+        
+ 
     else:
         print('Wrong test_id!')
