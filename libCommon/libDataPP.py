@@ -20,12 +20,21 @@ def loadData():
     
     train = data.iloc[:,:-1]
     label = data.iloc[:,-1]
-    
+    print('train shape: {}; label shape: {}'.format(train.shape, label.shape))
     return train, label
 
+# 一个整体检查数据状态的子程序
+def featCheck(train, label):
+    # 缺失值检查
+    print(train.head(5))
+    result = {}
+    result['nullPerc'] = train.isnull().sum()/len(train)*100  # 计算每个变量缺失值比例
+    # 
+    return result
 
 '''------------------------预处理---------------------------------------------
 1. 预处理-缺失值: 缺失值处理永远是数据处理的第一步
+    * 填充为可识别的nan: 需要先用浮点型字符串'nan'填充，即float('nan')或np.nan，才能被isnull()识别   
     * 如果是连续特征：可以用平均值，或者中位数填充
     * 如果是离散特征：可以用众数填充
     * preprocessing.Imputer
@@ -40,6 +49,10 @@ def loadData():
     
     * 离散特征连续化：线性回归逻辑回归只能处理连续特征，所以需要连续化，OneHotEncoder
     * 离散特征离散化：1)文字转离散数字，可用oneHotEncoder
+    * 区分dummy和oneHot: dummy编码是对一个类别进行分类编码，比如male/female编成0，1
+      而oneHot编码是把
+      对于dummy来说，多个类别编码的连续输入，被sklearn认为是连续变量，彼此有序，不符合特征实际情况
+      而用oneHot编码来说就没有这个问题
     
     * 对于文本编码：可以用word2vec转换
     
@@ -59,19 +72,44 @@ def loadData():
 '''
 
 
-# 缺失值比率判断: 去除缺失值太多的特征
-def checkHighPercNullFeat(train):
-    nullPerc = train.isnull().sum()/len(train)*100  # 计算每个变量缺失值比例
-    dropindex = np.where(nullPerc >= 20)
-    for i in dropindex[0]:
-        train = train.drop(train.columns[i], axis = 1)  # 更新train
-    return train
+# 缺失值比率判断: 去除缺失值太多的特征 - clean_up
+def checkHighPercNullFeat(train, drop = True):
+    old_nullPerc = train.isnull().sum()/len(train)*100  # 计算每个变量缺失值比例
+    dropindex = np.where(old_nullPerc >= 20)
+    
+    nullPercChange = old_nullPerc
+    if drop:
+        for i in dropindex[0]:  # dropindex为tuple
+            train = train.drop(train.columns[i], axis = 1)  # 更新train
+        new_nullPerc = train.isnull().sum()/len(train)*100
+    
+        nullPercChange = pd.DataFrame([old_nullPerc, new_nullPerc]).T
+    return train, nullPercChange  # 由于作用域的原因，无法直接修改外部变量，需要return回去做赋值
 
-# 缺失值填充
-def fillNull():
-    pass
+
+# 缺失值填充  -  clean_up
+def fillNull(train, col_name, fill_method='mean', copy = False):
+    import numpy as np
+    from sklearn.preprocessing import Imputer
+
+    imp = Imputer(missing_values='NaN',   # (默认是填充缺失值'NaN')缺失值可以是NaN或数值比如0
+                  strategy=fill_method,  # (默认是'mean')填充方式：'mean','median','most_frequent'
+                  axis=0,  # (默认是0)axis=0是按照列进行
+                  copy = copy)  # (默认是False)直接修改源数据)
+    imp.fit(train[col_name].values.reshape(-1,1))
+    #if not copy:
+    imp.transform(train[col_name].values.reshape(-1,1))
 
 
+def fillNull_2(train, col_name): # 使用pandas的语法   
+    import pandas as pd
+    print(train[col_name].value_counts())
+    
+    initial_null = sum(train[col_name].isnull())
+    train[col_name] = train[col_name].fillna(train[col_name].mode()[0])
+    # 众数填充.mode()[0], 均值.mean(), 中位数.median()
+    after_null = sum(train[col_name].isnull())
+    
 '''
 标准化：也叫z-score, 变为均值为0，方差为1的高斯标准正态分布
 标准化方法：xhat = (x - mu)/theta (减均值，除方差)
@@ -112,6 +150,7 @@ def dataNormalize():
 数据编码: one-hot独热编码
 '''
 def oneHotEncode():
+    
     pass
 
 def dummyEncode():
@@ -196,6 +235,9 @@ def featShrink(train, label):
 # 运行调试区
 if __name__=='__main__':
     train, label = loadData()
-    newtrain = checkHighPercNullFeat(train)
+    train, nullPercChange = checkHighPercNullFeat(train, drop = False)
+    
+
+    
 
 
