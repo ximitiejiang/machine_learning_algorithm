@@ -140,7 +140,7 @@ def linnerudData():
 
 '''
 著名数据集：MNIST，一个大型手写数字图片集。来自：http://yann.lecun.com/exdb/mnist/
-    * 每张图片28 x 28，展开放在1行784个特征即代表一个图片
+    * 每张图片28*28*1，黑白照片所以色彩只有一层数据代表灰度的1和0
     * 训练数据集：train-images.idx3-ubyte，train-labels.idx1-ubyte，包括60，000个样本
     * 验证数据集：t10k-images.idx3-ubyte，t10k-labels.idx1-ubyte，包括10，000个样本
 '''
@@ -195,8 +195,27 @@ def MNISTData():
     return X_train, y_train
 
 
-# -----运行区----------
+'''著名数据集：CIFAR-10，彩色图片数据集，来自http://www.cs.toronto.edu/~kriz/cifar.html
+    * 共10个分类，每个分类6000张，总计60000张图片
+    * 图片像素32*32*3，彩色照片所以有三层数据分别代表红绿蓝的1和0
+'''
+def unpickle(file):
+    import pickle
+    with open(file, 'rb') as fo:
+        dict = pickle.load(fo, encoding='bytes')
+    return dict
+
+def CIFAR10Data():
+    filename = ''
+
+# -------------运行区---------------------------------
 if __name__ == '__main__':
+    
+    test_id = 5
+    
+    if test_id == 0:
+        pass
+    
     #X, labels = classifyData_2()
     #X, labels = irisData()
     #X, labels =linnerudData()        
@@ -205,6 +224,9 @@ if __name__ == '__main__':
 
     #X,y,coef = regressionData()
     #plotCurve(X,y,coef)
-
-    X_train, y_train = MNISTData()
-
+    
+    elif test_id == 5:
+        X_train, y_train = MNISTData()
+    
+    else:
+        print('Wrong test_id!')
