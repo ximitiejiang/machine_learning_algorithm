@@ -4,6 +4,12 @@
 Created on Wed Sep  5 14:57:53 2018
 
 @author: suliang
+xx.__version
+    * tf: 1.11.0-dev20180904
+    * np: 1.14.0
+    * tfe
+    
+基于新安装的eager execution进行TF的实例调试练习
 """
 
 import tensorflow as tf
@@ -27,9 +33,9 @@ class simple_nn(tf.keras.Model):
         super(simple_nn, self).__init__()
         """ 在init里边定义dense layer全连接层，output layer输出层
         """   
-        # Hidden layer.
+        # 隐藏层
         self.dense_layer = tf.layers.Dense(10, activation=tf.nn.relu)
-        # Output layer. No activation.
+        # 输出层. No activation.
         self.output_layer = tf.layers.Dense(2, activation=None)
     
     def predict(self, input_data):
@@ -80,5 +86,27 @@ model = simple_nn()
 model.fit(X_tensor, y_tensor, optimizer, num_epochs=500, verbose=50)
 
 
+# 可视化
+x_min, x_max = X[:, 0].min() - 1, X[:, 0].max() + 1
+y_min, y_max = X[:, 1].min() - 1, X[:, 1].max() + 1
+xx, yy = np.meshgrid(np.arange(x_min, x_max, 0.01),
+                     np.arange(y_min, y_max, 0.01))
+
+# Predict target for each sample xx, yy
+Z = np.argmax(model.predict(tf.constant(np.c_[xx.ravel(), yy.ravel()])).numpy(), axis=1)
+
+# Put the result into a color plot
+Z = Z.reshape(xx.shape)
+fig = plt.figure()
+plt.contourf(xx, yy, Z, cmap=plt.cm.autumn, alpha=0.8)
+
+# Plot our training points
+plt.scatter(X[:, 0], X[:, 1], c=y, s=40, cmap=plt.cm.autumn, edgecolors='k')
+plt.xlim(xx.min(), xx.max())
+plt.ylim(yy.min(), yy.max())
+plt.xlabel('First feature', fontsize=15)
+plt.ylabel('Second feature', fontsize=15)
+plt.title('Toy classification problem', fontsize=15)
+plt.show()
 
 

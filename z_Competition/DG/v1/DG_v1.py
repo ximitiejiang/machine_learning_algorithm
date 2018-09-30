@@ -137,7 +137,7 @@ def paraCompare(data, labels):
     
     parameters={'penalty':('l1','l2'),'C':[0.1,1,10,100]}
     LoR = LogisticRegression()
-    clf = GridSearchCV(LoR, parameters)
+    clf = GridSearchCV(LoR, parameters)  # 要网格搜索的写在para字典里，不要搜索的写哪？
     clf.fit(data, labels)
     
     print(clf.best_estimator_)

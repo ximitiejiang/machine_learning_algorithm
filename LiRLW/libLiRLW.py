@@ -7,6 +7,7 @@ Created on Tue Aug 28 19:26:53 2018
 """
 
 # LiRLW = linear regression with locally weighted 局部加权线性回归
+# 通过局部加权，相对于对跟待预测样本权重
 
 import numpy as np
 import pandas as pd
@@ -59,6 +60,8 @@ def plotRegresCurve(data, label, theta):
 def test():
     filename = 'ex0.txt'
     data, label = loadDataSet(filename)
+    x_test = 
     y_test = LWlinearRegres(x_test, data, label, k=1.0)
     plotRegresCurve(data, label, theta)   
- 
+
+test() 

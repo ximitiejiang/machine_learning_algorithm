@@ -31,7 +31,11 @@ def modelsFit(x_train, y_train):
                                              solver = 'sag',
                                              multi_class = 'mvm',
                                              class_weight = 'balanced')))
-    models.append(('DeT', DecisionTreeClassifier(max_depth=7)))
+    models.append(('DeT', DecisionTreeClassifier(max_depth=7,
+                                                 max_featrures = 30,
+                                                 min_sample_split = 10,
+                                                 min_sample_leaf = 5,
+                                                 max_leaf_nodes = 50)))
     models.append(('Bagging',BaggingClassifier(DecisionTreeClassifier(random_state=1))))
     models.append(('RanF', RandomForestClassifier(random_state=1)))
     models.append(('AdaB', AdaBoostClassifier(random_state=1)))
@@ -56,6 +60,16 @@ def modelsFit(x_train, y_train):
     return models, results  
 
 
+# 拆分数据集
+def splitData(X,y):
+    from sklearn.model_selection import train_test_split
+    X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.3, random_state=0)
+
+
+# 交叉验证：用于挑选合适的参数
+def crossValidation():
+    pass
+    
 
 # 学习曲线绘制：评估模型的收敛性    
 def learningCurve(X,y,model):
