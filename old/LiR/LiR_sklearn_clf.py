@@ -51,11 +51,11 @@ model.append(('reg_poly_2',LinearRegression(normalize = True)))
 model.append(('reg_poly_4',LinearRegression(normalize = True)))
 
 results = []
-for name, model in enumerate(models):
+for name, m in enumerate(model):
     #kf = KFold(n_splits = 10) 
     #cv_score = cross_val_score(model, X_train, y_train, cv=kf)
-    model.fit(X_train[],Y)
-    results.append((name, model.score, mean_squared_error(Y, model.predict(X))))
+    m.fit(X_train,Y)
+    results.append((name, m.score, mean_squared_error(Y, m.predict(X))))
 
 # 显示结果
 n = len(results)    
