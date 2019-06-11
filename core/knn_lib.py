@@ -7,74 +7,44 @@ Created on Mon Jun 10 16:59:16 2019
 """
 import numpy as np
 
-
-class KNNLib():
+class KNN():
     def __init__(self, feats, labels):
         """ knn algorithm lib
+        knn算法通过计算待预测数据与每个样本的距离，提取距离最近的k个样本投票决定待预测样本的类别
+        knn算法没有预训练过程，也没有预训练参数，所以也就没有可保存的模型，都是实时计算距离实时投票实时获得预测结果
+        优点：算法简单，可处理二分类和多分类
+        缺点：没有可训练的参数保存，每次都要实时计算才能进行预测
         Args:
-            feats(numpy): (n,2)
-            labels(numpy): (n,)
-            k(int): 
-        Returns:
-            
+            feats(numpy): (n_samples, m_feats)
+            labels(numpy): (n_samples,)
         """
+        assert feats.ndim ==2, 'the feats should be (n_samples, m_feats), each sample should be 1-dim flatten data.'
         self.feats = feats
         self.labels = labels
     
     def classify(self, data, k):
         """
         Args:
-            data(numpy): (1,2)
-            k(int): 
+            data(numpy): (1, m_feats) or (m_feats,)，如果是(m,n)则需要展平
+            k(int): number of neibours
         Returns:
-            
+            label(int)
         """
-        assert(data, np.ndarray), 'data should be ndarray.'
+        assert isinstance(data, np.ndarray), 'data should be ndarray.'
+        assert (data.shape[0]==1 or data.ndim==1), 'data should be flatten data like(m,) or (1,m).'
+        assert (k % 2 == 1), 'k should be odd number.'
         # calculate distance
-        tiled_data = np.tile(data, (self.feats.shape(0),1))           # 把输入数据堆叠成特征的高度
-        dist = np.sqrt(np.sum((tiled_data - self.feats)**2, axis=1))  # distances = np.sqrt((xi - x)^2) 
+        tiled_data = np.tile(data, (self.feats.shape[0], 1))           # (n, m)把输入数据堆叠成特征的高度
+        dist = np.sqrt(np.sum((tiled_data - self.feats)**2, axis=1))  # (n,) distances = np.sqrt((xi - x)^2) 
         
         # sort distance and vote
-        dist_sort_index = np.argsort(dist)
-        for i in range(k):
-            vote = data[dist_sort_index[i]]
-            
-        return vote
-
+        dist_sort_index = np.argsort(dist)   #(n,)
+        count_dict = {}  # 存储  {标签：个数}
+        for i in range(k):  #找最近的k个样本 
+            dist_label = self.labels[dist_sort_index[i]]   # 获得距离对应的标签
+            count_dict[dist_label] = count_dict.get(dist_label, 0) + 1  # 如果有这个距离对应标签key，则个数+1, 否则在0的基础上+1  
         
-from sklearn.datasets import load_digits
-import matplotlib.pyplot as plt
+        # get most counted label
+        label, _ = max(zip(count_dict.keys(), count_dict.values()))   # 字典排序
+        return label
 
-class DigitsDataset():
-    """sklearn自带手写数字集(1797,64)共计1797个样本
-    digits.keys() = ['images','data','target_names','DESCR','target']
-    其中imgaes为(8,8)ndarray, data为(1797,64)ndarray展开的图片值，
-    
-    """
-    def __init__(self):
-        self.dataset = load_digits()        # dict, len=5
-
-    def __len__(self):
-        return len(self.dataset['images'])
-    
-    def __getitem__(self, idx):
-        img = self.dataset.images[idx]
-        label = self.dataset.target[idx]
-        
-        return [img, label] 
-
-if __name__ == "__main__":
-    data = DigitsDataset()
-
-    img1, label1 = data[0]
-    img2, label2 = data[1]
-    img3, label3 = data[2]    
-    plt.figure()
-    plt.subplot(1,3,1)
-    plt.imshow(img1)
-    plt.subplot(1,3,2)
-    plt.imshow(img2)    
-    plt.subplot(1,3,3)
-    plt.imshow(img3)    
-#    knn = KNNLib(feats, labels)
-        

@@ -34,9 +34,10 @@ def BGA(data, labels, alpha=0.001):  # batch gradient ascent 批量梯度上升
     thetas = np.ones([n,1]) # 新建thetas,默认为全1列表
         
     for i in range(maxCycles): # 每次都使用整个数据集data计算一列hxi,得到一列thetas
-        hxi = sigmoid(data * (thetas))  # mat格式下*代表叉乘, sigmoid()可以计算矢量
+        prob = data * (thetas)  # mat格式下*代表按位相乘后累加, sigmoid()可以计算矢量
+        hxi = sigmoid(prob)
         error = labels - hxi            # labels, hxi, error都是一列矢量
-        thetas += alpha * data.T * error   # 整个data更新一组thetas
+        thetas += alpha * data.T * error   # 整个data更新一组thetas = theta + (100,3)*(100,1)
         
     return thetas
 
@@ -165,9 +166,10 @@ def test_Colic():  # 疝气病实例
     pass
     
 
-#thetas, result = test([0,-100])    # BGA
+thetas, result = test([0,-100])    # BGA
 #thetas, result = test_1([0,-100])  # BGA2
-thetas, result = test_3([0,-100])   # SGA
+#thetas, result = test_3([0,-100])   # SGA
 
+print(thetas)
 
 
