@@ -18,19 +18,20 @@ def BGD(data, labels, maxCycles, alpha):  # alpha为学习率
     data = np.mat(data)
     labels = np.mat(labels).T
     x0 = np.ones((data.shape[0],1))
-    data = np.hstack((x0, data))
+    data = np.hstack((x0, data))     # (135, 3) 第一列为1
     
     m, n = data.shape    
-    thetas = np.mat(np.ones((n,k)))  # 初始化参数thetas, k个类别就是k列
+    thetas = np.mat(np.ones((n,k)))  # w初始化(n_feat, k_class), 每个样本对应一个类别就有一组参数，k个类别就有k组参数
     
     for i in range(maxCycles):
-        edot = np.exp(data * thetas)  # 计算mat点积 exp(data*thetas)
+        edot = np.exp(data * thetas)  # data(135,3) * thetas(3,4) -> (135,4)4表示这个样本属于这4类的值
         rowsum = edot.sum(axis = 1)  # 计算每行求和
         rowsum = rowsum.repeat(k, axis=1)  # 横向赋值扩展成k列，每类一列备用
         
-        p = - edot/rowsum  # 计算softmax函数，等效于每个样本在每个类别的概率，k列
-                           # 加负号是为了下一步算 1-p方便
-        for j in range(m):
+        p = - edot/rowsum  # (135,4)4表示每个样本属于一个类别的4个概率值 
+                           # 计算softmax函数，等效于每个样本在每个类别的概率，k列
+                           # 加负号是为了下一步算 1-p方便: 1-p变为1+(-p)
+        for j in range(m):  # m 表示135个样本
             p[j, labels[j,0]] += 1  # 计算(1-p),只在该样本属于类的那列计算1-p
         # thetas = thetas + (alpha/m) * X.T * (1-p)
         thetas = thetas + (alpha / m) * data.T * p
@@ -69,7 +70,8 @@ def plotFitCurve(data, labels):
 
 if __name__ == '__main__':
     inputfile = 'softInput.txt'
-    data, labels = loadDataSet(inputfile)
+    data, labels = loadDataSet(inputfile)  # (135,2)  (135)
     
-    plotFitCurve(data,labels)
+#    plotFitCurve(data,labels)
     thetas = BGD(data, labels, 200, 0.01)
+    print('thetas = ', thetas)
