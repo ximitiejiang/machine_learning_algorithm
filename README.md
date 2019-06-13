@@ -1,13 +1,13 @@
-### machine learning algorithm implementation
+# machine learning algorithm implementation
 
 Machine learning algorithm implemented by python3:
 trying to build a clear, modular, easy-to-use-and-modify machine learning library. all the machine learning algorithms are rewrited as Class, with same and clear interface. also implement common dataset Class that can be easily used in any algorithms.
 
-# features
+### features
 - all the algorithm integrated as Class, easy to use and modify
 - all the dataset integrated as Class, easy to use and modify
 
-# usage
+### usage
 - train: 
 ```
 from core.softmax_reg_lib import SoftmaxReg
@@ -30,11 +30,7 @@ sm.load(path='./softmax_reg_weight_2019-5-1_150341.pkl')
 sm.classify([-1, 8.5])
 ```
 
-# Reference:
-  - Machine Learning in Action, Peter Harrington
-  - Python Machine learning Algorithm, Zhiyong Zhao
-
-# Classify
+### Classify
 1. KNN: k-nearest neighbors
 2. KNNkd: KNN with kd tree - tbf
 3. LoR: logistic regression
@@ -53,22 +49,25 @@ sm.classify([-1, 8.5])
 9. RanF: random forest with CART tree - tbf
 10. BPNN
 
-## Regression
+### Regression
 11. LiR: linear regression
     * ridge regression - tbf
     * lasso regression - tbf
 12. LWLiR: locally weighted linear regression
 13. CART regression
 
-## Cluster
+### Cluster
 14. K-mean
 15. DBSCAN
 
-## Deep Learning
+### Deep Learning
 16. perception - tbf
 17. NN - tbf
 18. CNN - tbf
 
 
-## Common function for Data Analysis
+### Reference:
+  - Machine Learning in Action, Peter Harrington
+  - Python Machine learning Algorithm, Zhiyong Zhao
+  
 
