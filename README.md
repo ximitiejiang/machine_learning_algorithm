@@ -29,6 +29,13 @@ sm = SoftmaxReg(feats, labels)
 sm.load(path='./softmax_reg_weight_2019-5-1_150341.pkl')
 sm.classify([-1, 8.5])
 ```
+- visualize the divide hyperplane
+```
+from core.softmax_reg_lib import SoftmaxReg
+sm = SoftmaxReg(feats, labels)
+sm.train()
+sm.vis_points_line()
+```
 
 ### Classify
 1. KNN: k-nearest neighbors
