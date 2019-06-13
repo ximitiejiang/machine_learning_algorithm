@@ -11,6 +11,7 @@ from dataset.breast_cancer_dataset import BreastCancerDataset
 from dataset.mnist_dataset import MnistDataset
 from dataset.digits_dataset import DigitsDataset
 from core.logistic_reg_lib import LogisticReg
+from core.softmax_reg_lib import SoftmaxReg
 from sklearn.model_selection import train_test_split
 
 def accuracy(preds, labels):
@@ -20,41 +21,31 @@ def accuracy(preds, labels):
 
 if __name__ == "__main__":
     
-    dataset = 'mnist'
+    dataset = 'digits'
     
     if dataset == 'mnist':        # acc = 0.98
-        dataset = MnistDataset(data_type='train_binary')  # 采用mnist数据集
+        dataset = MnistDataset(data_type='train')  # 采用mnist数据集
         train_feats, test_feats, train_labels, test_labels = train_test_split(dataset.datas, dataset.labels, test_size=0.3)
         
         # get model
-        logi = LogisticReg(train_feats, train_labels)
-        logi.train(n_epoch=1000)
+        soft = SoftmaxReg(train_feats, train_labels)
+        soft.train(n_epoch=1000)
         
         # evaluation
-        acc = logi.evaluation(test_feats, test_labels)
+        acc = soft.evaluation(test_feats, test_labels)
         print('acc = %f'%acc)
     
     if dataset == 'digits':       # acc = 1
-        dataset = DigitsDataset(data_type='binary')
+        dataset = DigitsDataset(data_type='train')
         train_feats, test_feats, train_labels, test_labels = train_test_split(dataset.datas, dataset.labels, test_size=0.3)
         
         # get model
-        logi = LogisticReg(train_feats, train_labels)
-        logi.train()
+        soft = SoftmaxReg(train_feats, train_labels)
+        soft.train(n_epoch=10000)
         
         # evaluation
-        acc = logi.evaluation(test_feats, test_labels)
+        acc = soft.evaluation(test_feats, test_labels)
         print('acc = %f'%acc)
     
-    if dataset == 'breastcancer':    # acc = 0.56, 可能需要增加归一化操作
-        dataset = BreastCancerDataset()
-        train_feats, test_feats, train_labels, test_labels = train_test_split(dataset.datas, dataset.labels, test_size=0.3)
-        
-        # get model
-        logi = LogisticReg(train_feats, train_labels)
-        logi.train()
-        
-        # evaluation
-        acc = logi.evaluation(test_feats, test_labels)
-        print('acc = %f'%acc)
+
         
