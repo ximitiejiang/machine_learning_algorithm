@@ -38,16 +38,20 @@ class SoftmaxReg():
         x_prob = x_exp / x_sum_repeat
         return x_prob
     
-    def get_batch_data(self, feats, labels, batch_size=1, type='shuffle'):
+    def get_batch_data(self, feats, labels, batch_size=16, type='shuffle'):
         """从特征数据中提取batch size个特征，并组合成一个特征数据
         """
         batch_idx = np.random.permutation(np.arange(len(labels)))[:batch_size]  # 随机出batch_size个idx
+        batch_feats_list = []
+        batch_labels_list = []
         for idx in batch_idx:
-            batch_feats = feats[idx].reshape(1,-1)
-            batch_labels = labels[idx].reshape(-1,1)
+            batch_feats_list.append(feats[idx].reshape(1,-1))
+            batch_labels_list.append(labels[idx].reshape(-1,1))
+        batch_feats = np.concatenate(batch_feats_list, axis=0)
+        batch_labels = np.concatenate(batch_labels_list, axis=0)
         return batch_feats, batch_labels
         
-    def train(self, alpha=0.001, n_epoch=500):
+    def train(self, alpha=0.001, n_epoch=500, batch_size=16):
         """feats(x1,x2,..xn) -> feats(1,x1,x2,..xn)
         Args:
             alpha(float): 梯度下降步长
@@ -61,29 +65,29 @@ class SoftmaxReg():
         self.W = np.ones((feats_with_one.shape[1], n_classes)) # (m_feat, k_classes)
         self.losses = []
         
-        batch_size = 1
         n_iter = n_epoch * (n_samples // batch_size)
         
         for i in range(n_iter):
             # TODO: to support batch_size define: currently only support 1 pic per batch for training
-            batch_feats, batch_labels = self.get_batch_data(feats_with_one, labels, batch_size, type='shuffle')
+            batch_feats, batch_labels = self.get_batch_data(feats_with_one, labels, batch_size=batch_size, type='shuffle')
 
             # w0*x0 + w1*x1 +...wn*xn = w0 + w1*x1 +...wn*xn, 然后通过softmax函数转换为概率(0-1)
             # (n_sample, 1) 每个样本一个prob(0~1)，也就是作为2分类问题的预测概率
-            w_x = np.dot(batch_feats, self.W)   # w*x  (1, 4) (n_sample, k_class)
-            probs = self.softmax(w_x)              # probability (1,4)
-            
+            w_x = np.dot(batch_feats, self.W)   # w*x  (1, 4) (b, c)
+            probs = self.softmax(w_x)              # probability (b,c)
+            # loss
             loss = np.mean(-np.log(probs + 1e-06))  # 归一化平均  loss = -log(p)
             self.losses.append([i,loss])
+            # vis text
             if i % 20 == 0:  # 每20个iter显示一次
                 print('epoch: %d / %d, loss: %f, '%(i, n_epoch, loss))
-                
+            # gradient    
             _probs = - probs              # 取负号 -p
             for j in range(batch_size):
-                label = labels[j, 0]   # 提取每个样本的标签
-                _probs[j, label] = 1 + _probs[j, label]   # 正样本则为1-p, 负样本不变依然是-p
-                
-            gradient = - np.dot(feats_with_one.transpose(), _probs)  # (135,3).T * (135,4) -> (3,4), grad = -x*(I-y')   
+                label = batch_labels[j, 0]   # 提取每个样本的标签
+                _probs[j, label] = 1 + _probs[j, label]   # 正样本则为1-p, 负样本不变依然是-p    
+            gradient = - np.dot(batch_feats.transpose(), _probs)  # (135,3).T * (135,4) -> (3,4), grad = -x*(I-y')   
+            # update Weights
             self.W -= alpha/n_samples * gradient   # W(3,4) - (a/n)*(3,4)
         
         self.vis_loss(self.losses)
@@ -113,7 +117,7 @@ class SoftmaxReg():
         return label, label_prob
     
     def evaluation(self, test_feats, test_labels):
-        """评价评价整个验证数据集
+        """评价整个验证数据集
         """
         correct = 0
         total_sample = len(test_feats)
