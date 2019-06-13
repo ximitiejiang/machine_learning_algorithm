@@ -1,13 +1,40 @@
-# MyCodeForML
+### machine learning algorithm implementation
 
-Machine learning algorithm by python:
-This is a summary of my machine learning coding practice, including most of the main stream machine learning algorithms. Most of the coding are based on Peter's Machine Learning in Action(MLA), which is a awesome book for ML learners. Also added some other interesting algorithms that not included in MLA. hopes this material can help more people on learning ML, and any suggestion is highly appriciated.
+Machine learning algorithm implemented by python3:
+trying to build a clear, modular, easy-to-use-and-modify machine learning library. all the machine learning algorithms are rewrited as Class, with same and clear interface. also implement common dataset Class that can be easily used in any algorithms.
 
-Reference:
+# features
+- all the algorithm integrated as Class, easy to use and modify
+- all the dataset integrated as Class, easy to use and modify
+
+# usage
+- train: 
+```
+from core.softmax_reg_lib import SoftmaxReg
+sm = SoftmaxReg(feats, labels)
+sm.train()
+sm.save(root='./')
+```
+- eval:
+```
+from core.softmax_reg_lib import SoftmaxReg
+sm = SoftmaxReg(feats, labels)
+sm.load(path='./softmax_reg_weight_2019-5-1_150341.pkl')
+sm.evaluation(test_feats, test_labels)
+```
+- test a sample
+```
+from core.softmax_reg_lib import SoftmaxReg
+sm = SoftmaxReg(feats, labels)
+sm.load(path='./softmax_reg_weight_2019-5-1_150341.pkl')
+sm.classify([-1, 8.5])
+```
+
+# Reference:
   - Machine Learning in Action, Peter Harrington
   - Python Machine learning Algorithm, Zhiyong Zhao
 
-## Classify
+# Classify
 1. KNN: k-nearest neighbors
 2. KNNkd: KNN with kd tree - tbf
 3. LoR: logistic regression
@@ -44,6 +71,4 @@ Reference:
 
 
 ## Common function for Data Analysis
-* Data generation
-* Data pre-processing
-* Model select&evaluation
+
