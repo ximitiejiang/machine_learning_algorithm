@@ -8,8 +8,8 @@ Created on Tue Jun 11 10:34:02 2019
 
 import numpy as np
 import matplotlib.pyplot as plt
-import time
-from tqdm import tqdm
+import time, datetime
+import pickle
 
 class SoftmaxReg():
     def __init__(self, feats, labels):
@@ -159,6 +159,16 @@ class SoftmaxReg():
         for i in range(len(x)):
             y[i] = (-W[0,0] - x[i]*W[1,0]) / W[2,0]
         plt.plot(x, y, c='r')
+        
+    def save(self, path='./'):
+        if self.trained:
+            time1 = datetime.datetime.now()
+            path = path + 'softmax_reg_weight_' + datetime.datetime.strftime(time1,'%Y%m%d_%H%M%S')
+            pickle.dump(self.W)
+            
+    def load(self, path):
+        if os.path.isfile(path):
+            self.W = pickle.load(path)
 
 if __name__ == '__main__':
     import matplotlib.pyplot as plt
