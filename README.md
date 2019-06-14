@@ -5,6 +5,8 @@ trying to build a clear, modular, easy-to-use-and-modify machine learning librar
 
 ### update
 - 2019/06/14 add softmax regression algorithm
+- 2019/06/12 add logistic regression algorithm
+- 2019/06/10 add knn regression algorithm
 - 2019/06/03 reconstruct this repo
 
 ### features
@@ -47,29 +49,29 @@ sm.train()
 sm.vis_points_line()
 ```
 
-### knn regression
+### PART 1. knn regression
 
 feature: no model weight, support two-classes-classification and multi-classes-classification.
-test code: [test_knn](https://github.com/ximitiejiang/machine_learning_algorithm/blob/master/test_knn.py)
-source code: [knn_reg_lib](https://github.com/ximitiejiang/machine_learning_algorithm/blob/master/core/knn_lib.py)
+<br>test code: [test_knn](https://github.com/ximitiejiang/machine_learning_algorithm/blob/master/test_knn.py)
+<br>source code: [knn_reg_lib](https://github.com/ximitiejiang/machine_learning_algorithm/blob/master/core/knn_lib.py)
 
-### logistic regression
+### PART 2. logistic regression
 
 feature: with model weight(n_feat+1, 1), only support two-classes-classification.
-test code: [test_logistic_reg](https://github.com/ximitiejiang/machine_learning_algorithm/blob/master/test_logistic_reg.py)
-source code: [logistic_reg_lib](https://github.com/ximitiejiang/machine_learning_algorithm/blob/master/core/logistic_reg_lib.py)
+<br>test code: [test_logistic_reg](https://github.com/ximitiejiang/machine_learning_algorithm/blob/master/test_logistic_reg.py)
+<br>source code: [logistic_reg_lib](https://github.com/ximitiejiang/machine_learning_algorithm/blob/master/core/logistic_reg_lib.py)
 
-### softmax regression
+### PART 3. softmax regression
 
 feature: with model weight(n_feat+1, n_class), support two-classes-classification and multi-classes-classification
-test code: [test_softmax_reg](https://github.com/ximitiejiang/machine_learning_algorithm/blob/master/test_softmax_reg.py)
-source code: [softmax_reg_lib](https://github.com/ximitiejiang/machine_learning_algorithm/blob/master/core/softmax_lib.py)
+<br>test code: [test_softmax_reg](https://github.com/ximitiejiang/machine_learning_algorithm/blob/master/test_softmax_reg.py)
+<br>source code: [softmax_reg_lib](https://github.com/ximitiejiang/machine_learning_algorithm/blob/master/core/softmax_lib.py)
 
-### svm regression
+### PART 4. svm regression
 
 feature: in process
-test code: in process
-source code: in process
+<br>test code: in process
+<br>source code: in process
 
 
 ### Reference:
