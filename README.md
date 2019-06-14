@@ -2,9 +2,10 @@
 
 Machine learning algorithm implemented by python3: 
 trying to build a clear, modular, easy-to-use-and-modify machine learning library. all the machine learning algorithms are rewrited as Class, with same and clear interface. also implement common dataset Class that can be easily used in any algorithms.
-As this is a simplified machine learning algorithm implement, the accuracy is not the main factor to be considered, but it can be take as a baseline, a better acc result is possible to get after training hyper params modification.
+As this is a simplified machine learning algorithm implement, the accuracy is not the main factor to be considered, but it can be taken as a baseline, a better acc result is possible to get by optimizing the training hyper params.
 
 ### update
+- 2019/06/15 add perceptron algorithm
 - 2019/06/14 add softmax regression algorithm
 - 2019/06/12 add logistic regression algorithm
 - 2019/06/10 add knn regression algorithm
@@ -20,7 +21,7 @@ As this is a simplified machine learning algorithm implement, the accuracy is no
 
 ### usage
 
-- prepare dataset: digits(from sklearn), mnist(from kaggle)
+- prepare main dataset: digits(from sklearn), mnist(from kaggle)
 ```
 python3 setup.sh
 ```
@@ -79,12 +80,16 @@ feature: with model weight(n_feat+1, 1), only support two-classes-classification
 
 ### PART 5. svm classifier
 
-feature: with model weight
+feature: to be update
 <br>test code: [test_svm](https://github.com/ximitiejiang/machine_learning_algorithm/blob/master/test_svm.py)
 <br>source code: [svm_lib](https://github.com/ximitiejiang/machine_learning_algorithm/blob/master/core/svm_lib.py)
 
+### PART 6
+
+to be update ...
+
 ### Reference:
-  - Machine Learning in Action, Peter Harrington
-  - Python Machine learning Algorithm, Zhiyong Zhao
+- Machine Learning in Action, Peter Harrington
+- Python Machine learning Algorithm, Zhiyong Zhao
   
 
