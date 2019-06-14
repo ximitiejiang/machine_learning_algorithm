@@ -17,7 +17,8 @@ if __name__ == "__main__":
     
     dataset = 'digits'
     
-    if dataset == 'mnist':        # acc = 0.843 但必须特征归一化， 同时w必须初始化为0，否则会导致inf问题
+    if dataset == 'mnist':        # 必须特征归一化，同时w必须初始化为0，否则会导致inf问题
+        # acc = 0.843@lr0.0001/batch32/w0/norm
         dataset = MnistDataset(data_type='train')  # 采用mnist数据集
         train_feats, test_feats, train_labels, test_labels = train_test_split(dataset.datas, dataset.labels, test_size=0.3)
         
@@ -29,7 +30,8 @@ if __name__ == "__main__":
         acc = soft.evaluation(test_feats, test_labels)
         print('acc = %f'%acc)
     
-    if dataset == 'digits':       # acc = 0.966
+    if dataset == 'digits':       
+        # acc = 0.966@lr0.0001/batch16/w0/norm
         dataset = DigitsDataset(data_type='train')
         train_feats, test_feats, train_labels, test_labels = train_test_split(dataset.datas, dataset.labels, test_size=0.3)
         

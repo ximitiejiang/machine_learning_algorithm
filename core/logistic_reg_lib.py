@@ -14,6 +14,8 @@ from sklearn.preprocessing import scale
 class LogisticReg():
     def __init__(self, feats, labels):
         """ logistic reg algorithm lib, 当前只支持2分类
+        特点：支持二分类，模型参数可保存(n_feat+1, 1)，支持线性可分数据
+        
         logistic reg算法由一个线性模块(w0x0+w1x1+..wnxn)和一个非线性模块(sigmoid函数)组成一个函数
         用输入特征feats和labels来训练这个模块，得到一组(w0,w1,..wn)的模型，可用来进行二分类问题的预测，但不能直接用于多分类问题
         Args:

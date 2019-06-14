@@ -42,10 +42,10 @@ def rbf_kernel(X1, X2):
 
 
 def SMOsimple(data, labels, C, toler, maxIter):
-    data = np.mat(data)
-    labels = np.mat(labels).transpose()
+    data = np.mat(data)                      # (100,2)
+    labels = np.mat(labels).transpose()      # (100,1)
     m = data.shape[0]
-    alphas = np.mat(np.zeros((m,1)))
+    alphas = np.mat(np.zeros((m,1)))         # (100,1)
     b = 0
     
     iter = 0
@@ -124,9 +124,9 @@ def WandPredict(x, data, labels, alphas, b):
     pass
 
 # -------main-----------
-data, labels = loadDataSet('testSet.txt')  # X, y都是np.array
+data, labels = loadDataSet('testSet.txt')  # data(100,2), labels(100,)
 
-alphas, b = SMOsimple(data, labels, 100, 0.001, 40)
+alphas, b = SMOsimple(data, labels, 100, 0.001, 40) # 
 
 svlist = []
 for i in range(len(alphas)):

@@ -12,9 +12,9 @@ import time, datetime, os
 import pickle
 from sklearn.preprocessing import scale
 
-class SoftmaxReg():
+class SVMReg():
     def __init__(self, feats, labels):
-        """ softmax reg algorithm lib, 可用于多分类的算法: 参考<机器学习算法-赵志勇, softmax regression>
+        """ svm reg algorithm lib, 可用于多分类的算法: 参考<机器学习算法-赵志勇, softmax regression>
         softmax reg算法由一个线性模块(w0x0+w1x1+..wnxn)和一个非线性模块(softmax函数)组成一个函数
         用输入特征feats和labels来训练这个模块，得到一组(w0,w1,..wn)的模型，可用来进行二分类问题的预测，但不能直接用于多分类问题
         Args:
@@ -187,18 +187,18 @@ if __name__ == '__main__':
 
     import pandas as pd
     from sklearn.model_selection import train_test_split
-    filename = '4classes_data.txt'  # 一个简单的2个特征的多分类数据集
+    filename = '2classes_data_2.txt'  # 一个简单的2个特征的多分类数据集
     data = pd.read_csv(filename, sep='\t').values
     x = data[:,0:2]
     y = data[:,-1]
     train_x, test_x, train_y, test_y = train_test_split(x, y, test_size=0.2)
     
-    soft = SoftmaxReg(train_x, train_y)
-    soft.train(alpha=0.5, n_epoch=10000, batch_size=64)  # 在学习率0.5下精度在0.8-0.9之间，太小学习率导致精度下降
-    print('W = ', soft.W)
-    acc = soft.evaluation(test_x, test_y)
+    svm = SVMReg(train_x, train_y)
+    svm.train(alpha=0.5, n_epoch=10000, batch_size=64)  # 在学习率0.5下精度在0.8-0.9之间，太小学习率导致精度下降
+    print('W = ', svm.W)
+    acc = svm.evaluation(test_x, test_y)
     print('acc on test data is: %f'% acc)
     
     sample = np.array([2,8])
-    label, prob = soft.classify(sample)
+    label, prob = svm.classify(sample)
     print('one sample predict label = %d, probility = %f'% (label, prob))

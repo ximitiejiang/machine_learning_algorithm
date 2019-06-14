@@ -11,11 +11,12 @@ import matplotlib.pyplot as plt
 import time, datetime, os
 import pickle
 from sklearn.preprocessing import scale
+from sklearn.model_selection import train_test_split
 
-class SoftmaxReg():
+class Perceptron():
     def __init__(self, feats, labels):
-        """ softmax reg algorithm lib, 可用于多分类的算法: 参考<机器学习算法-赵志勇, softmax regression>
-        特点：支持二分类和多分类，模型参数可保存(n_feat+1, n_class)，支持线性可分数据
+        """ perceptron algorithm lib, 感知机模型
+        特点：支持二分类，模型参数可保存(n_feat+1, 1)，支持线性可分数据
         
         softmax reg算法由一个线性模块(w0x0+w1x1+..wnxn)和一个非线性模块(softmax函数)组成一个函数
         用输入特征feats和labels来训练这个模块，得到一组(w0,w1,..wn)的模型，可用来进行二分类问题的预测，但不能直接用于多分类问题
@@ -32,19 +33,6 @@ class SoftmaxReg():
         # 其中mnist由于数值较大会导致exp操作发生inf(无穷大)，所以需要先对特征进行normalize
         self.feats = scale(self.feats)  # to N(0,1)
     
-    def softmax(self, x):
-        """exp(wx)/sum(exp(wx))
-        Args:
-            x(array): (n_sample, k_class)
-        Return:
-            x_prob(array): (n_sample, k_class)
-        """
-        x_exp = np.exp(x)                    # (135,4), 这里要防止无穷大的产生
-        x_sum = np.sum(x_exp, axis=1)        # (135,)
-        x_sum_repeat = np.tile(x_sum.reshape(-1,1), (1, x.shape[1]))
-        x_prob = x_exp / x_sum_repeat
-        return x_prob
-    
     def get_batch_data(self, feats, labels, batch_size=16, type='shuffle'):
         """从特征数据中提取batch size个特征，并组合成一个特征数据
         """
@@ -52,56 +40,57 @@ class SoftmaxReg():
         batch_feats_list = []
         batch_labels_list = []
         for idx in batch_idx:
+            label = 2 * labels[idx][0] - 1   # perceptron label(0, 1) to label(-1, 1)
             batch_feats_list.append(feats[idx].reshape(1,-1))
-            batch_labels_list.append(labels[idx].reshape(-1,1))
+            batch_labels_list.append(np.array([label]).reshape(-1,1))
         batch_feats = np.concatenate(batch_feats_list, axis=0)
         batch_labels = np.concatenate(batch_labels_list, axis=0)
         return batch_feats, batch_labels
         
-    def train(self, alpha=0.001, n_epoch=500, batch_size=16):
+    def train(self, alpha=0.001, n_epoch=500, batch_size=2):
         """feats(x1,x2,..xn) -> feats(1,x1,x2,..xn)
         Args:
             alpha(float): 梯度下降步长
             n_epoch(inf): 循环训练轮数
-        """
+        """                  
         assert batch_size <= len(self.labels), 'too big batch size, should be smaller than dataset size.'
         
         start = time.time()
-        n_classes = len(set(self.labels))
         n_samples = len(self.feats)
         feats_with_one = np.concatenate([np.ones((n_samples,1)), self.feats], axis=1)  # (n_sample, 1+ n_feats) (1,x1,x2,..xn)
         labels = self.labels.reshape(-1, 1)   # (n_sample, 1)
-        self.W = np.zeros((feats_with_one.shape[1], n_classes)) # (f_feat, c_classes)
+        self.W = np.zeros((feats_with_one.shape[1], 1)) # (f_feat, 1)
         self.losses = []
         
         n_iter = n_epoch * (n_samples // batch_size)
+        sum_loss = 0
+        sum_gradient = 0
+        n_wrong = 0
         for i in range(n_iter):
             batch_feats, batch_labels = self.get_batch_data(
                 feats_with_one, labels, batch_size=batch_size, type='shuffle')
             # w0*x0 + w1*x1 +...wn*xn = w0 + w1*x1 +...wn*xn, 然后通过softmax函数转换为概率(0-1)
             # (n_sample, 1) 每个样本一个prob(0~1)，也就是作为2分类问题的预测概率
-            w_x = np.dot(batch_feats, self.W)       # w*x (b, c)
-            probs = self.softmax(w_x)               # probability (b,c)
-            
-            # loss: 只提取正样本概率p转化为损失-log(p) 
-            sum_loss = 0
-            for sample in range(len(batch_labels)):
-                sum_loss += -np.log(probs[sample, batch_labels[sample, 0]] / np.sum(probs[sample, :]))
-            loss = sum_loss / len(batch_labels)  # average loss
-            self.losses.append([i,loss])
+            w_x = np.dot(batch_feats, self.W)       # w*x (b, 1)
+            for j in range(len(w_x)):
+                if w_x[j, 0] > 0:
+                    continue
+                else:
+                    n_wrong += 1
+                    sum_loss += - batch_labels[j, 0] * w_x[j, 0]  # loss = -sum(yi*wTx)
+                    sum_gradient += - batch_labels[j, 0] * np.sum(batch_feats[j])
+                    
+            loss = sum_loss / n_wrong
+            self.losses.append([i, loss])        # loss平均化  
             
             # vis text
             if i % 20 == 0:  # 每20个iter显示一次
                 print('iter: %d / %d, loss: %f, '%(i, n_iter, loss))
-            # gradient    
-            _probs = - probs              # 取负号 -p
-            for j in range(batch_size):
-                label = batch_labels[j, 0]   # 提取每个样本的标签
-                _probs[j, label] += 1   # 正样本则为1-p, 负样本不变依然是-p    
-            gradient = - np.dot(batch_feats.transpose(), _probs)  # (135,3).T * (135,4) -> (3,4), grad = -x*(I-y')   
-            # update Weights
-            self.W -= alpha * gradient * (1/batch_size)   # W(3,4) - (a/n)*(3,4), 因前面计算梯度时我采用的负号，这里就应该是w = w-alpha*grad
-        
+            # gradient
+            gradient = sum_gradient / n_wrong
+            # update weight
+            self.W -= alpha * gradient
+            
         self.vis_loss(self.losses)
         if self.feats.shape[1] == 2:
             for j in range(self.W.shape[1]):   # w (3,4)代表3个特征，4个类别
@@ -123,10 +112,11 @@ class SoftmaxReg():
         assert (single_sample_feats.shape[0]==1 or single_sample_feats.ndim==1), 'data should be flatten data like(m,) or (1,m).'
         assert self.trained, 'model didnot trained, can not classify without pretrained params.'
         single_sample_feats = np.concatenate([np.array([1]), single_sample_feats]).reshape(1,-1)
-        probs = self.softmax(np.dot(single_sample_feats, self.W))  # w*x
-        label = np.argmax(probs)   # 获得最大概率所在位置，即标签(所以也要求标签从0开始 0~n)
-        label_prob = probs[0,label]
-        return label, label_prob
+        result = np.sum(np.dot(single_sample_feats, self.W))  # w*x
+        if result > 0:
+            return 1
+        else:
+            return -1
     
     def evaluation(self, test_feats, test_labels):
         """评价整个验证数据集
@@ -189,18 +179,18 @@ if __name__ == '__main__':
 
     import pandas as pd
     from sklearn.model_selection import train_test_split
-    filename = '4classes_data.txt'  # 一个简单的2个特征的多分类数据集
+    filename = '2classes_data_2.txt'  # 一个简单的2个特征的多分类数据集
     data = pd.read_csv(filename, sep='\t').values
     x = data[:,0:2]
     y = data[:,-1]
     train_x, test_x, train_y, test_y = train_test_split(x, y, test_size=0.2)
     
-    soft = SoftmaxReg(train_x, train_y)
-    soft.train(alpha=0.5, n_epoch=10000, batch_size=64)  # 在学习率0.5下精度在0.8-0.9之间，太小学习率导致精度下降
-    print('W = ', soft.W)
-    acc = soft.evaluation(test_x, test_y)
+    perc = Perceptron(train_x, train_y)
+    perc.train(alpha=0.5, n_epoch=10000, batch_size=64)  # 在学习率0.5下精度在0.8-0.9之间，太小学习率导致精度下降
+    print('W = ', svm.W)
+    acc = svm.evaluation(test_x, test_y)
     print('acc on test data is: %f'% acc)
     
     sample = np.array([2,8])
-    label, prob = soft.classify(sample)
+    label, prob = svm.classify(sample)
     print('one sample predict label = %d, probility = %f'% (label, prob))

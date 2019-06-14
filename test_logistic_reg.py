@@ -18,7 +18,8 @@ if __name__ == "__main__":
     
     dataset = 'breastcancer'
     
-    if dataset == 'mnist':        # acc = 0.98
+    if dataset == 'mnist':      
+        # acc = 0.98@lr0.001/batch128/w0/norm
         dataset = MnistDataset(data_type='train_binary')  # 采用mnist数据集
         train_feats, test_feats, train_labels, test_labels = train_test_split(dataset.datas, dataset.labels, test_size=0.3)
         
@@ -30,7 +31,8 @@ if __name__ == "__main__":
         acc = logi.evaluation(test_feats, test_labels)
         print('acc = %f'%acc)
     
-    if dataset == 'digits':       # acc = 0.996
+    if dataset == 'digits':       
+        # acc = 0.996@lr0.001/batch128/w0/norm
         dataset = DigitsDataset(data_type='binary')
         train_feats, test_feats, train_labels, test_labels = train_test_split(dataset.datas, dataset.labels, test_size=0.3)
         
@@ -42,7 +44,8 @@ if __name__ == "__main__":
         acc = logi.evaluation(test_feats, test_labels)
         print('acc = %f'%acc)
     
-    if dataset == 'breastcancer':    # 原有acc = 0.56, 增加特征归一化以后acc变为0.94, 学习率0.001收敛，但设置小了反而acc下降
+    if dataset == 'breastcancer':    
+        # acc = 0.94@lr0.007/batch128/w0/norm
         dataset = BreastCancerDataset()
         train_feats, test_feats, train_labels, test_labels = train_test_split(dataset.datas, dataset.labels, test_size=0.3)
         
