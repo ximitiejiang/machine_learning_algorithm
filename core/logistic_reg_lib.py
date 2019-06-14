@@ -9,7 +9,7 @@ Created on Tue Jun 11 10:34:02 2019
 import numpy as np
 import matplotlib.pyplot as plt
 import time
-from tqdm import tqdm
+from sklearn.preprocessing import scale
 
 class LogisticReg():
     def __init__(self, feats, labels):
@@ -24,11 +24,26 @@ class LogisticReg():
         self.feats = feats
         self.labels = labels
         self.trained = False
+        
+        self.feats = scale(self.feats)
     
     def sigmoid(self, x):
         return 1.0/(1+np.exp(-x))    
-        
-    def train(self, alpha=0.001, n_epoch=500):
+    
+    def get_batch_data(self, feats, labels, batch_size=16, type='shuffle'):
+        """从特征数据中提取batch size个特征，并组合成一个特征数据
+        """
+        batch_idx = np.random.permutation(np.arange(len(labels)))[:batch_size]  # 随机出batch_size个idx
+        batch_feats_list = []
+        batch_labels_list = []
+        for idx in batch_idx:
+            batch_feats_list.append(feats[idx].reshape(1,-1))
+            batch_labels_list.append(labels[idx].reshape(-1,1))
+        batch_feats = np.concatenate(batch_feats_list, axis=0)
+        batch_labels = np.concatenate(batch_labels_list, axis=0)
+        return batch_feats, batch_labels
+    
+    def train(self, alpha=0.001, n_epoch=500, batch_size=64):
         """feats(x1,x2,..xn) -> feats(1,x1,x2,..xn)
         Args:
             alpha(float): 梯度下降步长
@@ -38,22 +53,27 @@ class LogisticReg():
         feats_with_one = np.concatenate([np.ones((len(self.feats),1)), self.feats], axis=1)  # (n_sample, 1+ n_feats) (1,x1,x2,..xn)
         labels = self.labels.reshape(-1, 1)   # (n_sample, 1)
         self.W = np.ones((feats_with_one.shape[1], 1)) # (m_feat, 1)
-        self.losses = []        
-        for i in range(n_epoch):
+        self.losses = []
+        
+        n_samples = len(self.feats)
+        n_iter = n_epoch * (n_samples // batch_size)        
+        for i in range(n_iter):
+            batch_feats, batch_labels = self.get_batch_data(
+                feats_with_one, labels, batch_size=batch_size, type='shuffle')
             # w0*x0 + w1*x1 +...wn*xn = w0 + w1*x1 +...wn*xn, 然后通过sigmoid函数转换为概率(0-1)
             # (n_sample, 1) 每个样本一个prob(0~1)，也就是作为2分类问题的预测概率
-            w_x = np.dot(feats_with_one, self.W)  # w*x
+            w_x = np.dot(batch_feats, self.W)  # w*x
             probs = self.sigmoid(w_x)     # (455,31) dot (31,1) -> (455,)
             
             loss = np.mean(-np.log(probs + 1e-06))  # loss = -log(P)
             self.losses.append([i,loss])
-            gradient = - np.dot(feats_with_one.transpose(), (labels - probs))  # grad = -(y-y')*x, (3,n)dot((n,1)-(n,1))->(3,n)dot(n,1)->(3,)
-            self.W -= alpha * gradient   # W(m,1), gradient(m,1)
             if i % 20 == 0:  # 每20个iter显示一次
-                print('epoch: %d / %d, loss: %f, '%(i, n_epoch, loss))
+                print('iter: %d / %d, loss: %f'%(i, n_iter, loss))
+                
+            gradient = - np.dot(batch_feats.transpose(), (batch_labels - probs))  # grad = -(y-y')*x, (3,n)dot((n,1)-(n,1))->(3,n)dot(n,1)->(3,)
+            self.W -= alpha * gradient   # W(m,1), gradient(m,1)
         
         self.vis_loss(self.losses)
-        
         if self.feats.shape[1] == 2:  # 如果是二维特征则显示分割直线
             self.vis_points_line(self.feats, labels, self.W)
         
@@ -79,6 +99,8 @@ class LogisticReg():
     def evaluation(self, test_feats, test_labels):
         """评价整个验证数据集
         """
+        test_feats = scale(test_feats)
+        
         correct = 0
         total_sample = len(test_feats)
         start = time.time()
@@ -132,7 +154,7 @@ if __name__ == '__main__':
     x = data[:,0:2]
     y = data[:,-1]
     logs = LogisticReg(x,y)
-    logs.train()
+    logs.train(alpha=0.001, n_epoch=5000, batch_size=64)
     print('finish trained: %s'%str(logs.trained))
     print('W = ', logs.W)
     sample = np.array([-1,1])

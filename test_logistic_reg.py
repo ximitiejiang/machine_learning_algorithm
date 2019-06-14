@@ -13,14 +13,10 @@ from dataset.digits_dataset import DigitsDataset
 from core.logistic_reg_lib import LogisticReg
 from sklearn.model_selection import train_test_split
 
-def accuracy(preds, labels):
-    """preds(n,), labels(n)
-    """
-    return acc
 
 if __name__ == "__main__":
     
-    dataset = 'mnist'
+    dataset = 'breastcancer'
     
     if dataset == 'mnist':        # acc = 0.98
         dataset = MnistDataset(data_type='train_binary')  # 采用mnist数据集
@@ -28,31 +24,31 @@ if __name__ == "__main__":
         
         # get model
         logi = LogisticReg(train_feats, train_labels)
-        logi.train(n_epoch=1000)
+        logi.train(alpha=0.001, n_epoch=100, batch_size=128)
         
         # evaluation
         acc = logi.evaluation(test_feats, test_labels)
         print('acc = %f'%acc)
     
-    if dataset == 'digits':       # acc = 1
+    if dataset == 'digits':       # acc = 0.996
         dataset = DigitsDataset(data_type='binary')
         train_feats, test_feats, train_labels, test_labels = train_test_split(dataset.datas, dataset.labels, test_size=0.3)
         
         # get model
         logi = LogisticReg(train_feats, train_labels)
-        logi.train()
+        logi.train(alpha=0.001, n_epoch=500, batch_size=128)
         
         # evaluation
         acc = logi.evaluation(test_feats, test_labels)
         print('acc = %f'%acc)
     
-    if dataset == 'breastcancer':    # acc = 0.56, 可能需要增加归一化操作
+    if dataset == 'breastcancer':    # 原有acc = 0.56, 增加特征归一化以后acc变为0.94, 学习率0.001收敛，但设置小了反而acc下降
         dataset = BreastCancerDataset()
         train_feats, test_feats, train_labels, test_labels = train_test_split(dataset.datas, dataset.labels, test_size=0.3)
         
         # get model
         logi = LogisticReg(train_feats, train_labels)
-        logi.train()
+        logi.train(alpha=0.007, n_epoch=100, batch_size=128)
         
         # evaluation
         acc = logi.evaluation(test_feats, test_labels)
