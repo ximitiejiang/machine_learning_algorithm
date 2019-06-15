@@ -11,11 +11,30 @@ from dataset.digits_dataset import DigitsDataset
 
 from core.softmax_reg_lib import SoftmaxReg
 from sklearn.model_selection import train_test_split
+import numpy as np
 
 
 if __name__ == "__main__":
     
-    dataset = 'digits'
+    dataset = '4class'
+    
+    if dataset == '4class':
+        import pandas as pd
+        filename = './dataset/simple/4classes_data.txt'  # 一个简单的2个特征的多分类数据集
+        data = pd.read_csv(filename, sep='\t').values
+        x = data[:,0:2]
+        y = data[:,-1]
+        train_x, test_x, train_y, test_y = train_test_split(x, y, test_size=0.2)
+        
+        soft = SoftmaxReg(train_x, train_y)
+        soft.train(alpha=0.5, n_epoch=10000, batch_size=64)  # 在学习率0.5下精度在0.8-0.9之间，太小学习率导致精度下降
+        print('W = ', soft.W)
+        acc = soft.evaluation(test_x, test_y)
+        print('acc on test data is: %f'% acc)
+        
+        sample = np.array([2,8])
+        label, prob = soft.classify(sample)
+        print('one sample predict label = %d, probility = %f'% (label, prob))
     
     if dataset == 'mnist':        # 必须特征归一化，同时w必须初始化为0，否则会导致inf问题
         # acc = 0.843@lr0.0001/batch32/w0/norm

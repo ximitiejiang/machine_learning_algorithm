@@ -14,15 +14,15 @@ from core.knn_lib import KNN
 if __name__ == "__main__":
 
     # get dataset
-    dataset = DigitsDataset()
+    dataset = DigitsDataset(data_type = 'train')
     # get model
     knn = KNN(dataset.datas, dataset.labels)
     # get sample
-    sample_id = 1513
-    sample, label = dataset[sample_id]  # 用第2000个样本做测试
+    sample_id = 1517
+    sample, label, label_raw = dataset[sample_id]  # 用第2000个样本做测试
     # test and show
-    pred = knn.classify(sample, 13)
-    print("the sample label is %d, predict is %d"%(label, pred))   
+    pred = knn.classify(sample, k=13)
+    print("the sample label is %d (raw label is %d), predict is %d"%(label, label_raw, pred))   
     plt.figure()
     plt.subplot(1,1,1)
     plt.imshow(sample.reshape(8,8), cmap='gray')

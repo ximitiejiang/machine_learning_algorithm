@@ -91,5 +91,7 @@ to be update ...
 ### Reference:
 - Machine Learning in Action, Peter Harrington
 - Python Machine learning Algorithm, Zhiyong Zhao
+- Statical learning method, Lihang
+- https://github.com/WenDesi/lihang_book_algorithm
   
 

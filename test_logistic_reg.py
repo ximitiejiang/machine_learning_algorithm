@@ -5,19 +5,45 @@ Created on Tue Jun 11 14:50:44 2019
 
 @author: ubuntu
 """
-
-import matplotlib.pyplot as plt
 from dataset.breast_cancer_dataset import BreastCancerDataset
 from dataset.mnist_dataset import MnistDataset
 from dataset.digits_dataset import DigitsDataset
 from core.logistic_reg_lib import LogisticReg
 from sklearn.model_selection import train_test_split
-
+import numpy as np
 
 if __name__ == "__main__":
     
-    dataset = 'digits'
+    dataset = '2class2'
     
+    if dataset == '2class':  # TODO: loss curve still need optimize
+        import pandas as pd       
+        filename = './dataset/simple/2classes_data.txt'  # 一个简单的2个特征的2分类数据集
+        data = pd.read_csv(filename, sep='\t').values
+        x = data[:,0:2]
+        y = data[:,-1]
+        train_x, test_x, train_y, test_y = train_test_split(x, y, test_size=0.2)
+        
+        logs = LogisticReg(train_x, train_y)
+        logs.train(alpha=0.001, n_epoch=1000, batch_size=64)
+        print('W = ', logs.W)
+        acc = logs.evaluation(test_x, test_y)
+        print('acc on test data is: %f'% acc)
+        
+    if dataset == '2class2':  # TODO: loss curve still need optimize
+        import pandas as pd       
+        filename = './dataset/simple/2classes_data_2.txt'  # 一个简单的2个特征的2分类数据集
+        data = pd.read_csv(filename, sep='\t').values
+        x = data[:,0:2]
+        y = data[:,-1]
+        train_x, test_x, train_y, test_y = train_test_split(x, y, test_size=0.2)
+        
+        logs = LogisticReg(train_x, train_y)
+        logs.train(alpha=0.001, n_epoch=1000, batch_size=64)
+        print('W = ', logs.W)
+        acc = logs.evaluation(test_x, test_y)
+        print('acc on test data is: %f'% acc)    
+        
     if dataset == 'mnist':      
         # acc = 0.98@lr0.001/batch128/w0/norm
         dataset = MnistDataset(data_type='train_binary')  # 采用mnist数据集

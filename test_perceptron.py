@@ -16,32 +16,32 @@ import pandas as pd
 
 if __name__ == "__main__":
     
-    dataset = '2class2'
+    dataset = '2class'
     
     if dataset == '2class':
         # acc = 0.90@lr0.01/batch1/w0/norm
-        filename = './core/2classes_data.txt'  # 一个简单的2个特征的2分类数据集
+        filename = './dataset/simple/2classes_data.txt'  # 一个简单的2个特征的2分类数据集
         data = pd.read_csv(filename, sep='\t').values
         x = data[:,0:2]
         y = data[:,-1]
         train_x, test_x, train_y, test_y = train_test_split(x, y, test_size=0.2)
         
         perc = Perceptron(train_x, train_y)
-        perc.train(alpha=0.01, n_epoch=10, batch_size=1)
+        perc.train(alpha=0.01, n_epoch=100, batch_size=1)
         print('W = ', perc.W)
         acc = perc.evaluation(test_x, test_y)
         print('acc on test data is: %f'% acc)
     
     if dataset == '2class2':
         # acc = 0.95@lr0.01/batch1/w0/norm
-        filename = './core/2classes_data_2.txt'  # 一个简单的2个特征的2分类数据集
+        filename = './dataset/simple/2classes_data_2.txt'  # 一个简单的2个特征的2分类数据集
         data = pd.read_csv(filename, sep='\t').values
         x = data[:,0:2]
         y = data[:,-1]
         train_x, test_x, train_y, test_y = train_test_split(x, y, test_size=0.2)
         
         perc = Perceptron(train_x, train_y)
-        perc.train(alpha=0.01, n_epoch=10, batch_size=1)
+        perc.train(alpha=0.01, n_epoch=1000, batch_size=1)
         print('W = ', perc.W)
         acc = perc.evaluation(test_x, test_y)
         print('acc on test data is: %f'% acc)

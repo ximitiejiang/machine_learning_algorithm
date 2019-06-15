@@ -42,17 +42,25 @@ def rbf_kernel(X1, X2):
 
 
 def SMOsimple(data, labels, C, toler, maxIter):
+    """
+    Args:
+        data
+        label
+        C: 代表alpha的最大值限制
+        toler: 
+        maxIter
+    """
     data = np.mat(data)                      # (100,2)
     labels = np.mat(labels).transpose()      # (100,1)
     m = data.shape[0]
-    alphas = np.mat(np.zeros((m,1)))         # (100,1)
+    alphas = np.mat(np.zeros((m,1)))         # 初始化alpha向量(n_sample, 1) (100,1)
     b = 0
     
     iter = 0
-    while (iter < maxIter):
+    while (iter < maxIter):  # 外循环： 在指定的maxiter循环次数中
         alphaPairsChanged = 0
-        for i in range(m):
-            fxi = float(np.multiply(alphas, labels).T * \
+        for i in range(m):   # 内循环：遍历所有样本
+            fxi = float(np.multiply(alphas, labels).T * \  # 先计算2个函数值fxi, Ei
                   (data * data[i,:].T)) + b
             Ei = fxi - labels[i]
             # 判断所选alphaI是否为支持向量：alphaI>0, alphaI<C，则为支持向量

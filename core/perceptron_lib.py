@@ -7,12 +7,11 @@ Created on Tue Jun 11 10:34:02 2019
 """
 
 import numpy as np
-import matplotlib.pyplot as plt
-import time, datetime, os
-import pickle
 from sklearn.preprocessing import scale
+from .base import BaseModel
+import time
 
-class Perceptron():
+class Perceptron(BaseModel):
     def __init__(self, feats, labels):
         """ perceptron algorithm lib, 感知机模型
         特点：支持二分类，模型参数可保存(n_feat+1, 1)，支持线性可分数据
@@ -23,14 +22,7 @@ class Perceptron():
             feats(numpy): (n_samples, f_feats)
             labels(numpy): (n_samples,)
         """
-        assert feats.ndim ==2, 'the feats should be (n_samples, m_feats), each sample should be 1-dim flatten data.'
-        self.feats = feats       
-        self.labels = labels.astype(np.int8)
-        self.trained = False
-        
-        # normalize, mnist特征取值范围(0-255), digits特征取值范围(0-16)，
-        # 其中mnist由于数值较大会导致exp操作发生inf(无穷大)，所以需要先对特征进行normalize
-        self.feats = scale(self.feats)  # to N(0,1)
+        super().__init__(feats, labels)
     
     def get_batch_data(self, feats, labels, batch_size=16, type='shuffle'):
         """从特征数据中提取batch size个特征，并组合成一个特征数据
@@ -143,64 +135,4 @@ class Perceptron():
         acc = correct / total_sample
         print('evaluation finished, with %f seconds.'%(time.time() - start))
         return acc
-    
-    def vis_loss(self, losses):
-        """可视化损失, losses为list [(epoch, loss)]"""
-        assert losses is not None, 'can not visualize losses because losses is empty.'
-        x = np.array(losses)[:,0]
-        y = np.array(losses)[:,1]
-        plt.subplot(1,2,1)
-        plt.title('losses')
-        plt.plot(x,y)
-        
-    def vis_points_line(self, feats, labels, W):
-        """可视化二维点和分隔线(单组w)
-        """
-        assert feats.shape[1] == 2, 'feats should be 2 dimention data with 1st. column of 1.'
-        assert len(W) == 3, 'W should be 3 values list.'
-        
-        feats_with_one = np.concatenate([np.ones((len(feats),1)), feats], axis=1)
-        
-        plt.subplot(1,2,2)
-        plt.title('points and divide hyperplane')
-        color = [c*64 + 64 for c in labels.reshape(-1)]
-        plt.scatter(feats_with_one[:,1], feats_with_one[:,2], c=color)
-        
-        min_x = int(min(feats_with_one[:,1]))
-        max_x = int(max(feats_with_one[:,1]))
-        x = np.arange(min_x - 1, max_x + 1, 0.1)
-        y = np.zeros((len(x),))
-        for i in range(len(x)):
-            y[i] = (-W[0,0] - x[i]*W[1,0]) / W[2,0]
-        plt.plot(x, y, c='r')
-        
-    def save(self, path='./'):
-        if self.trained:
-            time1 = datetime.datetime.now()
-            path = path + 'softmax_reg_weight_' + datetime.datetime.strftime(time1,'%Y%m%d_%H%M%S')
-            pickle.dump(self.W)
-            
-    def load(self, path):
-        if os.path.isfile(path):
-            self.W = pickle.load(path)
-        self.trained = True
 
-if __name__ == '__main__':
-
-    import pandas as pd
-    from sklearn.model_selection import train_test_split
-    filename = '2classes_data_2.txt'  # 一个简单的2个特征的2分类数据集
-    data = pd.read_csv(filename, sep='\t').values
-    x = data[:,0:2]
-    y = data[:,-1]
-    train_x, test_x, train_y, test_y = train_test_split(x, y, test_size=0.2)
-    
-    perc = Perceptron(train_x, train_y)
-    perc.train(alpha=0.01, n_epoch=10, batch_size=1)
-    print('W = ', perc.W)
-    acc = perc.evaluation(test_x, test_y)
-    print('acc on test data is: %f'% acc)
-    
-    sample = np.array([2,8])
-    label = perc.classify(sample)
-    print('one sample predict label = %d'% label)

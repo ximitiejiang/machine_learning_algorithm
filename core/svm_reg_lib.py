@@ -7,12 +7,10 @@ Created on Tue Jun 11 10:34:02 2019
 """
 
 import numpy as np
-import matplotlib.pyplot as plt
-import time, datetime, os
-import pickle
-from sklearn.preprocessing import scale
+from base import BaseModel
+import time
 
-class SVMReg():
+class SVMReg(BaseModel):
     def __init__(self, feats, labels):
         """ svm reg algorithm lib, 可用于多分类的算法
         svm reg算法由一个线性模块(w0x0+w1x1+..wnxn)
@@ -21,14 +19,7 @@ class SVMReg():
             feats(numpy): (n_samples, m_feats)
             labels(numpy): (n_samples,)  注意，多分类样本标签必须是0-n，从0开头因为算法中需要用label从0开始定位取对应概率值
         """
-        assert feats.ndim ==2, 'the feats should be (n_samples, m_feats), each sample should be 1-dim flatten data.'
-        self.feats = feats       
-        self.labels = labels.astype(np.int8)
-        self.trained = False
-        
-        # normalize, mnist特征取值范围(0-255), digits特征取值范围(0-16)，
-        # 其中mnist由于数值较大会导致exp操作发生inf(无穷大)，所以需要先对特征进行normalize
-        self.feats = scale(self.feats)  # to N(0,1)
+        super().__init__(feats, labels)
     
     def softmax(self, x):
         """exp(wx)/sum(exp(wx))
@@ -55,7 +46,90 @@ class SVMReg():
         batch_feats = np.concatenate(batch_feats_list, axis=0)
         batch_labels = np.concatenate(batch_labels_list, axis=0)
         return batch_feats, batch_labels
+    
+
+    
+    def SMOsimple(self, data, labels, C, toler, maxIter):
         
+        def selectJrand(i,m):
+            j = i
+            while(j==i):
+                j = int(np.random.uniform(0,m))
+            return j
+        
+        data = np.mat(data)                      # (100,2)
+        labels = np.mat(labels).transpose()      # (100,1)
+        m = data.shape[0]
+        alphas = np.mat(np.zeros((m,1)))         # (100,1)
+        b = 0
+        
+        iter = 0
+        while (iter < maxIter):
+            alphaPairsChanged = 0
+            for i in range(m):
+                fxi = float(np.multiply(alphas, labels).T * \
+                      (data * data[i,:].T)) + b
+                Ei = fxi - labels[i]
+                # 判断所选alphaI是否为支持向量：alphaI>0, alphaI<C，则为支持向量
+                # 判断alphaI对应的fxi的误差是否超过所定义偏差，如果超过说明需要优化alpha值
+                if ((labels[i]*Ei < -toler) and (alphas[i]< C)) \
+                   or ((labels[i]*Ei > toler) and (alphas[i]>0)): 
+                    
+                    # optimize step1: define alphaIold, alphaJold
+                    j = selectJrand(i,m)
+                    fxj = float(np.multiply(alphas, labels).T * \
+                          (data * data[j,:].T)) + b
+                    Ej = fxj - labels[j]
+                    alphaIold = alphas[i].copy()
+                    alphaJold = alphas[j].copy()
+                    
+                    # optimize step2: calculate L, H, eta
+                    if (labels[i]==labels[j]):
+                        L = max(0, alphas[j] +alphas[i] - C)
+                        H = min(C, alphas[j] +alphas[i])
+                    else:
+                        L = max(0, alphas[j] -alphas[i])
+                        H = min(C, C +alphas[j] -alphas[i])
+                    if L==H:
+                        continue
+                    eta = 2.0*data[i,:]*data[j,:].T - data[i,:]*data[i,:].T - \
+                          data[j,:]*data[j,:].T
+                    if eta >=0:
+                        continue
+                    
+                    # optimize step3: update alphaInew, alphaJnew
+                    alphas[j] -= labels[j]*(Ei - Ej)/eta 
+                    if alphas[j] > H:
+                        alphas[j] = H
+                    elif alphas[j]< L:
+                        alphas[j] = L
+                    if ((alphas[j] - alphaJold)<0.00001):
+                        continue
+                    alphas[i] += labels[i]*labels[j]*(alphaJold-alphas[j])
+                    
+                    # optimize step4: update b
+                    b1 = b - Ei - labels[i]*(alphas[i]-alphaIold)* \
+                         data[i,:]*data[i,:].T - labels[j]*(alphas[j]-alphaJold)*\
+                         data[i,:]*data[j,:].T
+                    b2 = b - Ej - labels[i]*(alphas[i]-alphaIold)* \
+                         data[i,:]*data[j,:].T - labels[j]*(alphas[j]-alphaJold)*\
+                         data[j,:]*data[j,:].T
+                    if alphas[i] > 0 and alphas[i] < C:
+                        b = b1
+                    elif alphas[j] > 0 and alphas[j] < C:
+                        b = b2
+                    else:
+                        b = 0.5*(b1 + b2)
+                        
+                    alphaPairsChanged +=1
+                    
+            if (alphaPairsChanged ==0): # 如果不再有alpha进行优化，就最多运行MaxIter次
+                iter += 1
+            else:
+                iter = 0                # 如果有alpha优化过，则重新计算循环次数
+    
+        return alphas, b    
+    
     def train(self, alpha=0.001, n_epoch=500, batch_size=16):
         """feats(x1,x2,..xn) -> feats(1,x1,x2,..xn)
         Args:
@@ -76,6 +150,11 @@ class SVMReg():
         for i in range(n_iter):
             batch_feats, batch_labels = self.get_batch_data(
                 feats_with_one, labels, batch_size=batch_size, type='shuffle')
+            
+            # 基于feats, labels，采用SMO算法算出alpha向量
+            alpha, b = self.SMO_simple(batch_feats, batch_labels, 
+                                  C = 100, toler = 0.001, maxIter = 40)
+            
             # w0*x0 + w1*x1 +...wn*xn = w0 + w1*x1 +...wn*xn, 然后通过softmax函数转换为概率(0-1)
             # (n_sample, 1) 每个样本一个prob(0~1)，也就是作为2分类问题的预测概率
             w_x = np.dot(batch_feats, self.W)       # w*x (b, c)
@@ -126,62 +205,6 @@ class SVMReg():
         label_prob = probs[0,label]
         return label, label_prob
     
-    def evaluation(self, test_feats, test_labels):
-        """评价整个验证数据集
-        """
-        test_feats = scale(test_feats)   # 测试数据集跟训练数据集一样增加归一化操作
-        
-        correct = 0
-        total_sample = len(test_feats)
-        start = time.time()
-        for feat, label in zip(test_feats, test_labels):
-            pred_label, pred_prob = self.classify(feat)
-            if int(pred_label) == int(label):
-                correct += 1
-        acc = correct / total_sample
-        print('evaluation finished, with %f seconds.'%(time.time() - start))
-        return acc
-    
-    def vis_loss(self, losses):
-        """可视化损失, losses为list [(epoch, loss)]"""
-        assert losses is not None, 'can not visualize losses because losses is empty.'
-        x = np.array(losses)[:,0]
-        y = np.array(losses)[:,1]
-        plt.subplot(1,2,1)
-        plt.title('losses')
-        plt.plot(x,y)
-        
-    def vis_points_line(self, feats, labels, W):
-        """可视化二维点和分隔线(单组w)
-        """
-        assert feats.shape[1] == 2, 'feats should be 2 dimention data with 1st. column of 1.'
-        assert len(W) == 3, 'W should be 3 values list.'
-        
-        feats_with_one = np.concatenate([np.ones((len(feats),1)), feats], axis=1)
-        
-        plt.subplot(1,2,2)
-        plt.title('points and divide hyperplane')
-        color = [c*64 + 64 for c in labels.reshape(-1)]
-        plt.scatter(feats_with_one[:,1], feats_with_one[:,2], c=color)
-        
-        min_x = int(min(feats_with_one[:,1]))
-        max_x = int(max(feats_with_one[:,1]))
-        x = np.arange(min_x - 1, max_x + 1, 0.1)
-        y = np.zeros((len(x),))
-        for i in range(len(x)):
-            y[i] = (-W[0,0] - x[i]*W[1,0]) / W[2,0]
-        plt.plot(x, y, c='r')
-        
-    def save(self, path='./'):
-        if self.trained:
-            time1 = datetime.datetime.now()
-            path = path + 'softmax_reg_weight_' + datetime.datetime.strftime(time1,'%Y%m%d_%H%M%S')
-            pickle.dump(self.W)
-            
-    def load(self, path):
-        if os.path.isfile(path):
-            self.W = pickle.load(path)
-        self.trained = True
 
 if __name__ == '__main__':
 

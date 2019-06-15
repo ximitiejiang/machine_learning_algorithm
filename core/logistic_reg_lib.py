@@ -7,11 +7,10 @@ Created on Tue Jun 11 10:34:02 2019
 """
 
 import numpy as np
-import matplotlib.pyplot as plt
 import time
-from sklearn.preprocessing import scale
+from .base import BaseModel
 
-class LogisticReg():
+class LogisticReg(BaseModel):
     def __init__(self, feats, labels):
         """ logistic reg algorithm lib, 当前只支持2分类
         特点：支持二分类，模型参数可保存(n_feat+1, 1)，支持线性可分数据
@@ -22,28 +21,11 @@ class LogisticReg():
             feats(numpy): (n_samples, m_feats)
             labels(numpy): (n_samples,)
         """
-        assert feats.ndim ==2, 'the feats should be (n_samples, m_feats), each sample should be 1-dim flatten data.'
-        self.feats = feats
-        self.labels = labels
-        self.trained = False
-        
-        self.feats = scale(self.feats)
+        super().__init__(feats, labels)
     
     def sigmoid(self, x):
         return 1.0/(1+np.exp(-x))    
     
-    def get_batch_data(self, feats, labels, batch_size=16, type='shuffle'):
-        """从特征数据中提取batch size个特征，并组合成一个特征数据
-        """
-        batch_idx = np.random.permutation(np.arange(len(labels)))[:batch_size]  # 随机出batch_size个idx
-        batch_feats_list = []
-        batch_labels_list = []
-        for idx in batch_idx:
-            batch_feats_list.append(feats[idx].reshape(1,-1))
-            batch_labels_list.append(labels[idx].reshape(-1,1))
-        batch_feats = np.concatenate(batch_feats_list, axis=0)
-        batch_labels = np.concatenate(batch_labels_list, axis=0)
-        return batch_feats, batch_labels
     
     def train(self, alpha=0.001, n_epoch=500, batch_size=64):
         """feats(x1,x2,..xn) -> feats(1,x1,x2,..xn)
@@ -51,6 +33,7 @@ class LogisticReg():
             alpha(float): 梯度下降步长
             n_epoch(inf): 循环训练轮数
         """
+        assert batch_size <= len(self.labels), 'too big batch size, should be smaller than dataset size.'
         start = time.time()
         feats_with_one = np.concatenate([np.ones((len(self.feats),1)), self.feats], axis=1)  # (n_sample, 1+ n_feats) (1,x1,x2,..xn)
         labels = self.labels.reshape(-1, 1)   # (n_sample, 1)
@@ -97,70 +80,6 @@ class LogisticReg():
         probs = self.sigmoid(np.dot(single_sample_feats, self.W))  # w*x
         probs_to_label = ((probs > 0.5)+0)[0,0]   # 概率转换成标签0,1: 大于0.5为True, +0把True转换成1, 提取[0,0]
         return probs_to_label, probs[0,0]
-    
-    def evaluation(self, test_feats, test_labels):
-        """评价整个验证数据集
-        """
-        test_feats = scale(test_feats)
-        
-        correct = 0
-        total_sample = len(test_feats)
-        start = time.time()
-        for feat, label in zip(test_feats, test_labels):
-            pred_label, pred_prob = self.classify(feat)
-            if int(pred_label) == int(label):
-                correct += 1
-        acc = correct / total_sample
-        print('evaluation finished, with %f seconds.'%(time.time() - start))
-        
-        if test_feats.shape[1]==2: # 还没添加首列1，为2个特征
-            self.vis_points_line(test_feats, test_labels)
-        return acc
-    
-    def vis_loss(self, losses):
-        """可视化损失"""
-        assert losses is not None, 'can not visualize losses because losses is empty.'
-        x = np.array(losses)[:,0]
-        y = np.array(losses)[:,1]
-        plt.subplot(1,2,1)
-        plt.title('losses')
-        plt.plot(x,y)
-    
-    def vis_points_line(self, feats, labels, W):
-        """可视化二维点和分隔线(单组w)
-        """
-        assert feats.shape[1] == 2, 'feats should be 2 dimention data with 1st. column of 1.'
-        assert len(W) == 3, 'W should be 3 values list.'
-        
-        feats_with_one = np.concatenate([np.ones((len(feats),1)), feats], axis=1)
-        
-        plt.subplot(1,2,2)
-        plt.title('points and divide hyperplane')
-        color = [c*64 + 64 for c in labels.reshape(-1)]
-        plt.scatter(feats_with_one[:,1], feats_with_one[:,2], c=color)
-        
-        min_x = int(min(feats_with_one[:,1]))
-        max_x = int(max(feats_with_one[:,1]))
-        x = np.arange(min_x - 1, max_x + 1, 0.1)
-        y = np.zeros((len(x),))
-        for i in range(len(x)):
-            y[i] = (-W[0,0] - x[i]*W[1,0]) / W[2,0]
-        plt.plot(x, y, c='r')
 
-    
-if __name__ == '__main__':
-    
-    import pandas as pd
-    filename = '2classes_data.txt'  # 一个简单的2个特征的二分类数据集
-    data = pd.read_csv(filename, sep='\t').values
-    x = data[:,0:2]
-    y = data[:,-1]
-    logs = LogisticReg(x,y)
-    logs.train(alpha=0.001, n_epoch=5000, batch_size=64)
-    print('finish trained: %s'%str(logs.trained))
-    print('W = ', logs.W)
-    sample = np.array([-1,1])
-    label, prob = logs.classify(sample)
-    print('label = %d, probility = %f'% (label, prob))
     
     
