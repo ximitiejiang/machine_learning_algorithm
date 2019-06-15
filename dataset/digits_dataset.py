@@ -46,6 +46,6 @@ class DigitsDataset():
         return [img, label, label_raw] 
     
 if __name__ == "__main__":
-    dg = DigitsDataset(binary=True)
+    dg = DigitsDataset(data_type='binary')
     img, label, label_raw = dg[229]
     print(label, label_raw)

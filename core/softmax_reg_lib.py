@@ -91,7 +91,7 @@ class SoftmaxReg():
             self.losses.append([i,loss])
             
             # vis text
-            if i % 20 == 0:  # 每20个iter显示一次
+            if i % 20 == 0 and i != 0:  # 每20个iter显示一次
                 print('iter: %d / %d, loss: %f, '%(i, n_iter, loss))
             # gradient    
             _probs = - probs              # 取负号 -p

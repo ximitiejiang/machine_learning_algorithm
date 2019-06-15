@@ -16,7 +16,7 @@ from sklearn.model_selection import train_test_split
 
 if __name__ == "__main__":
     
-    dataset = 'breastcancer'
+    dataset = 'digits'
     
     if dataset == 'mnist':      
         # acc = 0.98@lr0.001/batch128/w0/norm

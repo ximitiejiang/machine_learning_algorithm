@@ -69,7 +69,7 @@ class LogisticReg():
             
             loss = np.mean(-np.log(probs + 1e-06))  # loss = -log(P)
             self.losses.append([i,loss])
-            if i % 20 == 0:  # 每20个iter显示一次
+            if i % 20 == 0 and i != 0:  # 每20个iter显示一次
                 print('iter: %d / %d, loss: %f'%(i, n_iter, loss))
                 
             gradient = - np.dot(batch_feats.transpose(), (batch_labels - probs))  # grad = -(y-y')*x, (3,n)dot((n,1)-(n,1))->(3,n)dot(n,1)->(3,)

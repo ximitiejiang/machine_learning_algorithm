@@ -14,8 +14,8 @@ from sklearn.preprocessing import scale
 
 class SVMReg():
     def __init__(self, feats, labels):
-        """ svm reg algorithm lib, 可用于多分类的算法: 参考<机器学习算法-赵志勇, softmax regression>
-        softmax reg算法由一个线性模块(w0x0+w1x1+..wnxn)和一个非线性模块(softmax函数)组成一个函数
+        """ svm reg algorithm lib, 可用于多分类的算法
+        svm reg算法由一个线性模块(w0x0+w1x1+..wnxn)
         用输入特征feats和labels来训练这个模块，得到一组(w0,w1,..wn)的模型，可用来进行二分类问题的预测，但不能直接用于多分类问题
         Args:
             feats(numpy): (n_samples, m_feats)
@@ -89,7 +89,7 @@ class SVMReg():
             self.losses.append([i,loss])
             
             # vis text
-            if i % 20 == 0:  # 每20个iter显示一次
+            if i % 20 == 0 and i != 0:  # 每20个iter显示一次
                 print('iter: %d / %d, loss: %f, '%(i, n_iter, loss))
             # gradient    
             _probs = - probs              # 取负号 -p
