@@ -12,6 +12,7 @@ As this is a simplified machine learning algorithm implement, the accuracy is no
 - 2019/06/03 reconstruct this repo
 
 ### features
+- pure python code to implement all the algorithm.
 - all the algorithms integrated as Class, easy to use and modify.
 - all the datasets integrated as Class, easy to use and modify.
 - all the algorithms are validated on Mnist/Digits.
@@ -80,7 +81,7 @@ feature: with model weight(n_feat+1, 1), only support two-classes-classification
 
 ### PART 5. svm classifier
 
-feature: to be update
+feature: with model weight, only support two-classes-classification
 <br>test code: [test_svm](https://github.com/ximitiejiang/machine_learning_algorithm/blob/master/test_svm.py)
 <br>source code: [svm_lib](https://github.com/ximitiejiang/machine_learning_algorithm/blob/master/core/svm_lib.py)
 
@@ -91,7 +92,7 @@ to be update ...
 ### Reference:
 - Machine Learning in Action, Peter Harrington
 - Python Machine learning Algorithm, Zhiyong Zhao
-- Statical learning method, Lihang
+- Statical learning method, Hang Li
 - https://github.com/WenDesi/lihang_book_algorithm
   
 

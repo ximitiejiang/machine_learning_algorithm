@@ -18,6 +18,7 @@ def loadDataSet(filename):
 
 
 def selectJrand(i,m):
+    """随机选择alpha_j"""
     j = i
     while(j==i):
         j = int(np.random.uniform(0,m))
@@ -60,8 +61,7 @@ def SMOsimple(data, labels, C, toler, maxIter):
     while (iter < maxIter):  # 外循环： 在指定的maxiter循环次数中
         alphaPairsChanged = 0
         for i in range(m):   # 内循环：遍历所有样本
-            fxi = float(np.multiply(alphas, labels).T * \  # 先计算2个函数值fxi, Ei
-                  (data * data[i,:].T)) + b
+            fxi = float(np.multiply(alphas, labels).T * (data * data[i,:].T)) + b  # 先计算2个函数值fxi, Ei
             Ei = fxi - labels[i]
             # 判断所选alphaI是否为支持向量：alphaI>0, alphaI<C，则为支持向量
             # 判断alphaI对应的fxi的误差是否超过所定义偏差，如果超过说明需要优化alpha值
@@ -86,7 +86,7 @@ def SMOsimple(data, labels, C, toler, maxIter):
                 if L==H:
                     continue
                 eta = 2.0*data[i,:]*data[j,:].T - data[i,:]*data[i,:].T - \
-                      data[j,:]*data[j,:].T
+                      data[j,:]*data[j,:].T  # eta即 eta = K11+K22-2K12, 用于更新alpha_j
                 if eta >=0:
                     continue
                 

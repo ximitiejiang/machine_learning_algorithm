@@ -102,9 +102,11 @@ class BaseModel():
         if self.trained:
             time1 = datetime.datetime.now()
             path = path + 'softmax_reg_weight_' + datetime.datetime.strftime(time1,'%Y%m%d_%H%M%S')
-            pickle.dump(self.W)
+            with open(path, 'w') as f:
+                pickle.dump(self.W, f)
             
     def load(self, path):
         if os.path.isfile(path):
-            self.W = pickle.load(path)
+            with open(path, 'r') as f:
+                self.W = pickle.load(f)
         self.trained = True

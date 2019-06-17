@@ -45,7 +45,20 @@ class DigitsDataset():
         
         return [img, label, label_raw] 
     
+    def statistics(self):
+        classes = set(self.labels)
+        n_classes = len(classes)
+        
+        class_num_dict = {}
+        for label in self.labels:
+            class_num_dict[label] = class_num_dict.get(label, 0) + 1
+        print('num_classes: %d'%n_classes)
+        for key, value in sorted(class_num_dict.items()):
+            print('class %d: %d' % (key, value))
+        
 if __name__ == "__main__":
     dg = DigitsDataset(data_type='binary')
     img, label, label_raw = dg[229]
     print(label, label_raw)
+    
+    dg.statistics()
