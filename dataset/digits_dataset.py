@@ -8,6 +8,7 @@ Created on Tue Jun 11 09:59:32 2019
 
 from sklearn.datasets import load_digits
 import numpy as np
+import matplotlib.pyplot as plt
 
 class DigitsDataset():
     """sklearn自带手写数字集(1797,64)共计1797个样本
@@ -55,10 +56,20 @@ class DigitsDataset():
         print('num_classes: %d'%n_classes)
         for key, value in sorted(class_num_dict.items()):
             print('class %d: %d' % (key, value))
-        
-if __name__ == "__main__":
-    dg = DigitsDataset(data_type='binary')
-    img, label, label_raw = dg[229]
-    print(label, label_raw)
     
+    def show(self, idx):
+        if self.imgs is not None:
+            img = self.imgs[idx]
+            plt.imshow(img, cmap=plt.cm.gray)
+        else:
+            print('no imgs can be shown.')
+            
+if __name__ == "__main__":
+    dg = DigitsDataset(data_type='train')
+   
     dg.statistics()
+    
+    idx = 222
+    dg.show(idx)
+    img, label, label_raw = dg[idx]
+    print('label = %d, label_raw = %d' % (label, label_raw))

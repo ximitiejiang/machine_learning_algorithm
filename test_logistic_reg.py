@@ -14,7 +14,7 @@ import numpy as np
 
 if __name__ == "__main__":
     
-    dataset = '2class2'
+    dataset = '2class'
     
     if dataset == '2class':  # TODO: loss curve still need optimize
         import pandas as pd       

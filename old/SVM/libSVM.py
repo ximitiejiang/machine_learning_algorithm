@@ -43,13 +43,15 @@ def rbf_kernel(X1, X2):
 
 
 def SMOsimple(data, labels, C, toler, maxIter):
-    """
+    """SMO序列最小优化方法：主要出发点就是从alpha的列表中寻找不满足KKT条件的alpha对
+    (只要第一个alpha不满足KKT就随机选择alpha对中的第二个alpha)，每循环更新一对alpha对。
+    如此循环，直到所有alpha对都满足KKT条件或达到最大更新循环次数，则得到所有alpha的解
     Args:
         data
         label
         C: 代表alpha的最大值限制
-        toler: 
-        maxIter
+        toler: 替代0的一个精度值，判断alpha>0就变成alpha>toler，有助于算法很快收敛
+        maxIter: alpha对的更新次数
     """
     data = np.mat(data)                      # (100,2)
     labels = np.mat(labels).transpose()      # (100,1)
@@ -58,17 +60,17 @@ def SMOsimple(data, labels, C, toler, maxIter):
     b = 0
     
     iter = 0
-    while (iter < maxIter):  # 外循环： 在指定的maxiter循环次数中
-        alphaPairsChanged = 0
-        for i in range(m):   # 内循环：遍历所有样本
-            fxi = float(np.multiply(alphas, labels).T * (data * data[i,:].T)) + b  # 先计算2个函数值fxi, Ei
-            Ei = fxi - labels[i]
-            # 判断所选alphaI是否为支持向量：alphaI>0, alphaI<C，则为支持向量
-            # 判断alphaI对应的fxi的误差是否超过所定义偏差，如果超过说明需要优化alpha值
+    while (iter < maxIter):  # 外循环： 在指定的maxiter循环次数中(该循环次数是指更新alpha的次数，如果不更新则不算一次)
+        alphaPairsChanged = 0  # 是否更新的标志
+        for i in range(m):   # 内循环：遍历所有样本的alpha用来作为alpha_i的值
+            
+            # 1. 遍历寻找alpha_i: 判断alpha_i是否满足KKT条件，如果满足则不需要调整继续选择下一个alpha_i, 如果不满足则进行下面的优化更新
+            gxi = float(np.multiply(alphas, labels).T * (data * data[i,:].T)) + b
+            Ei = gxi - labels[i]            
             if ((labels[i]*Ei < -toler) and (alphas[i]< C)) \
-               or ((labels[i]*Ei > toler) and (alphas[i]>0)): 
-                
-                # optimize step1: define alphaIold, alphaJold
+               or ((labels[i]*Ei > toler) and (alphas[i]>0)):  # 不符合KKT条件的3种情况(yEi<0&alpha<C, yEi>0&alpha>0, yEi=0&alpha=0orC)
+                                                               # 这里引入toler是为了让KKT达到一定精度toler就停止，如果要完全等于0，往往不能很快收敛
+            # 2. 随机寻找alpha_j
                 j = selectJrand(i,m)
                 fxj = float(np.multiply(alphas, labels).T * \
                       (data * data[j,:].T)) + b
@@ -76,7 +78,7 @@ def SMOsimple(data, labels, C, toler, maxIter):
                 alphaIold = alphas[i].copy()
                 alphaJold = alphas[j].copy()
                 
-                # optimize step2: calculate L, H, eta
+            # 3. 基于alpha_i/alpha_j计算L, H, eta
                 if (labels[i]==labels[j]):
                     L = max(0, alphas[j] +alphas[i] - C)
                     H = min(C, alphas[j] +alphas[i])
@@ -90,7 +92,7 @@ def SMOsimple(data, labels, C, toler, maxIter):
                 if eta >=0:
                     continue
                 
-                # optimize step3: update alphaInew, alphaJnew
+            # 4. 基于eta更新alpha_i, alpha_j
                 alphas[j] -= labels[j]*(Ei - Ej)/eta 
                 if alphas[j] > H:
                     alphas[j] = H
@@ -100,7 +102,7 @@ def SMOsimple(data, labels, C, toler, maxIter):
                     continue
                 alphas[i] += labels[i]*labels[j]*(alphaJold-alphas[j])
                 
-                # optimize step4: update b
+            # 5. 基于更新的alpha_i,alpha_j更新b
                 b1 = b - Ei - labels[i]*(alphas[i]-alphaIold)* \
                      data[i,:]*data[i,:].T - labels[j]*(alphas[j]-alphaJold)*\
                      data[i,:]*data[j,:].T
@@ -122,6 +124,32 @@ def SMOsimple(data, labels, C, toler, maxIter):
             iter = 0                # 如果有alpha优化过，则重新计算循环次数
 
     return alphas, b
+
+class optStruct:
+    def __init__(self, dataMatIn, classLabels, C, toler):
+        self.X = dataMatIn
+        self.labelMat = classLabels
+        self.C = C
+        self.tol = toler
+        self.m = shape(dataMatIn)[0]
+        self.alphas = np.mat(np.zeros(self.m, 1))
+        self.b = 0
+        self.eCache = np.mat(np.zeros((self.m, 2)))
+    
+def calcEk(oS, k):
+    fXk = float(np.multiply(oS.alpha, oS.labelMat).T * (oS.X * oS.X[k, :].T)) + oS.b
+    Ek = fXk - float(oS.labelMat[k])
+    return Ek
+
+def selectJ(i, oS, Ei):
+    maxK = -1
+    maxDeltaE = 0
+    Ej = 0
+    oS.eCache[i] = [1, Ei]
+    validEcacheList = nonzero(oS.eCache[:,0].A)[0]
+    if (len(validEcacheList)
+        
+        
 
 def SMO(data, labels, C, toler, maxIter):
     pass

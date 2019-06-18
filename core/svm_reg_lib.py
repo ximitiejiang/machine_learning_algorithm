@@ -7,221 +7,277 @@ Created on Tue Jun 11 10:34:02 2019
 """
 
 import numpy as np
-from base import BaseModel
-import time
+from six.moves import cPickle as pickle
 
-class SVMReg(BaseModel):
-    def __init__(self, feats, labels):
-        """ svm reg algorithm lib, 可用于多分类的算法
-        svm reg算法由一个线性模块(w0x0+w1x1+..wnxn)
-        用输入特征feats和labels来训练这个模块，得到一组(w0,w1,..wn)的模型，可用来进行二分类问题的预测，但不能直接用于多分类问题
-        Args:
-            feats(numpy): (n_samples, m_feats)
-            labels(numpy): (n_samples,)  注意，多分类样本标签必须是0-n，从0开头因为算法中需要用label从0开始定位取对应概率值
-        """
-        super().__init__(feats, labels)
-    
-    def softmax(self, x):
-        """exp(wx)/sum(exp(wx))
-        Args:
-            x(array): (n_sample, k_class)
-        Return:
-            x_prob(array): (n_sample, k_class)
-        """
-        x_exp = np.exp(x)                    # (135,4), 这里要防止无穷大的产生
-        x_sum = np.sum(x_exp, axis=1)        # (135,)
-        x_sum_repeat = np.tile(x_sum.reshape(-1,1), (1, x.shape[1]))
-        x_prob = x_exp / x_sum_repeat
-        return x_prob
-    
-    def get_batch_data(self, feats, labels, batch_size=16, type='shuffle'):
-        """从特征数据中提取batch size个特征，并组合成一个特征数据
-        """
-        batch_idx = np.random.permutation(np.arange(len(labels)))[:batch_size]  # 随机出batch_size个idx
-        batch_feats_list = []
-        batch_labels_list = []
-        for idx in batch_idx:
-            batch_feats_list.append(feats[idx].reshape(1,-1))
-            batch_labels_list.append(labels[idx].reshape(-1,1))
-        batch_feats = np.concatenate(batch_feats_list, axis=0)
-        batch_labels = np.concatenate(batch_labels_list, axis=0)
-        return batch_feats, batch_labels
-    
+class SVM:
+    """SVM支持向量机模型，可支持采用线性核函数(用于线性可分数据)，高斯核函数(非线性可分数据)
+    """
+    def __init__(self, dataSet, labels, C, toler, kernel_option):
+        self.train_x = dataSet # 训练特征
+        self.train_y = labels  # 训练标签
+        self.C = C # 惩罚参数
+        self.toler = toler     # 迭代的终止条件之一
+        self.n_samples = np.shape(dataSet)[0] # 训练样本的个数
+        self.alphas = np.mat(np.zeros((self.n_samples, 1))) # 拉格朗日乘子
+        self.b = 0
+        self.error_tmp = np.mat(np.zeros((self.n_samples, 2))) # 保存E的缓存
+        self.kernel_opt = kernel_option # 选用的核函数及其参数
+        self.kernel_mat = calc_kernel(self.train_x, self.kernel_opt) # 核函数的输出
 
-    
-    def SMOsimple(self, data, labels, C, toler, maxIter):
-        
-        def selectJrand(i,m):
-            j = i
-            while(j==i):
-                j = int(np.random.uniform(0,m))
-            return j
-        
-        data = np.mat(data)                      # (100,2)
-        labels = np.mat(labels).transpose()      # (100,1)
-        m = data.shape[0]
-        alphas = np.mat(np.zeros((m,1)))         # (100,1)
-        b = 0
-        
-        iter = 0
-        while (iter < maxIter):
-            alphaPairsChanged = 0
-            for i in range(m):
-                fxi = float(np.multiply(alphas, labels).T * \
-                      (data * data[i,:].T)) + b
-                Ei = fxi - labels[i]
-                # 判断所选alphaI是否为支持向量：alphaI>0, alphaI<C，则为支持向量
-                # 判断alphaI对应的fxi的误差是否超过所定义偏差，如果超过说明需要优化alpha值
-                if ((labels[i]*Ei < -toler) and (alphas[i]< C)) \
-                   or ((labels[i]*Ei > toler) and (alphas[i]>0)): 
-                    
-                    # optimize step1: define alphaIold, alphaJold
-                    j = selectJrand(i,m)
-                    fxj = float(np.multiply(alphas, labels).T * \
-                          (data * data[j,:].T)) + b
-                    Ej = fxj - labels[j]
-                    alphaIold = alphas[i].copy()
-                    alphaJold = alphas[j].copy()
-                    
-                    # optimize step2: calculate L, H, eta
-                    if (labels[i]==labels[j]):
-                        L = max(0, alphas[j] +alphas[i] - C)
-                        H = min(C, alphas[j] +alphas[i])
-                    else:
-                        L = max(0, alphas[j] -alphas[i])
-                        H = min(C, C +alphas[j] -alphas[i])
-                    if L==H:
-                        continue
-                    eta = 2.0*data[i,:]*data[j,:].T - data[i,:]*data[i,:].T - \
-                          data[j,:]*data[j,:].T
-                    if eta >=0:
-                        continue
-                    
-                    # optimize step3: update alphaInew, alphaJnew
-                    alphas[j] -= labels[j]*(Ei - Ej)/eta 
-                    if alphas[j] > H:
-                        alphas[j] = H
-                    elif alphas[j]< L:
-                        alphas[j] = L
-                    if ((alphas[j] - alphaJold)<0.00001):
-                        continue
-                    alphas[i] += labels[i]*labels[j]*(alphaJold-alphas[j])
-                    
-                    # optimize step4: update b
-                    b1 = b - Ei - labels[i]*(alphas[i]-alphaIold)* \
-                         data[i,:]*data[i,:].T - labels[j]*(alphas[j]-alphaJold)*\
-                         data[i,:]*data[j,:].T
-                    b2 = b - Ej - labels[i]*(alphas[i]-alphaIold)* \
-                         data[i,:]*data[j,:].T - labels[j]*(alphas[j]-alphaJold)*\
-                         data[j,:]*data[j,:].T
-                    if alphas[i] > 0 and alphas[i] < C:
-                        b = b1
-                    elif alphas[j] > 0 and alphas[j] < C:
-                        b = b2
-                    else:
-                        b = 0.5*(b1 + b2)
-                        
-                    alphaPairsChanged +=1
-                    
-            if (alphaPairsChanged ==0): # 如果不再有alpha进行优化，就最多运行MaxIter次
-                iter += 1
-            else:
-                iter = 0                # 如果有alpha优化过，则重新计算循环次数
-    
-        return alphas, b    
-    
-    def train(self, alpha=0.001, n_epoch=500, batch_size=16):
-        """feats(x1,x2,..xn) -> feats(1,x1,x2,..xn)
-        Args:
-            alpha(float): 梯度下降步长
-            n_epoch(inf): 循环训练轮数
-        """
-        assert batch_size <= len(self.labels), 'too big batch size, should be smaller than dataset size.'
-        
-        start = time.time()
-        n_classes = len(set(self.labels))
-        n_samples = len(self.feats)
-        feats_with_one = np.concatenate([np.ones((n_samples,1)), self.feats], axis=1)  # (n_sample, 1+ n_feats) (1,x1,x2,..xn)
-        labels = self.labels.reshape(-1, 1)   # (n_sample, 1)
-        self.W = np.zeros((feats_with_one.shape[1], n_classes)) # (f_feat, c_classes)
-        self.losses = []
-        
-        n_iter = n_epoch * (n_samples // batch_size)
-        for i in range(n_iter):
-            batch_feats, batch_labels = self.get_batch_data(
-                feats_with_one, labels, batch_size=batch_size, type='shuffle')
+def cal_kernel_value(train_x, train_x_i, kernel_option):
+    '''样本之间的核函数的值
+    input:  train_x(mat):训练样本
+            train_x_i(mat):第i个训练样本
+            kernel_option(tuple):核函数的类型以及参数
+    output: kernel_value(mat):样本之间的核函数的值
             
-            # 基于feats, labels，采用SMO算法算出alpha向量
-            alpha, b = self.SMO_simple(batch_feats, batch_labels, 
-                                  C = 100, toler = 0.001, maxIter = 40)
-            
-            # w0*x0 + w1*x1 +...wn*xn = w0 + w1*x1 +...wn*xn, 然后通过softmax函数转换为概率(0-1)
-            # (n_sample, 1) 每个样本一个prob(0~1)，也就是作为2分类问题的预测概率
-            w_x = np.dot(batch_feats, self.W)       # w*x (b, c)
-            probs = self.softmax(w_x)               # probability (b,c)
-            
-            # loss: 只提取正样本概率p转化为损失-log(p) 
-            sum_loss = 0
-            for sample in range(len(batch_labels)):
-                sum_loss += -np.log(probs[sample, batch_labels[sample, 0]] / np.sum(probs[sample, :]))
-            loss = sum_loss / len(batch_labels)  # average loss
-            self.losses.append([i,loss])
-            
-            # vis text
-            if i % 20 == 0 and i != 0:  # 每20个iter显示一次
-                print('iter: %d / %d, loss: %f, '%(i, n_iter, loss))
-            # gradient    
-            _probs = - probs              # 取负号 -p
-            for j in range(batch_size):
-                label = batch_labels[j, 0]   # 提取每个样本的标签
-                _probs[j, label] += 1   # 正样本则为1-p, 负样本不变依然是-p    
-            gradient = - np.dot(batch_feats.transpose(), _probs)  # (135,3).T * (135,4) -> (3,4), grad = -x*(I-y')   
-            # update Weights
-            self.W -= alpha * gradient * (1/batch_size)   # W(3,4) - (a/n)*(3,4), 因前面计算梯度时我采用的负号，这里就应该是w = w-alpha*grad
-        
-        self.vis_loss(self.losses)
-        if self.feats.shape[1] == 2:
-            for j in range(self.W.shape[1]):   # w (3,4)代表3个特征，4个类别
-                w = self.W[:,j].reshape(-1,1)
-                self.vis_points_line(self.feats, self.labels, w)
-        
-        self.trained = True
-        print('training finished, with %f seconds.'%(time.time() - start))
-        
-    def classify(self, single_sample_feats):
-        """ 单样本预测
-        Args:
-            data(numpy): (1, m_feats) or (m_feats,)，如果是(m,n)则需要展平
-            k(int): number of neibours
-        Returns:
-            label(int)
-        """
-        assert isinstance(single_sample_feats, np.ndarray), 'data should be ndarray.'
-        assert (single_sample_feats.shape[0]==1 or single_sample_feats.ndim==1), 'data should be flatten data like(m,) or (1,m).'
-        assert self.trained, 'model didnot trained, can not classify without pretrained params.'
-        single_sample_feats = np.concatenate([np.array([1]), single_sample_feats]).reshape(1,-1)
-        probs = self.softmax(np.dot(single_sample_feats, self.W))  # w*x
-        label = np.argmax(probs)   # 获得最大概率所在位置，即标签(所以也要求标签从0开始 0~n)
-        label_prob = probs[0,label]
-        return label, label_prob
+    '''
+    kernel_type = kernel_option[0] # 核函数的类型，分为rbf和其他
+    m = np.shape(train_x)[0] # 样本的个数
     
+    kernel_value = np.mat(np.zeros((m, 1)))
+    
+    if kernel_type == 'rbf': # rbf核函数
+        sigma = kernel_option[1]
+        if sigma == 0:
+            sigma = 1.0
+        for i in xrange(m):
+            diff = train_x[i, :] - train_x_i
+            kernel_value[i] = np.exp(diff * diff.T / (-2.0 * sigma**2))
+    else: # 不使用核函数
+        kernel_value = train_x * train_x_i.T
+    return kernel_value
+
+
+def calc_kernel(train_x, kernel_option):
+    '''计算核函数矩阵
+    input:  train_x(mat):训练样本的特征值
+            kernel_option(tuple):核函数的类型以及参数
+    output: kernel_matrix(mat):样本的核函数的值
+    '''
+    m = np.shape(train_x)[0] # 样本的个数
+    kernel_matrix = np.mat(np.zeros((m, m))) # 初始化样本之间的核函数值
+    for i in xrange(m):
+        kernel_matrix[:, i] = cal_kernel_value(train_x, train_x[i, :], kernel_option)
+    return kernel_matrix
+
+def cal_error(svm, alpha_k):
+    '''误差值的计算
+    input:  svm:SVM模型
+            alpha_k(int):选择出的变量
+    output: error_k(float):误差值
+    '''
+    output_k = float(np.multiply(svm.alphas, svm.train_y).T * svm.kernel_mat[:, alpha_k] + svm.b)
+    error_k = output_k - float(svm.train_y[alpha_k])
+    return error_k
+
+
+def update_error_tmp(svm, alpha_k):
+    '''重新计算误差值
+    input:  svm:SVM模型
+            alpha_k(int):选择出的变量
+    output: 对应误差值
+    '''
+    error = cal_error(svm, alpha_k)
+    svm.error_tmp[alpha_k] = [1, error]
+
+def select_second_sample_j(svm, alpha_i, error_i):
+    '''选择第二个样本
+    input:  svm:SVM模型
+            alpha_i(int):选择出的第一个变量
+            error_i(float):E_i
+    output: alpha_j(int):选择出的第二个变量
+            error_j(float):E_j
+    '''
+    # 标记为已被优化
+    svm.error_tmp[alpha_i] = [1, error_i]
+    candidateAlphaList = np.nonzero(svm.error_tmp[:, 0].A)[0]
+    
+    maxStep = 0
+    alpha_j = 0
+    error_j = 0
+
+    if len(candidateAlphaList) > 1:
+        for alpha_k in candidateAlphaList:
+            if alpha_k == alpha_i: 
+                continue
+            error_k = cal_error(svm, alpha_k)
+            if abs(error_k - error_i) > maxStep:
+                maxStep = abs(error_k - error_i)
+                alpha_j = alpha_k
+                error_j = error_k
+    else: # 随机选择          
+        alpha_j = alpha_i
+        while alpha_j == alpha_i:
+            alpha_j = int(np.random.uniform(0, svm.n_samples))
+        error_j = cal_error(svm, alpha_j)
+    
+    return alpha_j, error_j
+
+def choose_and_update(svm, alpha_i):
+    '''判断和选择两个alpha进行更新
+    input:  svm:SVM模型
+            alpha_i(int):选择出的第一个变量
+    '''
+    error_i = cal_error(svm, alpha_i) # 计算第一个样本的E_i
+    
+    # 判断选择出的第一个变量是否违反了KKT条件
+    if (svm.train_y[alpha_i] * error_i < -svm.toler) and (svm.alphas[alpha_i] < svm.C) or\
+        (svm.train_y[alpha_i] * error_i > svm.toler) and (svm.alphas[alpha_i] > 0):
+
+        # 1、选择第二个变量
+        alpha_j, error_j = select_second_sample_j(svm, alpha_i, error_i)
+        alpha_i_old = svm.alphas[alpha_i].copy()
+        alpha_j_old = svm.alphas[alpha_j].copy()
+
+        # 2、计算上下界
+        if svm.train_y[alpha_i] != svm.train_y[alpha_j]:
+            L = max(0, svm.alphas[alpha_j] - svm.alphas[alpha_i])
+            H = min(svm.C, svm.C + svm.alphas[alpha_j] - svm.alphas[alpha_i])
+        else:
+            L = max(0, svm.alphas[alpha_j] + svm.alphas[alpha_i] - svm.C)
+            H = min(svm.C, svm.alphas[alpha_j] + svm.alphas[alpha_i])
+        if L == H:
+            return 0
+
+        # 3、计算eta
+        eta = 2.0 * svm.kernel_mat[alpha_i, alpha_j] - svm.kernel_mat[alpha_i, alpha_i] \
+                  - svm.kernel_mat[alpha_j, alpha_j]
+        if eta >= 0:
+            return 0
+
+        # 4、更新alpha_j
+        svm.alphas[alpha_j] -= svm.train_y[alpha_j] * (error_i - error_j) / eta
+
+        # 5、确定最终的alpha_j
+        if svm.alphas[alpha_j] > H:
+            svm.alphas[alpha_j] = H
+        if svm.alphas[alpha_j] < L:
+            svm.alphas[alpha_j] = L
+
+        # 6、判断是否结束      
+        if abs(alpha_j_old - svm.alphas[alpha_j]) < 0.00001:
+            update_error_tmp(svm, alpha_j)
+            return 0
+
+        # 7、更新alpha_i
+        svm.alphas[alpha_i] += svm.train_y[alpha_i] * svm.train_y[alpha_j] \
+                                * (alpha_j_old - svm.alphas[alpha_j])
+
+        # 8、更新b
+        b1 = svm.b - error_i - svm.train_y[alpha_i] * (svm.alphas[alpha_i] - alpha_i_old) \
+                                                    * svm.kernel_mat[alpha_i, alpha_i] \
+                             - svm.train_y[alpha_j] * (svm.alphas[alpha_j] - alpha_j_old) \
+                                                    * svm.kernel_mat[alpha_i, alpha_j]
+        b2 = svm.b - error_j - svm.train_y[alpha_i] * (svm.alphas[alpha_i] - alpha_i_old) \
+                                                    * svm.kernel_mat[alpha_i, alpha_j] \
+                             - svm.train_y[alpha_j] * (svm.alphas[alpha_j] - alpha_j_old) \
+                                                    * svm.kernel_mat[alpha_j, alpha_j]
+        if (0 < svm.alphas[alpha_i]) and (svm.alphas[alpha_i] < svm.C):
+            svm.b = b1
+        elif (0 < svm.alphas[alpha_j]) and (svm.alphas[alpha_j] < svm.C):
+            svm.b = b2
+        else:
+            svm.b = (b1 + b2) / 2.0
+
+        # 9、更新error
+        update_error_tmp(svm, alpha_j)
+        update_error_tmp(svm, alpha_i)
+
+        return 1
+    else:
+        return 0
+
+def SVM_training(train_x, train_y, C, toler, max_iter, kernel_option = ('rbf', 0.431029)):
+    '''SVM的训练
+    input:  train_x(mat):训练数据的特征
+            train_y(mat):训练数据的标签
+            C(float):惩罚系数
+            toler(float):迭代的终止条件之一
+            max_iter(int):最大迭代次数
+            kerner_option(tuple):核函数的类型及其参数
+    output: svm模型
+    '''
+    # 1、初始化SVM分类器
+    svm = SVM(train_x, train_y, C, toler, kernel_option)
+    
+    # 2、开始训练
+    entireSet = True
+    alpha_pairs_changed = 0
+    iteration = 0
+    
+    while (iteration < max_iter) and ((alpha_pairs_changed > 0) or entireSet):
+        print "\t iterration: ", iteration
+        alpha_pairs_changed = 0
+
+        if entireSet:
+            # 对所有的样本
+            for x in xrange(svm.n_samples):
+                alpha_pairs_changed += choose_and_update(svm, x)
+            iteration += 1
+        else:
+            # 非边界样本
+            bound_samples = []
+            for i in xrange(svm.n_samples):
+                if svm.alphas[i,0] > 0 and svm.alphas[i,0] < svm.C:
+                    bound_samples.append(i)
+            for x in bound_samples:
+                alpha_pairs_changed += choose_and_update(svm, x)
+            iteration += 1
+        
+        # 在所有样本和非边界样本之间交替
+        if entireSet:
+            entireSet = False
+        elif alpha_pairs_changed == 0:
+            entireSet = True
+
+    return svm
+
+def svm_predict(svm, test_sample_x):
+    '''利用SVM模型对每一个样本进行预测
+    input:  svm:SVM模型
+            test_sample_x(mat):样本
+    output: predict(float):对样本的预测
+    '''
+    # 1、计算核函数矩阵
+    kernel_value = cal_kernel_value(svm.train_x, test_sample_x, svm.kernel_opt)
+    # 2、计算预测值
+    predict = kernel_value.T * np.multiply(svm.train_y, svm.alphas) + svm.b
+    return predict
+
+def cal_accuracy(svm, test_x, test_y):
+    '''计算预测的准确性
+    input:  svm:SVM模型
+            test_x(mat):测试的特征
+            test_y(mat):测试的标签
+    output: accuracy(float):预测的准确性
+    '''
+    n_samples = np.shape(test_x)[0] # 样本的个数
+    correct = 0.0
+    for i in xrange(n_samples):
+        # 对每一个样本得到预测值
+        predict=svm_predict(svm, test_x[i, :])
+        # 判断每一个样本的预测值与真实值是否一致
+        if np.sign(predict) == np.sign(test_y[i]):
+            correct += 1
+    accuracy = correct / n_samples
+    return accuracy
+
+def save_svm_model(svm_model, model_file):
+    '''保存SVM模型
+    input:  svm_model:SVM模型
+            model_file(string):SVM模型需要保存到的文件
+    '''
+    with open(model_file, 'w') as f:
+        pickle.dump(svm_model, f)
+
 
 if __name__ == '__main__':
-
-    import pandas as pd
-    from sklearn.model_selection import train_test_split
-    filename = '2classes_data_2.txt'  # 一个简单的2个特征的多分类数据集
-    data = pd.read_csv(filename, sep='\t').values
-    x = data[:,0:2]
-    y = data[:,-1]
-    train_x, test_x, train_y, test_y = train_test_split(x, y, test_size=0.2)
-    
-    svm = SVMReg(train_x, train_y)
-    svm.train(alpha=0.5, n_epoch=10000, batch_size=64)  # 在学习率0.5下精度在0.8-0.9之间，太小学习率导致精度下降
-    print('W = ', svm.W)
-    acc = svm.evaluation(test_x, test_y)
-    print('acc on test data is: %f'% acc)
-    
-    sample = np.array([2,8])
-    label, prob = svm.classify(sample)
-    print('one sample predict label = %d, probility = %f'% (label, prob))
+    dataset, labels = load_data_libsvm("heart_scale")
+    C = 0.6
+    toler = 0.001
+    maxIter = 500
+    svm_model = svm.SVM_training(dataSet, labels, C, toler, maxIter)
+    accuracy = svm.cal_accuracy(svm_model, dataSet, labels)
+    print "The training accuracy is: %.3f%%" % (accuracy * 100)
+    svm.save_svm_model(svm_model, "model_file")
