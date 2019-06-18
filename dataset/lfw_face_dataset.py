@@ -49,7 +49,7 @@ class LFWFacesDataset():
         plt.imshow(img, cmap=plt.cm.gray)
 
 if __name__ == '__main__':
-    faces = LFWFaceDataset()
+    faces = LFWFacesDataset()
     faces.statistics()
     idx = 65
     data, label = faces[idx]
