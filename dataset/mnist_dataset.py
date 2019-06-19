@@ -7,8 +7,9 @@ Created on Tue Jun 11 17:54:50 2019
 """
 
 import pandas as pd
+from .base_dataset import BaseDataset
 
-class MnistDataset():
+class MnistDataset(BaseDataset):
     """采用kaggle版本的mnist数据集https://www.kaggle.com/c/digit-recognizer/data
     数据被处理成train.csv和test.csv，每张图片像素为28*28, 被展平为一行784个像素
     其中train.csv为(42000,785), 即42000个样本，且第一列为label(0-9), 剩下为像素(0-255)
@@ -17,47 +18,27 @@ class MnistDataset():
     从而变成一个二分类数据集(两个类别是0或非零)
     """
     def __init__(self, root_path='./dataset/mnist/', data_type='train'):
-        """固定接口为self.datas, self.labels"""
+        """可设置data_type = train, test, binary分别调用训练集/测试集/二值训练集"""       
         train_path = root_path + 'train.csv'
         test_path = root_path + 'test.csv'
         train_binary_path = root_path + 'train_binary.csv'
         
         if data_type == 'train':
-            path = train_path
-        elif data_type == 'train_binary':
-            path = train_binary_path
+            self.path = train_path
+        elif data_type == 'binary':
+            self.path = train_binary_path
         elif data_type == 'test':
-            path = test_path
+            self.path = test_path
         else:
-            raise ValueError('wrong data type, only support train/train_binary/test.')
-              
-        dataset = pd.read_csv(path, header=0).values  # (42000, 785)
-        self.datas = dataset[:, 1:]
-        self.labels = dataset[:,0]  
-
-    def __len__(self):
-        return len(self.datas)
+            raise ValueError('wrong data type, only support train/binary/test.')
+            
+        super().__init__() # 先准备self.path再init
     
-    def __getitem__(self, idx):
-        img = self.datas[idx]
-        label = self.labels[idx]
+    def get_dataset(self):
+        raw_data = pd.read_csv(self.path, header=0).values  # (42000, 785)
+        dataset = {}
+        dataset['data'] = raw_data[:, 1:]
+        dataset['target'] = raw_data[:, 0]
+        dataset['images'] = raw_data[:, 1:].reshape(-1, 28, 28)  # (n, 784) -> (n, 28, 28)
+        return dataset
         
-        return [img, label] 
-    
-    def statistics(self):
-        classes = set(self.labels)
-        n_classes = len(classes)
-        
-        class_num_dict = {}
-        for label in self.labels:
-            class_num_dict[label] = class_num_dict.get(label, 0) + 1
-        print('num_classes: %d'%n_classes)
-        
-        for key, value in sorted(class_num_dict.items()):
-            print('class %d: %d' % (key, value))
-
-if __name__ == "__main__":
-    mn = MnistDataset(root_path='mnist/')
-    data, label = mn[3]
-    mn.statistics()
-    

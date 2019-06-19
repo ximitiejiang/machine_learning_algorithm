@@ -8,7 +8,7 @@ Created on Tue Jun 11 10:34:02 2019
 
 import numpy as np
 import time
-from .base import BaseModel
+from .base_model import BaseModel
 
 class LogisticReg(BaseModel):
     def __init__(self, feats, labels):

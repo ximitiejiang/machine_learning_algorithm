@@ -7,7 +7,7 @@ Created on Tue Jun 11 10:34:02 2019
 """
 import time
 import numpy as np
-from .base import BaseModel
+from .base_model import BaseModel
 
 class SoftmaxReg(BaseModel):
     def __init__(self, feats, labels):

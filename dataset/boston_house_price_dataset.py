@@ -7,8 +7,9 @@ Created on Tue Jun 11 09:59:32 2019
 """
 
 from sklearn.datasets import load_boston
+from .base_dataset import BaseDataset
 
-class BostonHousePriceDataset():
+class BostonHousePriceDataset(BaseDataset):
     """sklearn自带波士顿房价数据集(506,13)，属于回归数据集，共计506个样本，每个样本有13个特征
     CRIM: 城镇人均犯罪率
     ZN: 城镇超过25000平方英尺的住宅区域占地比例
@@ -28,24 +29,10 @@ class BostonHousePriceDataset():
     其中data(506,13), target(506,), 其中target为每个房价的数值
     """
     def __init__(self):
-        self.type = 'reg'    # 定义数据集类型为回归类数据集
-        self.dataset = load_boston()
-        self.datas = self.dataset.data      # 
-        self.labels = self.dataset.target   # 
-        self.feat_names = self.dataset.feature_names  # 
+        super().__init__()
     
-    def __len__(self):
-        return len(self.datas)
-    
-    def __getitem__(self, idx):
-        data = self.datas[idx]
-        label = self.labels[idx]
-        
-        return [data, label]
-    
+    def get_dataset(self):
+        return load_boston()
 
-if __name__ == '__main__':
-    bost = BostonHousePriceDataset()
-    data, label = bost[10]                     
     
                

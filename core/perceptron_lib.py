@@ -8,7 +8,7 @@ Created on Tue Jun 11 10:34:02 2019
 
 import numpy as np
 from sklearn.preprocessing import scale
-from .base import BaseModel
+from .base_model import BaseModel
 import time
 
 class Perceptron(BaseModel):
@@ -41,6 +41,13 @@ class Perceptron(BaseModel):
         batch_labels = np.concatenate(batch_labels_list, axis=0)
         return batch_feats, batch_labels
         
+    # TODO: 采用阶越函数代替在train和test中的判断
+    def step(self, x):
+        if x > 0:
+            return 1
+        else:
+            return -1   
+    
     def train(self, alpha=0.001, n_epoch=500, batch_size=1):
         """feats(x1,x2,..xn) -> feats(1,x1,x2,..xn)
         Args:
@@ -92,7 +99,7 @@ class Perceptron(BaseModel):
         
         self.trained = True
         print('training finished, with %f seconds.'%(time.time() - start))
-        
+     
     def classify(self, single_sample_feats):
         """ 单样本预测
         Args:
