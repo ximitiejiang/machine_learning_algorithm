@@ -8,6 +8,7 @@ Created on Tue Jun 11 10:34:02 2019
 
 import numpy as np
 from six.moves import cPickle as pickle
+from .base_model import BaseModel
 
 # TODO: 实现SVM的多分类版本：
 """参考：https://blog.csdn.net/xfchen2/article/details/79621396
@@ -23,34 +24,21 @@ from six.moves import cPickle as pickle
           同时负样本个数远远超过正样本个数，产生样本不平衡，需要引入不同的惩罚因子解决不平衡问题
 """
 
-#class SVMParams:
-#    def __init__(self, dataSet, labels, C, toler, kernel_option):
-#        self.train_x = dataSet # 训练特征
-#        self.train_y = labels  # 训练标签
-#        self.C = C # 惩罚参数
-#        self.toler = toler     # 迭代的终止条件之一
-#        self.n_samples = np.shape(dataSet)[0] # 训练样本的个数
-#        self.alphas = np.mat(np.zeros((self.n_samples, 1))) # 拉格朗日乘子
-#        self.b = 0
-#        self.error_tmp = np.mat(np.zeros((self.n_samples, 2))) # 保存E的缓存
-#        self.kernel_opt = kernel_option # 选用的核函数及其参数
-#        self.kernel_mat = calc_kernel(self.train_x, self.kernel_opt) # 核函数的输出 (270, 270)，每个样本跟其他样本都做一次升维和内积计算
-
-class SVMReg():
+class SVMReg(BaseModel):
     
     def __init__(self, feats, labels, C, toler, max_iter, kernel_option=('rbf', 0.431029)):
         super().__init__(feats, labels)
-        self.train_x = feats # 训练特征
-        self.train_y = labels  # 训练标签
-        self.C = C # 惩罚参数
-        self.toler = toler     # 迭代的终止条件之一
+        self.train_x = feats 
+        self.train_y = labels 
+        self.C = C 
+        self.toler = toler 
         self.max_iter = max_iter
-        self.n_samples = np.shape(feats)[0] # 训练样本的个数
-        self.alphas = np.mat(np.zeros((self.n_samples, 1))) # 拉格朗日乘子
+        self.n_samples = np.shape(feats)[0] 
+        self.alphas = np.mat(np.zeros((self.n_samples, 1)))        # (n_sample, 1)
         self.b = 0
-        self.error_tmp = np.mat(np.zeros((self.n_samples, 2))) # 保存E的缓存
-        self.kernel_opt = kernel_option # 选用的核函数及其参数
-        self.kernel_mat = self.calc_kernel(self.train_x, self.kernel_opt) # 核函数的输出 (270, 270)，每个样本跟其他样本都做一次升维和内积计算
+        self.error_tmp = np.mat(np.zeros((self.n_samples, 2)))     # (n_sample, 2) 2代表
+        self.kernel_opt = kernel_option
+        self.kernel_mat = self.calc_kernel(self.train_x, self.kernel_opt)  # 核函数的输出 (n_sample, n_sample)，每个样本跟其他样本都做一次升维和内积计算
     
     def calc_kernel(self, train_x, kernel_option):
         '''计算核函数矩阵
@@ -87,20 +75,7 @@ class SVMReg():
             kernel_value = train_x * train_x_i.T
         return kernel_value
     
-    def train(self):
-        '''SVM的训练
-        input:  train_x(mat):训练数据的特征
-                train_y(mat):训练数据的标签
-                C(float):惩罚系数
-                toler(float):迭代的终止条件之一
-                max_iter(int):最大迭代次数
-                kerner_option(tuple):核函数的类型及其参数
-        output: svm模型
-        '''
-        # 1、初始化SVM分类器
-#        svm = SVM(train_x, train_y, C, toler, kernel_option)
-        
-        # 2、开始训练
+    def train(self):       
         entireSet = True
         alpha_pairs_changed = 0
         iteration = 0

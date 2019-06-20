@@ -7,6 +7,7 @@ Created on Tue Jun 11 14:50:44 2019
 """
 
 from dataset.heart_scale_dataset import HeartScaleDataset
+from dataset.nonlinear_dataset import NonlinearDataset
 from core.svm_reg_lib import SVMReg
 from sklearn.model_selection import train_test_split
 import numpy as np
@@ -21,21 +22,37 @@ if __name__ == "__main__":
         dataset = HeartScaleDataset(filename)
         
         x = dataset.datas    # (270, 13)
-        y = dataset.labels   # (270,)
-        train_x, test_x, train_y, test_y = train_test_split(x, y, test_size=0.2)
+        y = dataset.labels   # (270,)   取值1, -1
+        train_x, test_x, train_y, test_y = train_test_split(x, y, test_size=0.2) # (n, 13) (n,)
         
-        svm = SVMReg(np.mat(train_x), np.mat(train_y).T)
-        svm.train(alpha=0.5, n_epoch=10000, batch_size=64)
+        svm = SVMReg(np.mat(train_x), np.mat(train_y).T, 
+                     C=5, toler=0.001, max_iter=500, 
+                     kernel_option=('rbf', 0.45))
+        svm.train()
         acc = svm.cal_accuracy(train_x, train_y)
+        print('training acc = %f'%(acc))
         
-#        print('W = ', soft.W)
-#        acc = soft.evaluation(test_x, test_y)
-#        print('acc on test data is: %f'% acc)
-#        
-#        sample = np.array([2,8])
-#        label, prob = soft.classify(sample)
-#        print('one sample predict label = %d, probility = %f'% (label, prob))
-    
+        acc2 = svm.cal_accuracy(test_x, test_y)
+        print('test acc = %f'%(acc2))
+        
 
+    if dataset == 'nonlinear':
+        
+        dataset = NonlinearDataset(type= 'moon', n_samples=300, noise=0.1)
+        x = dataset.datas
+        y = dataset.labels
+        train_x, test_x, train_y, test_y = train_test_split(x, y, test_size=0.3) # (n, 13) (n,)
+        
+        svm = SVMReg(np.mat(train_x), np.mat(train_y).T, 
+                     C=5, toler=0.001, max_iter=500, 
+                     kernel_option=('rbf', 0.45))
+        svm.train()
+        acc = svm.cal_accuracy(train_x, train_y)
+        print('training acc = %f'%(acc))
+        
+        acc2 = svm.cal_accuracy(test_x, test_y)
+        print('test acc = %f'%(acc2))
+        
+        
 
         
