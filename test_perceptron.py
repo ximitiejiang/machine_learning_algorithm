@@ -24,6 +24,10 @@ if __name__ == "__main__":
         data = pd.read_csv(filename, sep='\t').values
         x = data[:,0:2]
         y = data[:,-1]
+        # 变换标签[1,0]->[1,-1]
+        for i, label in enumerate(y):
+            if label == 0:
+                y[i] = -1
         train_x, test_x, train_y, test_y = train_test_split(x, y, test_size=0.2)
         
         perc = Perceptron(train_x, train_y)
@@ -31,6 +35,8 @@ if __name__ == "__main__":
         print('W = ', perc.W)
         acc = perc.evaluation(test_x, test_y)
         print('acc on test data is: %f'% acc)
+        
+        perc.vis_boundary()
     
     if dataset == '2class2':
         # acc = 0.95@lr0.01/batch1/w0/norm
@@ -38,6 +44,10 @@ if __name__ == "__main__":
         data = pd.read_csv(filename, sep='\t').values
         x = data[:,0:2]
         y = data[:,-1]
+        # 变换标签[1,0]->[1,-1]
+        for i, label in enumerate(y):
+            if label == 0:
+                y[i] = -1
         train_x, test_x, train_y, test_y = train_test_split(x, y, test_size=0.2)
         
         perc = Perceptron(train_x, train_y)
@@ -45,6 +55,8 @@ if __name__ == "__main__":
         print('W = ', perc.W)
         acc = perc.evaluation(test_x, test_y)
         print('acc on test data is: %f'% acc)
+        
+        perc.vis_boundary()
     
     if dataset == 'mnist':        # 必须特征归一化，同时w必须初始化为0，否则会导致inf问题
         # acc = 0.985@lr0.00001/batch8/w0/norm

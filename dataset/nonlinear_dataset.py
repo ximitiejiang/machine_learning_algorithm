@@ -31,7 +31,7 @@ class NonlinearDataset(BaseDataset):
             pass
         else:  # 如果指定了标签变换dict
             assert isinstance(label_transform_dict, dict), 'the label_transform_dict should be a dict.' 
-            for i, label in enumerate(range(len(self.labels))):
+            for i, label in enumerate(self.labels):
                 new_label = label_transform_dict[label]
                 self.labels[i] = int(new_label)   # 比如{1:1, 0:-1}就是要把1变为1, 0变为-1
             

@@ -23,6 +23,12 @@ class Perceptron(BaseModel):
             labels(numpy): (n_samples,)
         """
         super().__init__(feats, labels)
+        
+        # assert labels are [-1, 1]
+        label_set = set(self.labels)
+        for label in label_set:
+            if label != 1 and label != -1:
+                raise ValueError('labels should be 1 or -1.')
     
     def get_batch_data(self, feats, labels, batch_size=16, type='shuffle'):
         """从特征数据中提取batch size个特征，并组合成一个特征数据
@@ -100,7 +106,7 @@ class Perceptron(BaseModel):
         self.trained = True
         print('training finished, with %f seconds.'%(time.time() - start))
      
-    def classify(self, single_sample_feats):
+    def predict_single(self, single_sample_feats):
         """ 单样本预测
         Args:
             data(numpy): (1, m_feats) or (m_feats,)，如果是(m,n)则需要展平
@@ -136,7 +142,7 @@ class Perceptron(BaseModel):
         total_sample = len(test_feats)
         start = time.time()
         for feat, label in zip(test_feats, test_labels_new):
-            pred_label = self.classify(feat)
+            pred_label = self.predict_single(feat)
             if int(pred_label) == int(label):
                 correct += 1
         acc = correct / total_sample

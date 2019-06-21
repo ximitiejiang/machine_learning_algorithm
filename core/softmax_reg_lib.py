@@ -87,7 +87,7 @@ class SoftmaxReg(BaseModel):
         self.trained = True
         print('training finished, with %f seconds.'%(time.time() - start))
         
-    def classify(self, single_sample_feats):
+    def predict_single(self, single_sample_feats):
         """ 单样本预测
         Args:
             data(numpy): (1, m_feats) or (m_feats,)，如果是(m,n)则需要展平
@@ -98,11 +98,12 @@ class SoftmaxReg(BaseModel):
         assert isinstance(single_sample_feats, np.ndarray), 'data should be ndarray.'
         assert (single_sample_feats.shape[0]==1 or single_sample_feats.ndim==1), 'data should be flatten data like(m,) or (1,m).'
         assert self.trained, 'model didnot trained, can not classify without pretrained params.'
+        
         single_sample_feats = np.concatenate([np.array([1]), single_sample_feats]).reshape(1,-1)
         probs = self.softmax(np.dot(single_sample_feats, self.W))  # w*x
         label = np.argmax(probs)   # 获得最大概率所在位置，即标签(所以也要求标签从0开始 0~n)
-        label_prob = probs[0,label]
-        return label, label_prob
+#        label_prob = probs[0,label]
+        return label
     
 
 

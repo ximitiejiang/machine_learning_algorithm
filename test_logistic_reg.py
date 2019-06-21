@@ -30,6 +30,8 @@ if __name__ == "__main__":
         acc = logs.evaluation(test_x, test_y)
         print('acc on test data is: %f'% acc)
         
+        logs.vis_boundary()
+        
     if dataset == '2class2':  # TODO: loss curve still need optimize
         import pandas as pd       
         filename = './dataset/simple/2classes_data_2.txt'  # 一个简单的2个特征的2分类数据集
@@ -43,6 +45,8 @@ if __name__ == "__main__":
         print('W = ', logs.W)
         acc = logs.evaluation(test_x, test_y)
         print('acc on test data is: %f'% acc)    
+        
+        logs.vis_boundary()
         
     if dataset == 'mnist':      
         # acc = 0.98@lr0.001/batch128/w0/norm

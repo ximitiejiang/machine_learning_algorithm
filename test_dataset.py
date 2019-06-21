@@ -47,9 +47,9 @@ from dataset.heart_scale_dataset import HeartScaleDataset
 #mn.show(idx)
 
 # 6
-#mc = MultiClassDataset(100, 4, 2)
-#data, label = mc[10]                     
-#mc.statistics()  
+mc = MultiClassDataset(100, 4, 2)
+data, label = mc[10]                     
+mc.statistics()  
 
 # 7
 #nl = NonlinearDataset('moon', 100, 0.05)

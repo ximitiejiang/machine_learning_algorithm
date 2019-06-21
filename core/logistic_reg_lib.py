@@ -65,7 +65,7 @@ class LogisticReg(BaseModel):
         self.trained = True
         print('training finished, with %f seconds.'%(time.time() - start))
         
-    def classify(self, single_sample_feats):
+    def predict_single(self, single_sample_feats):
         """ 单样本预测
         Args:
             data(numpy): (1, m_feats) or (m_feats,)，如果是(m,n)则需要展平
@@ -79,7 +79,7 @@ class LogisticReg(BaseModel):
         single_sample_feats = np.concatenate([np.array([1]), single_sample_feats]).reshape(1,-1)
         probs = self.sigmoid(np.dot(single_sample_feats, self.W))  # w*x
         probs_to_label = ((probs > 0.5)+0)[0,0]   # 概率转换成标签0,1: 大于0.5为True, +0把True转换成1, 提取[0,0]
-        return probs_to_label, probs[0,0]
+        return probs_to_label
 
     
     

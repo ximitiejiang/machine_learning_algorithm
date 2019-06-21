@@ -5,6 +5,7 @@ trying to build a clear, modular, easy-to-use-and-modify machine learning librar
 As this is a simplified machine learning algorithm implement, the accuracy is not the main factor to be considered, but it can be taken as a baseline, a better acc result is possible to get by optimizing the training hyper params.
 
 ### update
+- 2019/06/21 add svm algorithm
 - 2019/06/15 add perceptron algorithm
 - 2019/06/14 add softmax regression algorithm
 - 2019/06/12 add logistic regression algorithm
@@ -56,36 +57,41 @@ sm.vis_points_line()
 ```
 
 ### PART 1. knn classifier
-
+<div align=center><img src="https://github.com/ximitiejiang/machine_learning_algorithm/blob/master/demo/knn.png"/></div>
 feature: no model weight, support two-classes-classification and multi-classes-classification.
 <br>test code: [test_knn](https://github.com/ximitiejiang/machine_learning_algorithm/blob/master/test_knn.py)
 <br>source code: [knn_reg_lib](https://github.com/ximitiejiang/machine_learning_algorithm/blob/master/core/knn_lib.py)
 
 ### PART 2. logistic regression classifier
-
+<div align=center><img src="https://github.com/ximitiejiang/machine_learning_algorithm/blob/master/demo/logistic.png"/></div>
 feature: with model weight(n_feat+1, 1), only support two-classes-classification.
 <br>test code: [test_logistic_reg](https://github.com/ximitiejiang/machine_learning_algorithm/blob/master/test_logistic_reg.py)
 <br>source code: [logistic_reg_lib](https://github.com/ximitiejiang/machine_learning_algorithm/blob/master/core/logistic_reg_lib.py)
 
 ### PART 3. softmax regression classifier
-
+<div align=center><img src="https://github.com/ximitiejiang/machine_learning_algorithm/blob/master/demo/softmax.png"/></div>
 feature: with model weight(n_feat+1, n_class), support two-classes-classification and multi-classes-classification
 <br>test code: [test_softmax_reg](https://github.com/ximitiejiang/machine_learning_algorithm/blob/master/test_softmax_reg.py)
 <br>source code: [softmax_reg_lib](https://github.com/ximitiejiang/machine_learning_algorithm/blob/master/core/softmax_reg_lib.py)
 
 ### PART 4. perceptron classifier
-
+<div align=center><img src="https://github.com/ximitiejiang/machine_learning_algorithm/blob/master/demo/perceptron.png"/></div>
 feature: with model weight(n_feat+1, 1), only support two-classes-classification
 <br>test code: [test_perceptron](https://github.com/ximitiejiang/machine_learning_algorithm/blob/master/test_perceptron.py)
 <br>source code: [perceptron_lib](https://github.com/ximitiejiang/machine_learning_algorithm/blob/master/core/perceptron_lib.py)
 
 ### PART 5. svm classifier
-
+<div align=center><img src="https://github.com/ximitiejiang/machine_learning_algorithm/blob/master/demo/svm.png"/></div>
 feature: with model weight, only support two-classes-classification
 <br>test code: [test_svm](https://github.com/ximitiejiang/machine_learning_algorithm/blob/master/test_svm.py)
 <br>source code: [svm_lib](https://github.com/ximitiejiang/machine_learning_algorithm/blob/master/core/svm_lib.py)
 
-### PART 6
+### PART 6. CART classifier
+feature:
+<br>test code: [test_cart](https://github.com/ximitiejiang/machine_learning_algorithm/blob/master/test_cart.py)
+<br>source code: [cart_lib](https://github.com/ximitiejiang/machine_learning_algorithm/blob/master/core/cart_lib.py)
+
+### PART 7. naive bayes classifier 
 
 to be update ...
 
