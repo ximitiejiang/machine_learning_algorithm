@@ -54,10 +54,10 @@ class Perceptron(BaseModel):
         else:
             return -1   
     
-    def train(self, alpha=0.001, n_epoch=500, batch_size=1):
+    def train(self, lr=0.001, n_epoch=500, batch_size=1):
         """feats(x1,x2,..xn) -> feats(1,x1,x2,..xn)
         Args:
-            alpha(float): 梯度下降步长
+            lr(float): 梯度下降步长
             n_epoch(inf): 循环训练轮数
         """                  
         assert batch_size <= len(self.labels), 'too big batch size, should be smaller than dataset size.'
@@ -95,7 +95,7 @@ class Perceptron(BaseModel):
             # gradient
             gradient = sum_gradient / n_wrong if n_wrong !=0 else 0  # (f_feat+1, 1) 梯度平均
             # update weight
-            self.W -= alpha * gradient
+            self.W -= lr * gradient
             
         self.vis_loss(self.losses)
         if self.feats.shape[1] == 2:

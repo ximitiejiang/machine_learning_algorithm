@@ -34,10 +34,10 @@ class SoftmaxReg(BaseModel):
         x_prob = x_exp / x_sum_repeat
         return x_prob
         
-    def train(self, alpha=0.001, n_epoch=500, batch_size=16):
+    def train(self, lr=0.001, n_epoch=500, batch_size=16):
         """feats(x1,x2,..xn) -> feats(1,x1,x2,..xn)
         Args:
-            alpha(float): 梯度下降步长
+            lr(float): 梯度下降步长
             n_epoch(inf): 循环训练轮数
         """
         assert batch_size <= len(self.labels), 'too big batch size, should be smaller than dataset size.'
@@ -76,7 +76,7 @@ class SoftmaxReg(BaseModel):
                 _probs[j, label] += 1   # 正样本则为1-p, 负样本不变依然是-p    
             gradient = - np.dot(batch_feats.transpose(), _probs)  # (135,3).T * (135,4) -> (3,4), grad = -x*(I-y')   
             # update Weights
-            self.W -= alpha * gradient * (1/batch_size)   # W(3,4) - (a/n)*(3,4), 因前面计算梯度时我采用的负号，这里就应该是w = w-alpha*grad
+            self.W -= lr * gradient * (1/batch_size)   # W(3,4) - (a/n)*(3,4), 因前面计算梯度时我采用的负号，这里就应该是w = w-lr*grad
         
         self.vis_loss(self.losses)
         if self.feats.shape[1] == 2:

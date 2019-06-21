@@ -27,7 +27,7 @@ if __name__ == "__main__":
         train_x, test_x, train_y, test_y = train_test_split(x, y, test_size=0.2)
         
         soft = SoftmaxReg(train_x, train_y)
-        soft.train(alpha=0.5, n_epoch=1000, batch_size=64)  # 在学习率0.5下精度在0.8-0.9之间，太小学习率导致精度下降
+        soft.train(lr=0.5, n_epoch=1000, batch_size=64)  # 在学习率0.5下精度在0.8-0.9之间，太小学习率导致精度下降
         print('W = ', soft.W)
         acc = soft.evaluation(test_x, test_y)
         print('acc on test data is: %f'% acc)
@@ -45,7 +45,7 @@ if __name__ == "__main__":
         
         # get model
         soft = SoftmaxReg(train_feats, train_labels)
-        soft.train(alpha=0.0001, n_epoch=10, batch_size=32)
+        soft.train(lr=0.0001, n_epoch=10, batch_size=32)
         
         # evaluation
         acc = soft.evaluation(test_feats, test_labels)
@@ -58,7 +58,7 @@ if __name__ == "__main__":
         
         # get model
         soft = SoftmaxReg(train_feats, train_labels)
-        soft.train(alpha=0.0001, n_epoch=1000, batch_size=16)
+        soft.train(lr=0.0001, n_epoch=1000, batch_size=16)
         
         # evaluation
         acc = soft.evaluation(test_feats, test_labels)

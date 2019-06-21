@@ -25,8 +25,10 @@ class BaseModel():
         self.feats = feats
         self.labels = labels.astype(np.int8)
         self.trained = False
+        self.model_dict = {}
+        self.norm = norm
         
-        if norm:
+        if self.norm:
             self.feats = scale(self.feats)
     
     def get_batch_data(self, feats, labels, batch_size=16, type='shuffle'):
@@ -53,7 +55,8 @@ class BaseModel():
     def evaluation(self, test_feats, test_labels):
         """评价整个验证数据集
         """
-        test_feats = scale(test_feats)
+        if self.norm:
+            test_feats = scale(test_feats)
         
         correct = 0
         total_sample = len(test_feats)
@@ -127,15 +130,26 @@ class BaseModel():
         plt.title('predict boundary of the test data')
         
     
-    def save(self, path='./'):
-        if self.trained:
+    def save(self, path='./demo'):
+        """保存模型，统一保存到字典model_dict中，但需要预先准备model_dict的数据
+        """
+        if self.trained and self.model_dict:  # 已训练，且model_dict不为空
             time1 = datetime.datetime.now()
-            path = path + 'softmax_reg_weight_' + datetime.datetime.strftime(time1,'%Y%m%d_%H%M%S')
-            with open(path, 'w') as f:
-                pickle.dump(self.W, f)
+            path = path + self.model_dict['model_name'] + '_' + datetime.datetime.strftime(time1,'%Y%m%d_%H%M%S') + '.pkl'
+            with open(path, 'wb') as f:
+                pickle.dump(self.model_dict, f)
+        else:
+            raise ValueError('can not save model due to empty model_dict or not training.')
             
-    def load(self, path):
+    def load(self, path=None):
         if os.path.isfile(path):
-            with open(path, 'r') as f:
-                self.W = pickle.load(f)
+            with open(path, 'rb') as f:
+                self.model_dict = pickle.load(f)
+        else:
+            raise ValueError('model_dict does not existed in current path.')
+        for key, value in self.model_dict.items():
+            exec('self.' + key + '=value', {'self':self, 'value':value})
         self.trained = True
+        
+        
+        

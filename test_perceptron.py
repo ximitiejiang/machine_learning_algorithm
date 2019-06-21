@@ -31,7 +31,7 @@ if __name__ == "__main__":
         train_x, test_x, train_y, test_y = train_test_split(x, y, test_size=0.2)
         
         perc = Perceptron(train_x, train_y)
-        perc.train(alpha=0.01, n_epoch=100, batch_size=1)
+        perc.train(lr=0.01, n_epoch=100, batch_size=1)
         print('W = ', perc.W)
         acc = perc.evaluation(test_x, test_y)
         print('acc on test data is: %f'% acc)
@@ -51,7 +51,7 @@ if __name__ == "__main__":
         train_x, test_x, train_y, test_y = train_test_split(x, y, test_size=0.2)
         
         perc = Perceptron(train_x, train_y)
-        perc.train(alpha=0.01, n_epoch=1000, batch_size=1)
+        perc.train(lr=0.01, n_epoch=1000, batch_size=1)
         print('W = ', perc.W)
         acc = perc.evaluation(test_x, test_y)
         print('acc on test data is: %f'% acc)
@@ -65,7 +65,7 @@ if __name__ == "__main__":
         
         # get model
         soft = Perceptron(train_feats, train_labels)
-        soft.train(alpha=0.00001, n_epoch=10, batch_size=8)
+        soft.train(lr=0.00001, n_epoch=10, batch_size=8)
         
         # evaluation
         acc = soft.evaluation(test_feats, test_labels)
@@ -78,7 +78,7 @@ if __name__ == "__main__":
         
         # get model
         soft = Perceptron(train_feats, train_labels)
-        soft.train(alpha=0.0001, n_epoch=1000, batch_size=64)
+        soft.train(lr=0.0001, n_epoch=1000, batch_size=64)
         
         # evaluation
         acc = soft.evaluation(test_feats, test_labels)

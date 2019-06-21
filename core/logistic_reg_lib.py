@@ -27,10 +27,10 @@ class LogisticReg(BaseModel):
         return 1.0/(1+np.exp(-x))    
     
     
-    def train(self, alpha=0.001, n_epoch=500, batch_size=64):
+    def train(self, lr=0.001, n_epoch=500, batch_size=64):
         """feats(x1,x2,..xn) -> feats(1,x1,x2,..xn)
         Args:
-            alpha(float): 梯度下降步长
+            lr(float): 梯度下降步长
             n_epoch(inf): 循环训练轮数
         """
         assert batch_size <= len(self.labels), 'too big batch size, should be smaller than dataset size.'
@@ -56,7 +56,7 @@ class LogisticReg(BaseModel):
                 print('iter: %d / %d, loss: %f'%(i, n_iter, loss))
                 
             gradient = - np.dot(batch_feats.transpose(), (batch_labels - probs))  # grad = -(y-y')*x, (3,n)dot((n,1)-(n,1))->(3,n)dot(n,1)->(3,)
-            self.W -= alpha * gradient   # W(m,1), gradient(m,1)
+            self.W -= lr * gradient   # W(m,1), gradient(m,1)
         
         self.vis_loss(self.losses)
         if self.feats.shape[1] == 2:  # 如果是二维特征则显示分割直线

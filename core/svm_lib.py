@@ -124,6 +124,13 @@ class SVMC(BaseModel):
                 entireSet = True
         
         self.trained = True
+        # prepare model_dict for saving
+        self.model_dict['model_name'] = 'SVMC'
+        self.model_dict['feats'] = self.feats
+        self.model_dict['labels'] = self.labels
+        self.model_dict['kernel_opt'] = self.kernel_opt
+        self.model_dict['alphas'] = self.alphas
+        self.model_dict['b'] = self.b
                 
     def choose_and_update(self, alpha_i):
         '''判断和选择两个alpha进行更新
@@ -267,7 +274,6 @@ class SVMC(BaseModel):
         predict = kernel_value.T * np.multiply(self.labels, self.alphas) + self.b
         return np.sign(predict)
         
-    
     def cal_accuracy(self, test_x, test_y):
         '''计算预测的准确性
         input:  svm:SVM模型
