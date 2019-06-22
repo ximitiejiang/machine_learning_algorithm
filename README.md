@@ -59,7 +59,8 @@ sm.vis_points_line()
 
 ### PART 1. knn classifier
 <div align=center><img src="https://github.com/ximitiejiang/machine_learning_algorithm/blob/master/demo/knn.png"/></div>
-feature: 
+
+<br>feature: 
 - no model weight
 - support two-classes-classification and multi-classes-classification.
 - support linear separable features.
@@ -68,7 +69,8 @@ feature:
 
 ### PART 2. logistic regression classifier
 <div align=center><img src="https://github.com/ximitiejiang/machine_learning_algorithm/blob/master/demo/logistic.png"/></div>
-feature: 
+
+<br>feature: 
 - with model weight(n_feat+1, 1).
 - only support two-classes-classification.
 - support linear separable features.
@@ -77,7 +79,8 @@ feature:
 
 ### PART 3. softmax regression classifier
 <div align=center><img src="https://github.com/ximitiejiang/machine_learning_algorithm/blob/master/demo/softmax.png"/></div>
-feature: 
+
+<br>feature: 
 - with model weight(n_feat+1, n_class).
 - support two-classes-classification and multi-classes-classification.
 - support linear separable features.
@@ -86,7 +89,8 @@ feature:
 
 ### PART 4. perceptron classifier
 <div align=center><img src="https://github.com/ximitiejiang/machine_learning_algorithm/blob/master/demo/perceptron.png"/></div>
-feature: 
+
+<br>feature: 
 - with model weight(n_feat+1, 1).
 - only support two-classes-classification.
 - support linear separable features.
@@ -95,7 +99,8 @@ feature:
 
 ### PART 5. svm classifier
 <div align=center><img src="https://github.com/ximitiejiang/machine_learning_algorithm/blob/master/demo/svm.png"/></div>
-feature: 
+
+<br>feature: 
 - with model weight.
 - only support two-classes-classification.
 - support linear separable features and nonlinear separable features.
@@ -103,7 +108,8 @@ feature:
 <br>source code: [svm_lib](https://github.com/ximitiejiang/machine_learning_algorithm/blob/master/core/svm_lib.py).
 
 ### PART 6. naive bayes classifier 
-feature:
+
+<br>feature:
 <br>test code: [test_cart](https://github.com/ximitiejiang/machine_learning_algorithm/blob/master/test_cart.py).
 <br>source code: [cart_lib](https://github.com/ximitiejiang/machine_learning_algorithm/blob/master/core/cart_lib.py).
 
