@@ -17,6 +17,7 @@ As this is a simplified machine learning algorithm implement, the accuracy is no
 - all the algorithms integrated as Class, easy to use and modify.
 - all the datasets integrated as Class, easy to use and modify.
 - all the algorithms are validated on Mnist/Digits.
+- support multi class classify by using multi-class-model_wrapper on top of two-class-classify-model.
 - support training hyper-parameters modify: batch_size change, learning rate change, model save and load.
 - visualization training process: log text and loss curve generation.
 - detailed code explanation.

@@ -10,20 +10,6 @@ import numpy as np
 import matplotlib.pyplot as plt
 from .base_model import BaseModel
 
-# TODO: 实现SVM的多分类版本：
-"""参考：https://blog.csdn.net/xfchen2/article/details/79621396
-1. 多分类方式1：一对一
-   流程：这是libsvm使用的方法，A对B类，A类对C类...B类对C类，B类对D类...C类对D类...分别训练(n-1)*(n-2)...*2个分类器，最后投票决定分类结果
-   优点是：每个分类器都比较容易训练
-   缺点是：如果类别较多会导致单分类器很多，训练和测试时间较长
-
-2. 多分类方式2：一对多
-   流程：A类对剩下B,C,D...B类对剩下A,C,D...,分别训练n_class个分类器，分别测试，对结果去最大值作为分类结果   
-   优点是：子分类器个数相对较少，等于n_class个子分类器
-   缺点是：每个分类器都是以全部样本训练，有多余的成分；
-          同时负样本个数远远超过正样本个数，产生样本不平衡，需要引入不同的惩罚因子解决不平衡问题
-"""
-
 class SVMC(BaseModel):
     """SVMClassify
     

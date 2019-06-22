@@ -28,6 +28,10 @@ class BaseModel():
         self.model_dict = {}
         self.norm = norm
         
+        self.n_classes = len(set(self.labels))
+        self.n_samples = self.feats.shape[0]
+        self.n_feats = self.feats.shape[1]
+        
         if self.norm:
             self.feats = scale(self.feats)
     

@@ -24,8 +24,8 @@ if __name__ == "__main__":
         y = data[:,-1]
         train_x, test_x, train_y, test_y = train_test_split(x, y, test_size=0.2)
         
-        logs = LogisticReg(train_x, train_y)
-        logs.train(lr=0.001, n_epoch=1000, batch_size=64)
+        logs = LogisticReg(train_x, train_y, lr=0.001, n_epoch=1000, batch_size=64)
+        logs.train()
         print('W = ', logs.W)
         acc = logs.evaluation(test_x, test_y)
         print('acc on test data is: %f'% acc)
@@ -40,8 +40,8 @@ if __name__ == "__main__":
         y = data[:,-1]
         train_x, test_x, train_y, test_y = train_test_split(x, y, test_size=0.2)
         
-        logs = LogisticReg(train_x, train_y)
-        logs.train(lr=0.001, n_epoch=1000, batch_size=64)
+        logs = LogisticReg(train_x, train_y, lr=0.001, n_epoch=1000, batch_size=64)
+        logs.train()
         print('W = ', logs.W)
         acc = logs.evaluation(test_x, test_y)
         print('acc on test data is: %f'% acc)    
@@ -54,8 +54,8 @@ if __name__ == "__main__":
         train_feats, test_feats, train_labels, test_labels = train_test_split(dataset.datas, dataset.labels, test_size=0.3)
         
         # get model
-        logi = LogisticReg(train_feats, train_labels)
-        logi.train(lr=0.001, n_epoch=100, batch_size=128)
+        logi = LogisticReg(train_feats, train_labels, lr=0.001, n_epoch=100, batch_size=128)
+        logi.train()
         
         # evaluation
         acc = logi.evaluation(test_feats, test_labels)
@@ -67,8 +67,8 @@ if __name__ == "__main__":
         train_feats, test_feats, train_labels, test_labels = train_test_split(dataset.datas, dataset.labels, test_size=0.3)
         
         # get model
-        logi = LogisticReg(train_feats, train_labels)
-        logi.train(lr=0.001, n_epoch=500, batch_size=128)
+        logi = LogisticReg(train_feats, train_labels, lr=0.001, n_epoch=500, batch_size=128)
+        logi.train()
         
         # evaluation
         acc = logi.evaluation(test_feats, test_labels)
@@ -80,8 +80,8 @@ if __name__ == "__main__":
         train_feats, test_feats, train_labels, test_labels = train_test_split(dataset.datas, dataset.labels, test_size=0.3)
         
         # get model
-        logi = LogisticReg(train_feats, train_labels)
-        logi.train(lr=0.007, n_epoch=100, batch_size=128)
+        logi = LogisticReg(train_feats, train_labels, lr=0.007, n_epoch=100, batch_size=128)
+        logi.train()
         
         # evaluation
         acc = logi.evaluation(test_feats, test_labels)

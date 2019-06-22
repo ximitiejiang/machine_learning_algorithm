@@ -11,7 +11,7 @@ import time
 from .base_model import BaseModel
 
 class LogisticReg(BaseModel):
-    def __init__(self, feats, labels):
+    def __init__(self, feats, labels, lr=0.001, n_epoch=500, batch_size=64):
         """ logistic reg algorithm lib, 当前只支持2分类
         特点：支持二分类，模型参数可保存(n_feat+1, 1)，支持线性可分数据
         
@@ -22,18 +22,18 @@ class LogisticReg(BaseModel):
             labels(numpy): (n_samples,)
         """
         super().__init__(feats, labels)
+        
+        self.lr = lr
+        self.n_epoch = n_epoch
+        self.batch_size = batch_size
     
     def sigmoid(self, x):
         return 1.0/(1+np.exp(-x))    
     
-    
-    def train(self, lr=0.001, n_epoch=500, batch_size=64):
+    def train(self):
         """feats(x1,x2,..xn) -> feats(1,x1,x2,..xn)
-        Args:
-            lr(float): 梯度下降步长
-            n_epoch(inf): 循环训练轮数
         """
-        assert batch_size <= len(self.labels), 'too big batch size, should be smaller than dataset size.'
+        assert self.batch_size <= len(self.labels), 'too big batch size, should be smaller than dataset size.'
         start = time.time()
         feats_with_one = np.concatenate([np.ones((len(self.feats),1)), self.feats], axis=1)  # (n_sample, 1+ n_feats) (1,x1,x2,..xn)
         labels = self.labels.reshape(-1, 1)   # (n_sample, 1)
@@ -41,10 +41,10 @@ class LogisticReg(BaseModel):
         self.losses = []
         
         n_samples = len(self.feats)
-        n_iter = n_epoch * (n_samples // batch_size)        
+        n_iter = self.n_epoch * (n_samples // self.batch_size)        
         for i in range(n_iter):
             batch_feats, batch_labels = self.get_batch_data(
-                feats_with_one, labels, batch_size=batch_size, type='shuffle')
+                feats_with_one, labels, batch_size=self.batch_size, type='shuffle')
             # w0*x0 + w1*x1 +...wn*xn = w0 + w1*x1 +...wn*xn, 然后通过sigmoid函数转换为概率(0-1)
             # (n_sample, 1) 每个样本一个prob(0~1)，也就是作为2分类问题的预测概率
             w_x = np.dot(batch_feats, self.W)  # w*x
@@ -56,7 +56,7 @@ class LogisticReg(BaseModel):
                 print('iter: %d / %d, loss: %f'%(i, n_iter, loss))
                 
             gradient = - np.dot(batch_feats.transpose(), (batch_labels - probs))  # grad = -(y-y')*x, (3,n)dot((n,1)-(n,1))->(3,n)dot(n,1)->(3,)
-            self.W -= lr * gradient   # W(m,1), gradient(m,1)
+            self.W -= self.lr * gradient   # W(m,1), gradient(m,1)
         
         self.vis_loss(self.losses)
         if self.feats.shape[1] == 2:  # 如果是二维特征则显示分割直线
