@@ -50,7 +50,7 @@ class OVOModel(BaseModel):
         self.ovo_models = []
         # 分解数据集
         for i, label in enumerate(label_types): 
-            single_class_idx = labels[labels == label]  # TODO
+            single_class_idx = labels[labels == label]  # TODO: 待debug这部分
             feats_single_class = feats[single_class_idx]
             labels_single_class = labels[single_class_idx]
             
@@ -65,7 +65,7 @@ class OVOModel(BaseModel):
                           'labels': ovo_labels[j],
                           'args': args, 
                           'kwargs': kwargs})
-            ovo_models.append(model)
+            self.ovo_models.append(model)
             
     @staticmethod
     def factorial(num):
@@ -82,7 +82,7 @@ class OVOModel(BaseModel):
             model.train()
             
         self.trained = True
-        self.model_dict['model_name'] = 'ovo_model_' + self.base_model
+        self.model_dict['model_name'] = 'ovo_model_' + self.ovo_models[0].model_dict['model_name']
         self.model_dict['ovo_models'] = self.ovo_models
     
     def predict_single(self, test_x):
@@ -96,35 +96,3 @@ class OVOModel(BaseModel):
         predict = 1
         return predict
     
-#    def evaluation(self, test_feats, test_labels):
-#        correct = 0
-#        total_sample = len(test_feats)
-#        start = time.time()
-#        for feat, label in zip(test_feats, test_labels):
-#            pred_label = self.predict_single(feat)
-#            if int(pred_label) == int(label):
-#                correct += 1
-#        acc = correct / total_sample
-#        print('evaluation finished, with %f seconds.'%(time.time() - start))
-#        return acc
-#    
-#    def save(self, path='./demo'):
-#        """保存模型，统一保存到字典model_dict中，但需要预先准备model_dict的数据
-#        """
-#        if self.trained and self.model_dict:  # 已训练，且model_dict不为空
-#            time1 = datetime.datetime.now()
-#            path = path + self.model_dict['model_name'] + '_' + datetime.datetime.strftime(time1,'%Y%m%d_%H%M%S') + '.pkl'
-#            with open(path, 'wb') as f:
-#                pickle.dump(self.model_dict, f)
-#        else:
-#            raise ValueError('can not save model due to empty model_dict or not training.')
-#            
-#    def load(self, path=None):
-#        if os.path.isfile(path):
-#            with open(path, 'rb') as f:
-#                self.model_dict = pickle.load(f)
-#        else:
-#            raise ValueError('model_dict does not existed in current path.')
-#        for key, value in self.model_dict.items():
-#            exec('self.' + key + '=value', {'self':self, 'value':value})
-#        self.trained = True

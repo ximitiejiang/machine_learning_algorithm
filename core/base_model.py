@@ -28,7 +28,7 @@ class BaseModel():
         self.model_dict = {}
         self.norm = norm
         
-        self.n_classes = len(set(self.labels))
+        self.n_classes = len(set(np.array(self.labels).reshape(-1).tolist())) # 为了同时能处理array和mat, set只能处理list
         self.n_samples = self.feats.shape[0]
         self.n_feats = self.feats.shape[1]
         
@@ -131,7 +131,11 @@ class BaseModel():
         plt.scatter(np.array(self.feats)[:,0], 
                     np.array(self.feats)[:,1], 
                     c = np.array(self.labels).flatten() * 64 + 128)
-        plt.title('predict boundary of the test data')
+        if self.model_dict:
+            model_name = self.model_dict['model_name']
+        else:
+            model_name = 'model'
+        plt.title('predict boundary of ' + model_name)
         
     
     def save(self, path='./demo'):

@@ -15,7 +15,7 @@ import numpy as np
 
 if __name__ == "__main__":
     
-    dataset = 'load'
+    dataset = 'circle'
     
     if dataset == 'heart':
         filename = './dataset/simple/'  # 一个简单的2个特征的多分类数据集
@@ -62,7 +62,7 @@ if __name__ == "__main__":
         
     if dataset == 'circle':
         # acc=0.98@C=5, sigma=0.5
-        dataset = NonlinearDataset(type= 'circle', n_samples=300, noise=0.02, 
+        dataset = NonlinearDataset(type= 'circle', n_samples=300, noise=0.05, 
                                    label_transform_dict={1:1, 0:-1})
         x = dataset.datas
         y = dataset.labels
@@ -71,8 +71,8 @@ if __name__ == "__main__":
         train_x, test_x, train_y, test_y = np.mat(train_x), np.mat(test_x), np.mat(train_y), np.mat(test_y)
         
         svm = SVMC(train_x, train_y.T, 
-                     C=5, toler=0.001, max_iter=500, 
-                     kernel_option=('rbf', 0.5))
+                     C=10, toler=0.001, max_iter=500, 
+                     kernel_option=('rbf', 0.01))
         svm.train()
         acc = svm.cal_accuracy(train_x, train_y.T)
         print('training acc = %f'%(acc))

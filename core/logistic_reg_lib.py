@@ -62,8 +62,13 @@ class LogisticReg(BaseModel):
         if self.feats.shape[1] == 2:  # 如果是二维特征则显示分割直线
             self.vis_points_line(self.feats, labels, self.W)
         
-        self.trained = True
         print('training finished, with %f seconds.'%(time.time() - start))
+        
+        self.trained = True
+        # prepare model_dict for saving
+        self.model_dict['model_name'] = 'LogisticReg'
+        self.model_dict['W'] = self.W
+
         
     def predict_single(self, single_sample_feats):
         """ 单样本预测

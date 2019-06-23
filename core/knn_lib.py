@@ -23,6 +23,9 @@ class KNN(BaseModel):
         """
         super().__init__(feats, labels)
         self._k = k
+        
+        self.model_dict['model_name'] = 'KNN' + '_k' + str(self._k)
+        self.model_dict['k'] = self._k
     
     def predict_single(self, sample_single):
         """

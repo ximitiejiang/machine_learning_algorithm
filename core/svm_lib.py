@@ -44,6 +44,7 @@ class SVMC(BaseModel):
             if label != 1 and label != -1:
                 raise ValueError('labels should be 1 or -1.')
                 
+                
     def calc_kernel(self, feats, kernel_option):
         '''计算核函数矩阵
         input:  feats(mat):训练样本的特征值
@@ -111,7 +112,7 @@ class SVMC(BaseModel):
         
         self.trained = True
         # prepare model_dict for saving
-        self.model_dict['model_name'] = 'SVMC'
+        self.model_dict['model_name'] = 'SVMC'+'_c'+ str(self.C) + '_sigma' + str(self.kernel_opt[1])
         self.model_dict['feats'] = self.feats
         self.model_dict['labels'] = self.labels
         self.model_dict['kernel_opt'] = self.kernel_opt
