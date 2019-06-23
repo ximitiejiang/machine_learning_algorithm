@@ -71,8 +71,8 @@ if __name__ == "__main__":
         train_x, test_x, train_y, test_y = np.mat(train_x), np.mat(test_x), np.mat(train_y), np.mat(test_y)
         
         svm = SVMC(train_x, train_y.T, 
-                     C=10, toler=0.001, max_iter=500, 
-                     kernel_option=('rbf', 0.01))
+                     C=100, toler=0.001, max_iter=500, 
+                     kernel_option=('rbf', 0.5))
         svm.train()
         acc = svm.cal_accuracy(train_x, train_y.T)
         print('training acc = %f'%(acc))

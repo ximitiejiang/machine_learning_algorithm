@@ -11,6 +11,7 @@ import matplotlib.pyplot as plt
 from dataset.digits_dataset import DigitsDataset
 from dataset.multi_class_dataset import MultiClassDataset
 from core.knn_lib import KNN
+from core.kd_tree_lib import KdTree
 
 if __name__ == "__main__":
     
@@ -38,3 +39,12 @@ if __name__ == "__main__":
         
         knn = KNN(dataset.datas, dataset.labels, k=5)
         knn.vis_boundary()
+        
+    if source = 'compare'
+        dataset = MultiClassDataset(n_samples=100, centers=5, n_features=2)
+        x = dataset.datas
+        y = dataset.labels
+#        train_x, test_x, train_y, test_y = train_test_split(x, y, test_size=0.3)
+        
+        kdt = KdTree(dataset.datas, dataset.labels, k=3)
+        kdt.vis_boundary()

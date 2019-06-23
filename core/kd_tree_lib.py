@@ -5,160 +5,78 @@ Created on Mon Jun 10 16:59:16 2019
 
 @author: ubuntu
 """
-import numpy as np
 from .base_model import BaseModel
+from collections import namedtuple
+import numpy as np
 
 
-points = np.array([[-4.6, -10.55],
-                   [-4.96, 12.61],
-                   [1.75, 12.26],
-                   [15.31,-13.16],
-                   [7.83, 15.70],
-                   [14.63, -0.35],
-                   [-6.88, -5.4],
-                   [-2.96, -0.5],
-                   [7.75, -22.68],
-                   [10.8, -5.03],
-                   [1.24, -2.86],
-                   [17.05, -12.79],
-                   [6.27, 5.5]])
-
-class KdTree(BaseModel):
-    
-    def __init__(self, feats, labels):
-        """ kd tree算法: kd是指k dimension tree，也就是把k维特征数据存储到树结构中
-        原理介绍参考：https://www.joinquant.com/view/community/detail/c2c41c79657cebf8cd871b44ce4f5d97
-        https://www.cnblogs.com/lysuns/articles/4710712.html
-                     
-        代码参考：https://github.com/tsoding/kdtree-in-python/blob/master/main.py, 该方法把树放置到一个字典中
-        https://blog.csdn.net/u010551621/article/details/44813299#comments, 该方法是采用node来存放数据
+class KdNode:
+    def __init__(self, axis, point, left, right):
+        """ 存放每一个节点的数据结构，每个节点存放唯一一个样本
         Args:
-            k: 表示要选择的k个近邻
+            axis 决定这个节点以哪一个轴进行分类
+            point 保存这个节点的值
+            left 左节点
+            right 右节点
         """
-        self.k = 2  # k为
-        self.tree = self.build_kdtree(feats)
-
-
-
-class KD_node:
-    def __init__(self, point=None, split=None, LL = None, RR = None):
-        """
-        point:数据点
-        split:划分域
-        LL, RR:节点的左儿子跟右儿子
-        """
+        self.axis = axis
         self.point = point
-        self.split = split
-        self.left = LL
-        self.right = RR
+        self.left = left
+        self.right = right
+        
+def create_kdtree(axis, feats, labels):
+    """创建kdtree存放数据
+    """
     
-def createKDTree(root, data_list):
-    """
-    root:当前树的根节点
-    data_list:数据点的集合(无序)
-    return:构造的KDTree的树根
-    """
-    LEN = len(data_list)
-    if LEN == 0:
-        return
-    #数据点的维度
-    dimension = len(data_list[0])
-    #方差
-    max_var = 0
-    #最后选择的划分域
-    split = 0;
-    for i in range(dimension):
-        ll = []
-        for t in data_list:
-            ll.append(t[i])
-        var = computeVariance(ll)
-        if var > max_var:
-            max_var = var
-            split = i
-    #根据划分域的数据对数据点进行排序
-    data_list.sort(key=lambda x: x[split])
-    #选择下标为len / 2的点作为分割点
-    point = data_list[LEN / 2]
-    root = KD_node(point, split)
-    root.left = createKDTree(root.left, data_list[0:(LEN / 2)])
-    root.right = createKDTree(root.right, data_list[(LEN / 2 + 1):LEN])
-    return root
- 
- 
-def computeVariance(arrayList):
-    """
-    arrayList:存放的数据点
-    return:返回数据点的方差
-    """
-    for ele in arrayList:
-        ele = float(ele)
-    LEN = len(arrayList)
-    array = numpy.array(arrayList)
-    sum1 = array.sum()
-    array2 = array * array
-    sum2 = array2.sum()
-    mean = sum1 / LEN
-    #D[X] = E[x^2] - (E[x])^2
-    variance = sum2 / LEN - mean**2
-    return variance
+    k = feats.shape[1]
+    n_nodes = feats.shape[0]
+    
+    if not feats:    # 如果数据为空，跳出递归
+        return None
+    feats = feats[np.argsort(feats[:, axis])]   # 
+    
 
-def findNN(root, query):
-    """
-    root:KDTree的树根
-    query:查询点
-    return:返回距离data最近的点NN，同时返回最短距离min_dist
-    """
-    #初始化为root的节点
-    NN = root.point
-    min_dist = computeDist(query, NN)
-    nodeList = []
-    temp_root = root
-    ##二分查找建立路径
-    while temp_root:
-        nodeList.append(temp_root)
-        dd = computeDist(query, temp_root.point)
-        if min_dist > dd:
-            NN = temp_root.point
-            min_dist = dd
-        #当前节点的划分域
-        ss = temp_root.split
-        if query[ss] <= temp_root.point[ss]:
-            temp_root = temp_root.left
-        else:
-            temp_root = temp_root.right
-    ##回溯查找
-    while nodeList:
-        #使用list模拟栈，后进先出
-        back_point = nodeList.pop()
-        ss = back_point.split
-        print "back.point = ", back_point.point
-        ##判断是否需要进入父亲节点的子空间进行搜索
-        if abs(query[ss] - back_point.point[ss]) < min_dist:
-            if query[ss] <= back_point.point[ss]:
-                temp_root = back_point.right
-            else:
-                temp_root = back_point.left
- 
-            if temp_root:
-                nodeList.append(temp_root)
-                curDist = computeDist(query, temp_root.point)
-                if min_dist > curDist:
-                    min_dist = curDist
-                    NN = temp_root.point
-    return NN, min_dist
- 
- 
-def computeDist(pt1, pt2):
-    """
-    计算两个数据点的距离
-    return:pt1和pt2之间的距离
-    """
-    sum = 0.0
-    for i in range(len(pt1)):
-        sum = sum + (pt1[i] - pt2[i]) * (pt1[i] - pt2[i])
-    return math.sqrt(sum)
-
-
-if __name__ == "__main__":
-    # 1. 创建kd tree存放特征数据
-    root = creatKDTree()
+class KNN(BaseModel):
+    def __init__(self, feats, labels, k=5):
+        """ knn algorithm lib
+        特点：支持二分类和多分类，无模型参数，支持线性可分和非线性可分数据
+        
+        knn算法通过计算待预测数据与每个样本的距离，提取距离最近的k个样本投票决定待预测样本的类别
+        knn算法没有预训练过程，也没有预训练参数，所以也就没有可保存的模型，都是实时计算距离实时投票实时获得预测结果
+        优点：算法简单，可处理二分类和多分类
+        缺点：没有可训练的参数保存，每次都要实时计算才能进行预测
+        Args:
+            feats(numpy): (n_samples, m_feats)
+            labels(numpy): (n_samples,)
+        """
+        super().__init__(feats, labels)
+        self._k = k
+        
+        self.model_dict['model_name'] = 'KNN' + '_k' + str(self._k)
+        self.model_dict['k'] = self._k
+    
+    def predict_single(self, sample_single):
+        """
+        Args:
+            data(numpy): (1, m_feats) or (m_feats,)，如果是(m,n)则需要展平
+            k(int): number of neibours
+        Returns:
+            label(int)
+        """
+        assert isinstance(sample_single, np.ndarray), 'data should be ndarray.'
+        assert (sample_single.shape[0]==1 or sample_single.ndim==1), 'data should be flatten data like(m,) or (1,m).'
+        assert (self._k % 2 == 1), 'k should be odd number.'
+        # calculate distance
+        tiled_data = np.tile(sample_single, (self.feats.shape[0], 1))           # (n, m)把输入数据堆叠成特征的高度
+        dist = np.sqrt(np.sum((tiled_data - self.feats)**2, axis=1))  # (n,) distances = np.sqrt((xi - x)^2) 
+        
+        # sort distance and vote
+        dist_sort_index = np.argsort(dist)   #(n,)
+        count_dict = {}  # 存储  {标签：个数}
+        for i in range(self._k):  #找最近的k个样本 
+            dist_label = self.labels[dist_sort_index[i]]   # 获得距离对应的标签
+            count_dict[dist_label] = count_dict.get(dist_label, 0) + 1  # 如果有这个距离对应标签key，则个数+1, 否则在0的基础上+1  
+        
+        # get most counted label
+        label, _ = max(zip(count_dict.keys(), count_dict.values()))   # 字典排序
+        return label
