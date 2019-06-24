@@ -15,7 +15,7 @@ import numpy as np
 
 if __name__ == "__main__":
     
-    dataset = 'circle'
+    dataset = 'moon'
     
     if dataset == 'heart':
         filename = './dataset/simple/'  # 一个简单的2个特征的多分类数据集
@@ -71,7 +71,7 @@ if __name__ == "__main__":
         train_x, test_x, train_y, test_y = np.mat(train_x), np.mat(test_x), np.mat(train_y), np.mat(test_y)
         
         svm = SVMC(train_x, train_y.T, 
-                     C=100, toler=0.001, max_iter=500, 
+                     C=10, toler=0.001, max_iter=500, 
                      kernel_option=('rbf', 0.5))
         svm.train()
         acc = svm.cal_accuracy(train_x, train_y.T)
@@ -81,7 +81,7 @@ if __name__ == "__main__":
         print('test acc = %f'%(acc2))
         
         svm.vis_boundary(plot_step=0.05)
-        svm.save(path = './demo')
+        svm.save(path = './demo/')
 
         
     if dataset == 'load':

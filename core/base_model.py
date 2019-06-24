@@ -138,7 +138,7 @@ class BaseModel():
         plt.title('predict boundary of ' + model_name)
         
     
-    def save(self, path='./demo'):
+    def save(self, path='./demo/'):
         """保存模型，统一保存到字典model_dict中，但需要预先准备model_dict的数据
         """
         if self.trained and self.model_dict:  # 已训练，且model_dict不为空
@@ -147,7 +147,7 @@ class BaseModel():
             with open(path, 'wb') as f:
                 pickle.dump(self.model_dict, f)
         else:
-            raise ValueError('can not save model due to empty model_dict or not training.')
+            raise ValueError('can not save model due to empty model_dict or not trained.')
             
     def load(self, path=None):
         if os.path.isfile(path):

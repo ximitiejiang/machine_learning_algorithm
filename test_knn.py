@@ -32,7 +32,7 @@ if __name__ == "__main__":
         plt.imshow(sample.reshape(8,8), cmap='gray')
     
     if source == 'multi':
-        dataset = MultiClassDataset(n_samples=100, centers=5, n_features=2)
+        dataset = MultiClassDataset(n_samples=500, centers=4, n_features=2)
         x = dataset.datas
         y = dataset.labels
 #        train_x, test_x, train_y, test_y = train_test_split(x, y, test_size=0.3)
@@ -40,7 +40,7 @@ if __name__ == "__main__":
         knn = KNN(dataset.datas, dataset.labels, k=5)
         knn.vis_boundary()
         
-    if source = 'compare'
+    if source == 'compare':
         dataset = MultiClassDataset(n_samples=100, centers=5, n_features=2)
         x = dataset.datas
         y = dataset.labels

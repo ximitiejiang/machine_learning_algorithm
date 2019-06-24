@@ -5,6 +5,7 @@ trying to build a clear, modular, easy-to-use-and-modify machine learning librar
 As this is a simplified machine learning algorithm implement, the accuracy is not the main factor to be considered, but it can be taken as a baseline, a better acc result is possible to get by optimizing the training hyper params.
 
 ### update
+- 2019/06/25 add kdtree algorithm
 - 2019/06/21 add svm algorithm
 - 2019/06/15 add perceptron algorithm
 - 2019/06/14 add softmax regression algorithm
@@ -16,7 +17,7 @@ As this is a simplified machine learning algorithm implement, the accuracy is no
 - pure python code to implement all the algorithm.
 - all the algorithms integrated as Class, easy to use and modify.
 - all the datasets integrated as Class, easy to use and modify.
-- all the algorithms are validated on Mnist/Digits.
+- all the algorithms are validated on several datasets(sklearn exist datasets or Mnist/Digits).
 - support multi class classify by using multi-class-model_wrapper on top of two-class-classify-model.
 - support training hyper-parameters modify: batch_size change, learning rate change, model save and load.
 - visualization training process: log text and loss curve generation.
@@ -62,7 +63,7 @@ sm.vis_points_line()
 <br>feature: 
 - no model weight
 - support two-classes-classification and multi-classes-classification.
-- support linear separable features.
+- support linear separable features and nonlinear separable features.
 <br>test code: [test_knn](https://github.com/ximitiejiang/machine_learning_algorithm/blob/master/test_knn.py).
 <br>source code: [knn_reg_lib](https://github.com/ximitiejiang/machine_learning_algorithm/blob/master/core/knn_lib.py).
 <div align=center><img src="https://github.com/ximitiejiang/machine_learning_algorithm/blob/master/demo/knn.png"/></div>
@@ -102,13 +103,22 @@ sm.vis_points_line()
 <br>test code: [test_svm](https://github.com/ximitiejiang/machine_learning_algorithm/blob/master/test_svm.py).
 <br>source code: [svm_lib](https://github.com/ximitiejiang/machine_learning_algorithm/blob/master/core/svm_lib.py).
 <div align=center><img src="https://github.com/ximitiejiang/machine_learning_algorithm/blob/master/demo/svm.png"/></div>
+<div align=center><img src="https://github.com/ximitiejiang/machine_learning_algorithm/blob/master/demo/svm2.png"/></div>
 
-### PART 6. naive bayes classifier 
+### PART 6. kdtree classifier 
+- no model weight
+- support two-classes-classification and multi-classes-classification.
+- support linear separable features and nonlinear separable features.
+<br>test code: [test_knn](https://github.com/ximitiejiang/machine_learning_algorithm/blob/master/test_kdtree.py).
+<br>source code: [knn_reg_lib](https://github.com/ximitiejiang/machine_learning_algorithm/blob/master/core/kdtree_lib.py).
+<div align=center><img src="https://github.com/ximitiejiang/machine_learning_algorithm/blob/master/demo/kdtree.png"/></div>
+
+### PART 7. naive bayes classifier 
 <br>feature:
 <br>test code: [test_cart](https://github.com/ximitiejiang/machine_learning_algorithm/blob/master/test_cart.py).
 <br>source code: [cart_lib](https://github.com/ximitiejiang/machine_learning_algorithm/blob/master/core/cart_lib.py).
 
-### PART 7. CART classifier 
+### PART 8. CART classifier 
 
 to be update ...
 
