@@ -14,7 +14,7 @@ if __name__ == "__main__":
     
     source = 'multi'
     
-    if source == 'test':
+    if source == 'test':  # points from Lihang's book(P42)
         x = np.array([[2., 3.],
                       [5., 4.],
                       [9., 6.],
@@ -40,6 +40,5 @@ if __name__ == "__main__":
         label = kd.predict_single(point)
         print('predict label is: %d'%label)
         
-        # to have a cup of coffee...
         kd.vis_boundary(plot_step=0.5)
 

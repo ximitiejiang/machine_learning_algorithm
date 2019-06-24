@@ -59,7 +59,6 @@ sm.vis_points_line()
 ```
 
 ### PART 1. knn classifier
-
 <br>feature: 
 - no model weight
 - support two-classes-classification and multi-classes-classification.
@@ -106,6 +105,7 @@ sm.vis_points_line()
 <div align=center><img src="https://github.com/ximitiejiang/machine_learning_algorithm/blob/master/demo/svm2.png"/></div>
 
 ### PART 6. kdtree classifier 
+<br>feature:
 - no model weight
 - support two-classes-classification and multi-classes-classification.
 - support linear separable features and nonlinear separable features.
@@ -119,8 +119,14 @@ sm.vis_points_line()
 <br>source code: [cart_lib](https://github.com/ximitiejiang/machine_learning_algorithm/blob/master/core/cart_lib.py).
 
 ### PART 8. CART classifier 
+<br>to be update ...
 
-to be update ...
+### PART 9. OneVSOne classifier
+<br>feature:
+- as a wrapper to transform 2-class classifer to multi-class classifier, can be used on logistic-reg/svm/perceptron 
+<br>test code: [test_cart](https://github.com/ximitiejiang/machine_learning_algorithm/blob/master/test_ovo_model.py).
+<br>source code: [cart_lib](https://github.com/ximitiejiang/machine_learning_algorithm/blob/master/core/multi_class_model_wrapper.py).
+
 
 ### Reference:
 - Machine Learning in Action, Peter Harrington
