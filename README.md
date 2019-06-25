@@ -25,37 +25,51 @@ As this is a simplified machine learning algorithm implement, the accuracy is no
 
 ### usage
 
-- prepare main dataset: digits(from sklearn), mnist(from kaggle)
+- prepare main dataset: mnist(from kaggle), other datasets have been prepared by sklearn or in ./dataset/simple/ folder.
 ```
 python3 setup.sh
 ```
-- train: 
+- train(knn/kdtree don't need to train) 
 ```
 from core.softmax_reg_lib import SoftmaxReg
 sm = SoftmaxReg(feats, labels)
 sm.train()
-sm.save(root='./')
 ```
-- eval:
+- eval a dataset(support all models)
 ```
 from core.softmax_reg_lib import SoftmaxReg
 sm = SoftmaxReg(feats, labels)
 sm.load(path='./softmax_reg_weight_2019-5-1_150341.pkl')
 sm.evaluation(test_feats, test_labels)
 ```
-- test a sample
+- test a sample(support all models)
 ```
 from core.softmax_reg_lib import SoftmaxReg
 sm = SoftmaxReg(feats, labels)
 sm.load(path='./softmax_reg_weight_2019-5-1_150341.pkl')
-sm.classify([-1, 8.5])
+sm.predict_single([-1, 8.5])
 ```
-- visualize the divide hyperplane
+- visualize the linear divide hyperplane(only support logistic_reg/perceptron)
 ```
 from core.softmax_reg_lib import SoftmaxReg
 sm = SoftmaxReg(feats, labels)
 sm.train()
 sm.vis_points_line()
+```
+- visualize the predict boundary(support all models)
+```
+from core.softmax_reg_lib import SoftmaxReg
+sm = SoftmaxReg(feats, labels)
+sm.train()
+sm.vis_boundary()
+```
+- save model(support all models)
+```
+sm.save('save_folder_path')
+```
+- load model(support all models)
+```
+sm.load('model_path')
 ```
 
 ### PART 1. knn classifier
@@ -115,8 +129,8 @@ sm.vis_points_line()
 
 ### PART 7. naive bayes classifier 
 <br>feature:
-<br>test code: [test_cart](https://github.com/ximitiejiang/machine_learning_algorithm/blob/master/test_cart.py).
-<br>source code: [cart_lib](https://github.com/ximitiejiang/machine_learning_algorithm/blob/master/core/cart_lib.py).
+<br>test code: [test_cart](https://github.com/ximitiejiang/machine_learning_algorithm/blob/master/test_naive_bayes.py).
+<br>source code: [cart_lib](https://github.com/ximitiejiang/machine_learning_algorithm/blob/master/core/naive_bayes_lib.py).
 
 ### PART 8. CART classifier 
 <br>to be update ...

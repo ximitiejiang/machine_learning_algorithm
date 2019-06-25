@@ -16,6 +16,7 @@ from dataset.olivetti_faces_dataset import OlivettiFacesDataset
 from dataset.lfw_faces_dataset import LFWPeopleDataset, LFWPairsDataset
 from dataset.heart_scale_dataset import HeartScaleDataset
 from dataset.diabetes_dataset import DiabetesDataset
+from dataset.pima_indians_diabetes_dataset import PimaIndiansDiabetesDataset
 
 # 1
 #bost = BostonHousePriceDataset()
@@ -89,4 +90,9 @@ from dataset.diabetes_dataset import DiabetesDataset
 #db = DiabetesDataset()
 #db.statistics()
 
-
+#13
+db = PimaIndiansDiabetesDataset()
+idx = 15
+data, label = db[idx]
+print('data is: ', data)
+print('label is: %d'%label)

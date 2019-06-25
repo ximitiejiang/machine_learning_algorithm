@@ -12,12 +12,23 @@ import numpy as np
 from dataset.digits_dataset import DigitsDataset
 from dataset.multi_class_dataset import MultiClassDataset
 from dataset.nonlinear_dataset import NonlinearDataset
+from dataset.pima_indians_diabetes import PimaIndiansDiabetesDataset
 from sklearn.model_selection import train_test_split
 from core.naive_bayes_lib import NaiveBayes 
 
 if __name__ == "__main__":
     
-    source = 'multi'
+    source = 'diabetes'
+    
+    if source == 'diabetes':
+        dataset = PimaIndiansDiabetesDataset(path = './dataset/simple/pima_indians_diabetes.csv')
+        x = dataset.datas
+        y = dataset.labels
+        train_x, test_x, train_y, test_y = train_test_split(x, y, test_size=0.3)
+        
+        nb = NaiveBayes(train_x, train_y)
+        nb.evaluation(test_x, test_y)
+        nb.vis_boundary()
     
     if source == 'multi':
         dataset = MultiClassDataset(n_samples=500, centers=4, n_features=2)
@@ -25,7 +36,7 @@ if __name__ == "__main__":
         y = dataset.labels
 #        train_x, test_x, train_y, test_y = train_test_split(x, y, test_size=0.3)
         
-        nb = NaiveBayes(dataset.datas, dataset.labels, k=5)
+        nb = NaiveBayes(dataset.datas, dataset.labels)
         nb.vis_boundary()
     
     if source == 'circle':

@@ -23,8 +23,6 @@ class BaseDataset():
         self.num_classes = len(self.classes)
         self.num_features = self.datas.shape[1]  # 避免有的数据集没有feat_names这个字段
         
-        
-        
     def get_dataset(self):
         raise NotImplementedError('the get_dataset function is not implemented.')
     

@@ -28,7 +28,8 @@ class BaseModel():
         self.model_dict = {}
         self.norm = norm
         
-        self.n_classes = len(set(np.array(self.labels).reshape(-1).tolist())) # 为了同时能处理array和mat, set只能处理list
+        self.classes_list = list(set(np.array(self.labels).reshape(-1).tolist()))
+        self.n_classes = len(self.classes_list)
         self.n_samples = self.feats.shape[0]
         self.n_feats = self.feats.shape[1]
         
