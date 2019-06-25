@@ -15,6 +15,7 @@ from dataset.nonlinear_dataset import NonlinearDataset
 from dataset.olivetti_faces_dataset import OlivettiFacesDataset
 from dataset.lfw_faces_dataset import LFWPeopleDataset, LFWPairsDataset
 from dataset.heart_scale_dataset import HeartScaleDataset
+from dataset.diabetes_dataset import DiabetesDataset
 
 # 1
 #bost = BostonHousePriceDataset()
@@ -47,9 +48,9 @@ from dataset.heart_scale_dataset import HeartScaleDataset
 #mn.show(idx)
 
 # 6
-mc = MultiClassDataset(100, 4, 2)
-data, label = mc[10]                     
-mc.statistics()  
+#mc = MultiClassDataset(100, 4, 2)
+#data, label = mc[10]                     
+#mc.statistics()  
 
 # 7
 #nl = NonlinearDataset('moon', 100, 0.05)
@@ -84,5 +85,8 @@ mc.statistics()
 #hs = HeartScaleDataset()
 #hs.statistics()
 
+# 12
+#db = DiabetesDataset()
+#db.statistics()
 
 

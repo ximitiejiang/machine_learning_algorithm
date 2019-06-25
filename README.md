@@ -121,7 +121,7 @@ sm.vis_points_line()
 ### PART 8. CART classifier 
 <br>to be update ...
 
-### PART 9. OneVSOne classifier
+### PART 9. OneVSOne model wrapper
 <br>feature:
 - as a wrapper to transform 2-class classifer to multi-class classifier, can be used on logistic-reg/svm/perceptron 
 <br>test code: [test_cart](https://github.com/ximitiejiang/machine_learning_algorithm/blob/master/test_ovo_model.py).

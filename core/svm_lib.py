@@ -18,7 +18,7 @@ class SVMC(BaseModel):
         2. label的输入必须是1,-1,这点跟perceptron算法一样
         3. 特征norm=False，否则无法收敛
     """
-    def __init__(self, feats, labels, C, toler, max_iter, kernel_option=('rbf', 0.5)):
+    def __init__(self, feats, labels, C, toler, max_iter, kernel_option=dict(type='rbf', sigma=0.5)):
         assert isinstance(feats, np.matrix) and isinstance(labels, np.matrix), 'feats and labels should be mat.'
         assert labels.ndim ==2 and labels.shape[1] == 1, 'labels should be (n,1) style mat.'
         
@@ -64,20 +64,22 @@ class SVMC(BaseModel):
                 kernel_option(tuple):核函数的类型以及参数
         output: kernel_value(mat):样本之间的核函数的值
         '''
-        kernel_type = kernel_option[0] # 核函数的类型，分为rbf和其他
+        kernel_type = kernel_option['type'] # 核函数的类型，分为rbf和linear
         m = np.shape(feats)[0] # 样本的个数
         
         kernel_value = np.mat(np.zeros((m, 1)))
         
         if kernel_type == 'rbf': # rbf核函数
-            sigma = kernel_option[1]
+            sigma = kernel_option['sigma']
             if sigma == 0:
                 sigma = 1.0
             for i in range(m):
                 diff = feats[i, :] - feats_i   # (2,) - (2,) = (2,)
                 kernel_value[i] = np.exp(diff * diff.T / (-2.0 * sigma**2))
-        else: # 不使用核函数
+        elif kernel_type == 'linear': # 线性核，即不使用核函数
             kernel_value = feats * feats_i.T
+        else:
+            raise ValueError('not supported kernel type: currently only support rbf and linear.')
         return kernel_value
     
     def train(self):       
@@ -112,7 +114,10 @@ class SVMC(BaseModel):
         
         self.trained = True
         # prepare model_dict for saving
-        self.model_dict['model_name'] = 'SVMC'+'_c'+ str(self.C) + '_sigma' + str(self.kernel_opt[1])
+        kernel_str = ''
+        for name, value in self.kernel_opt.items():
+            kernel_str += str(name) + '_' + str(value)
+        self.model_dict['model_name'] = 'SVMC'+'_c'+ str(self.C) + '_' + kernel_str
         self.model_dict['feats'] = self.feats
         self.model_dict['labels'] = self.labels
         self.model_dict['kernel_opt'] = self.kernel_opt

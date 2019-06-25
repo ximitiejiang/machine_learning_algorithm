@@ -35,6 +35,9 @@ class BaseModel():
         if self.norm:
             self.feats = scale(self.feats)
     
+    def label_transform(self):
+        """用于标签变换：从[0, 1] -> [-1,1]"""
+    
     def get_batch_data(self, feats, labels, batch_size=16, type='shuffle'):
         """从特征数据中提取batch size个特征，并组合成一个特征数据
         """
@@ -70,10 +73,8 @@ class BaseModel():
             if int(pred_label) == int(label):
                 correct += 1
         acc = correct / total_sample
-        print('evaluation finished, with %f seconds.'%(time.time() - start))
+        print('evaluation finished, with %f seconds. Accuracy = %f'%((time.time() - start), acc))
         
-        if test_feats.shape[1]==2: # 还没添加首列1，为2个特征
-            self.vis_points_line(test_feats, test_labels, self.W)
         return acc
     
     def vis_loss(self, losses):
