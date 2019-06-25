@@ -58,7 +58,7 @@ P(B|A)代表第一次为正面的前提下再抛一次还为正面的概率。�
 **Q. 偏差与方差的区别**
 <br>偏差就是误差,也就是下图中的bias, 是相对于真值的距离，所以距离真值越远则偏差越大。
 <br>方差就是均值，也就是下图中的Variance, 是相对于均值的距离，所以想对于均值越分散则方差越大。
-<div align=center><img src="https://github.com/ximitiejiang/machine_learning_algorithm/blob/master/demo/svm_c_sigma.png"/></div>
+<div align=center><img src="https://github.com/ximitiejiang/machine_learning_algorithm/blob/master/demo/bias_vs_variance.png"/></div>
 
 ---
 ### 统计学
