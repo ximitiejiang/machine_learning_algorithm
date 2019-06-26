@@ -28,7 +28,7 @@ class BaseModel():
         self.model_dict = {}
         self.norm = norm
         
-        self.classes_list = list(set(np.array(self.labels).reshape(-1).tolist()))
+        self.classes_list = sorted(list(set(np.array(self.labels).reshape(-1).tolist())))  # classes_list为排序从小到大
         self.n_classes = len(self.classes_list)
         self.n_samples = self.feats.shape[0]
         self.n_feats = self.feats.shape[1]
@@ -112,7 +112,7 @@ class BaseModel():
     def vis_boundary(self, plot_step=0.02):
         """可视化分隔边界，可适用于线性可分和非线性可分特征，比较普适
         """
-        assert self.feats.shape[1] == 2, 'feats should be 2 dimention data with 1st. column of 1.'
+        assert self.feats.shape[1] == 2, 'feats should be 2 dimention data.'
         assert self.feats.ndim == 2 # 只能可视化边界二维特征
         xmin, xmax = self.feats[:,0].min(), self.feats[:,0].max()
         ymin, ymax = self.feats[:,1].min(), self.feats[:,1].max()

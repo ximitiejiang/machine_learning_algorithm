@@ -43,6 +43,7 @@ class KdTree(BaseModel):
         assert k <= self.n_nodes, 'num of k should be less than num of samples.'
         
         self.root = self.create_kdtree(0, self.feats, self.labels) # 先创建kdtree存放特征/标签
+        # kdtree不需要训练，直接保存创建的tree作为模型参数
         self.model_dict['model_name'] = 'KdTree' + '_k' + str(self._k)
         self.model_dict['k'] = self._k
         self.model_dict['kdtree'] = self.root
@@ -99,7 +100,7 @@ class KdTree(BaseModel):
                                     else [current_node.right, current_node.left]
             travel(near_point, target_point, nearest_nodes)  # 递归直到最后为None的节点才执行下面的代码
             
-            # 下行递归结束后，改为回退
+            # 递归下行结束后，进入回退阶段
             if len(nearest_nodes) < self._k:    #如果已保存的近邻点数量少于需要的k个，则添加当前点
                 self.add_node(current_point, current_label, target_point, nearest_nodes)
             else:
@@ -112,7 +113,7 @@ class KdTree(BaseModel):
         
         nearest_nodes = []  # 存放近邻点
         travel(self.root, target_point, nearest_nodes)
-        return nearest_nodes[:self._k]   # 最终得到的nearest_nodes个数有可能多于k个，则截取前k个距离最小的即可
+        return nearest_nodes[:self._k]   # 最终得到的nearest_nodes个数有可能多于k个，则截取前k个距离最小的
     
     def add_node(self, point, label, target_point, nearest_nodes):
         """处理要添加的点：计算距离，组合坐标与距离，加入新点，排序

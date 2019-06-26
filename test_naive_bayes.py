@@ -12,54 +12,50 @@ import numpy as np
 from dataset.digits_dataset import DigitsDataset
 from dataset.multi_class_dataset import MultiClassDataset
 from dataset.nonlinear_dataset import NonlinearDataset
-from dataset.pima_indians_diabetes import PimaIndiansDiabetesDataset
+from dataset.pima_indians_diabetes_dataset import PimaIndiansDiabetesDataset
 from sklearn.model_selection import train_test_split
-from core.naive_bayes_lib import NaiveBayes 
+from core.naive_bayes_lib import NaiveBayesContinuous
 
 if __name__ == "__main__":
     
-    source = 'diabetes'
+    source = 'circle'
     
     if source == 'diabetes':
         dataset = PimaIndiansDiabetesDataset(path = './dataset/simple/pima_indians_diabetes.csv')
         x = dataset.datas
         y = dataset.labels
-        train_x, test_x, train_y, test_y = train_test_split(x, y, test_size=0.3)
+        train_x, test_x, train_y, test_y = train_test_split(x, y, test_size=0.2)
         
-        nb = NaiveBayes(train_x, train_y)
-        nb.evaluation(test_x, test_y)
-        nb.vis_boundary()
+        nbc = NaiveBayesContinuous(train_x, train_y, norm=False)
+        nbc.evaluation(train_x, train_y)
+        nbc.evaluation(test_x, test_y)
     
     if source == 'multi':
         dataset = MultiClassDataset(n_samples=500, centers=4, n_features=2)
         x = dataset.datas
         y = dataset.labels
-#        train_x, test_x, train_y, test_y = train_test_split(x, y, test_size=0.3)
+        train_x, test_x, train_y, test_y = train_test_split(x, y, test_size=0.2)
         
-        nb = NaiveBayes(dataset.datas, dataset.labels)
-        nb.vis_boundary()
+        nbc = NaiveBayesContinuous(train_x, train_y, norm=False)
+        nbc.evaluation(test_x, test_y)
+        nbc.vis_boundary(plot_step=0.1)
     
     if source == 'circle':
         # acc=0.98@C=5, sigma=0.5
-        dataset = NonlinearDataset(type= 'circle', n_samples=300, noise=0.05, 
-                                   label_transform_dict={1:1, 0:-1})
+        dataset = NonlinearDataset(type= 'circle', n_samples=300, noise=0.05)
         x = dataset.datas
         y = dataset.labels
         train_x, test_x, train_y, test_y = train_test_split(x, y, test_size=0.3) # (n, 13) (n,)
-        # array to mat
-        train_x, test_x, train_y, test_y = np.mat(train_x), np.mat(test_x), np.mat(train_y), np.mat(test_y)
         
-        nb = NaiveBayes(dataset.datas, dataset.labels, k=5)
-
-        acc = nb.evaluation(train_x, train_y.T)
-        
-        nb.vis_boundary(plot_step=0.05)
+        nbc = NaiveBayesContinuous(train_x, train_y, norm=False)
+        nbc.evaluation(test_x, test_y)
+        nbc.vis_boundary(plot_step=0.1)
     
     if source == 'digits':
         # get dataset
         dataset = DigitsDataset(data_type = 'train')
         # get model
-        nb = NaiveBayes(dataset.datas, dataset.labels)
+        nb = NaiveBayesContinuous(dataset.datas, dataset.labels)
         # get sample
         sample_id = 1507
         sample, label = dataset[sample_id]  # 用第2000个样本做测试

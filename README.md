@@ -5,6 +5,7 @@ trying to build a clear, modular, easy-to-use-and-modify machine learning librar
 As this is a simplified machine learning algorithm implement, the accuracy is not the main factor to be considered, but it can be taken as a baseline, a better acc result is possible to get by optimizing the training hyper params.
 
 ### update
+- 2019/06/26 add naive bayes algorithm
 - 2019/06/25 add kdtree algorithm
 - 2019/06/21 add svm algorithm
 - 2019/06/15 add perceptron algorithm
@@ -129,8 +130,14 @@ sm.load('model_path')
 
 ### PART 7. naive bayes classifier 
 <br>feature:
+- no model weight
+- support two-classes-classification and multi-classes-classification.
+- support linear separable features and nonlinear separable features(but strongly restricted by features distribution).
+- support continuous features and discrete features
 <br>test code: [test_cart](https://github.com/ximitiejiang/machine_learning_algorithm/blob/master/test_naive_bayes.py).
 <br>source code: [cart_lib](https://github.com/ximitiejiang/machine_learning_algorithm/blob/master/core/naive_bayes_lib.py).
+<div align=center><img src="https://github.com/ximitiejiang/machine_learning_algorithm/blob/master/demo/naive_bayes_continuous.png"/></div>
+<div align=center><img src="https://github.com/ximitiejiang/machine_learning_algorithm/blob/master/demo/naive_bayes_continuous2.png"/></div>
 
 ### PART 8. CART classifier 
 <br>to be update ...
