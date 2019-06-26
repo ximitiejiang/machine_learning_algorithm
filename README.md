@@ -73,7 +73,7 @@ sm.save('save_folder_path')
 sm.load('model_path')
 ```
 
-### PART 1. knn classifier
+### PART 1.1 knn classifier
 <br>feature: 
 - no model weight
 - support two-classes-classification and multi-classes-classification.
@@ -82,7 +82,7 @@ sm.load('model_path')
 <br>source code: [knn_reg_lib](https://github.com/ximitiejiang/machine_learning_algorithm/blob/master/core/knn_lib.py).
 <div align=center><img src="https://github.com/ximitiejiang/machine_learning_algorithm/blob/master/demo/knn.png"/></div>
 
-### PART 2. logistic regression classifier
+### PART 1.2 logistic regression classifier
 <br>feature: 
 - with model weight(n_feat+1, 1).
 - only support two-classes-classification.
@@ -91,7 +91,7 @@ sm.load('model_path')
 <br>source code: [logistic_reg_lib](https://github.com/ximitiejiang/machine_learning_algorithm/blob/master/core/logistic_reg_lib.py).
 <div align=center><img src="https://github.com/ximitiejiang/machine_learning_algorithm/blob/master/demo/logistic.png"/></div>
 
-### PART 3. softmax regression classifier
+### PART 1.3 softmax regression classifier
 <br>feature: 
 - with model weight(n_feat+1, n_class).
 - support two-classes-classification and multi-classes-classification.
@@ -100,7 +100,7 @@ sm.load('model_path')
 <br>source code: [softmax_reg_lib](https://github.com/ximitiejiang/machine_learning_algorithm/blob/master/core/softmax_reg_lib.py).
 <div align=center><img src="https://github.com/ximitiejiang/machine_learning_algorithm/blob/master/demo/softmax.png"/></div>
 
-### PART 4. perceptron classifier
+### PART 1.4 perceptron classifier
 <br>feature: 
 - with model weight(n_feat+1, 1).
 - only support two-classes-classification.
@@ -109,7 +109,7 @@ sm.load('model_path')
 <br>source code: [perceptron_lib](https://github.com/ximitiejiang/machine_learning_algorithm/blob/master/core/perceptron_lib.py).
 <div align=center><img src="https://github.com/ximitiejiang/machine_learning_algorithm/blob/master/demo/perceptron.png"/></div>
 
-### PART 5. svm classifier
+### PART 1.5 svm classifier
 <br>feature: 
 - with model weight.
 - only support two-classes-classification.
@@ -119,7 +119,7 @@ sm.load('model_path')
 <div align=center><img src="https://github.com/ximitiejiang/machine_learning_algorithm/blob/master/demo/svm.png"/></div>
 <div align=center><img src="https://github.com/ximitiejiang/machine_learning_algorithm/blob/master/demo/svm2.png"/></div>
 
-### PART 6. kdtree classifier 
+### PART 1.6 kdtree classifier 
 <br>feature:
 - no model weight
 - support two-classes-classification and multi-classes-classification.
@@ -128,7 +128,7 @@ sm.load('model_path')
 <br>source code: [knn_reg_lib](https://github.com/ximitiejiang/machine_learning_algorithm/blob/master/core/kdtree_lib.py).
 <div align=center><img src="https://github.com/ximitiejiang/machine_learning_algorithm/blob/master/demo/kdtree.png"/></div>
 
-### PART 7. naive bayes classifier 
+### PART 1.7 naive bayes classifier 
 <br>feature:
 - no model weight
 - support two-classes-classification and multi-classes-classification.
@@ -139,15 +139,35 @@ sm.load('model_path')
 <div align=center><img src="https://github.com/ximitiejiang/machine_learning_algorithm/blob/master/demo/naive_bayes_continuous.png"/></div>
 <div align=center><img src="https://github.com/ximitiejiang/machine_learning_algorithm/blob/master/demo/naive_bayes_continuous2.png"/></div>
 
-### PART 8. CART classifier 
+### PART 1.8 CART classifier 
 <br>to be update ...
 
-### PART 9. OneVSOne model wrapper
+### PART 1.9 MLP classifier(BP network)
+<br>to be update ...
+
+### PART 1.10 ada boost classifer
+<br>to be update ...
+
+### PART 1.11 random forest classifer
+<br>to be update ...
+
+### PART 1.12 OneVSOne model wrapper
 <br>feature:
 - as a wrapper to transform 2-class classifer to multi-class classifier, can be used on logistic-reg/svm/perceptron 
 <br>test code: [test_cart](https://github.com/ximitiejiang/machine_learning_algorithm/blob/master/test_ovo_model.py).
 <br>source code: [cart_lib](https://github.com/ximitiejiang/machine_learning_algorithm/blob/master/core/multi_class_model_wrapper.py).
 
+### PART 1.13 xgboost classifier
+<br>to be update ...
+
+### PART 2.1 linear regressor
+<br>to be update ...
+
+### PART 3.1 K-means
+<br>to be update ...
+
+### PART 4.1 crf
+<br>to be update ...
 
 ### Reference:
 - Machine Learning in Action, Peter Harrington

@@ -36,8 +36,10 @@ class BaseModel():
         if self.norm:
             self.feats = scale(self.feats)
     
+    # TODO
     def label_transform(self):
         """用于标签变换：从[0, 1] -> [-1,1]"""
+        raise NotImplementedError('the label_transform func is not implemented.')
     
     def get_batch_data(self, feats, labels, batch_size=16, type='shuffle'):
         """从特征数据中提取batch size个特征，并组合成一个特征数据

@@ -11,11 +11,6 @@ from sklearn.preprocessing import scale
 from .base_model import BaseModel
 import time
 
-class NaiveBayesDiscrete():
-    def __init__():
-        """ naive bayes algorithm lib, 朴素贝叶斯离散特征模型：要求特征都是离散性特征，不能有连续值
-        """
-        pass
 
 class NaiveBayesContinuous(BaseModel):
     def __init__(self, feats, labels, norm):
@@ -30,13 +25,13 @@ class NaiveBayesContinuous(BaseModel):
         """
         super().__init__(feats, labels, norm=norm)
         
-        self.classes_mean_dict, self.classes_std_dict = self.divide_and_calc_mean_std()  
+        self.classes_mean_dict, self.classes_std_dict = self.calc_mean_std()  
         # 模型参数准备
         self.model_dict['model_name'] = 'NaiveBayesContinuous'
         self.model_dict['classes_mean'] = self.classes_mean_dict
         self.model_dict['classes_std'] = self.classes_std_dict
         
-    def divide_and_calc_mean_std(self):
+    def calc_mean_std(self):
         """获得训练集的均值和方差，同时按类别分割数据集
         已知self.n_classes, self.classes_list, self.n_samples, self.n_feats
         Return:
@@ -117,6 +112,35 @@ class NaiveBayesContinuous(BaseModel):
         return x_condition_prob
     
 
+class NaiveBayesDiscrete(NaiveBayesContinuous):
+    def __init__(self):
+        """ naive bayes algorithm lib, 朴素贝叶斯离散特征模型：要求特征都是离散性特征，不能有连续值
+        """
+        super().__init__()
+        # 模型参数准备
+        self.model_dict['model_name'] = 'NaiveBayesDiscrete'
     
-
+    def predict_single(self, sample_single):
+        # 计算先验概率
+        prior_prob_dict = self.calc_class_prior_prob()       # 先验概率P(Y=ck)     (n_class, )
+#        x_condition_prob_group = np.zeros((self.n_classes, )) # 条件概率连乘P(Xi=xi|Y=ck)  (n_class, )
+        probs_dict = {}
+        for label in self.classes_list:            
+            # 计算条件概率连乘
+            single_class_mean = self.classes_mean_dict[label]
+            single_class_std = self.classes_std_dict[label]
+            x_condition_prob = self.calc_class_cond_prob(sample_single, 
+                                                         single_class_mean, 
+                                                         single_class_std)
+            # 计算某一类别的P(Y=ck|X=x) = 先验概率P(Y=ck)*条件概率P(Xi=xi|Y=ck)
+            probs_dict[label] = x_condition_prob * prior_prob_dict[label]
+        # 预测
+        _, best_label = sorted(zip(probs_dict.values(), probs_dict.keys()))[-1]
         
+        return best_label
+    
+    def calc_class_cond_prob(self, sample, means, stds):
+        """离散型数据单类别条件概率的计算
+        """
+        # TODO: need finish.
+        pass

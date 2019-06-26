@@ -129,7 +129,6 @@ class KdTree(BaseModel):
         r = result(dist, point, label)
         nearest_nodes.append(r)
         nearest_nodes.sort(key=lambda x: x.dist) 
-
     
     @staticmethod
     def compute_dist(l1, l2):
