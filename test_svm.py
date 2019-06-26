@@ -31,10 +31,10 @@ if __name__ == "__main__":
                      C=5, toler=0.001, max_iter=500, 
                      kernel_option=('rbf', 0.9))
         svm.train()
-        acc = svm.cal_accuracy(train_x, train_y.T)
+        acc = svm.evaluation(train_x, train_y.T)
         print('training acc = %f'%(acc))
         
-        acc2 = svm.cal_accuracy(test_x, test_y.T)
+        acc2 = svm.evaluation(test_x, test_y.T)
         print('test acc = %f'%(acc2))
         
 
@@ -52,10 +52,10 @@ if __name__ == "__main__":
                      C=1, toler=0.001, max_iter=500, 
                      kernel_option=('rbf', 0.45))
         svm.train()
-        acc = svm.cal_accuracy(train_x, train_y.T)
+        acc = svm.evaluation(train_x, train_y.T)
         print('training acc = %f'%(acc))
         
-        acc2 = svm.cal_accuracy(test_x, test_y.T)
+        acc2 = svm.evaluation(test_x, test_y.T)
         print('test acc = %f'%(acc2))
         
         svm.vis_boundary(plot_step=0.05)
@@ -74,10 +74,10 @@ if __name__ == "__main__":
                      C=10, toler=0.001, max_iter=500, 
                      kernel_option=('rbf', 0.5))
         svm.train()
-        acc = svm.cal_accuracy(train_x, train_y.T)
+        acc = svm.evaluation(train_x, train_y.T)
         print('training acc = %f'%(acc))
         
-        acc2 = svm.cal_accuracy(test_x, test_y.T)
+        acc2 = svm.evaluation(test_x, test_y.T)
         print('test acc = %f'%(acc2))
         
         svm.vis_boundary(plot_step=0.05)
@@ -100,7 +100,7 @@ if __name__ == "__main__":
         
         # 不进行训练，直接加载参数进行预测
         svm.load(path = './demo/SVMC_20190621_232511.pkl')
-        acc = svm.cal_accuracy(test_x, test_y.T)
+        acc = svm.evaluation(test_x, test_y.T)
         print('test acc = %f'%(acc))
         svm.vis_boundary(plot_step=0.05)
 

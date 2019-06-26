@@ -20,8 +20,8 @@ class NaiveBayesDiscrete():
 class NaiveBayesContinuous(BaseModel):
     def __init__(self, feats, labels, norm):
         """ naive bayes algorithm lib, 朴素贝叶斯连续特征模型：要求特征都是连续性特征，不能有离散值
-        代码参考：https://blog.csdn.net/u013597931/article/details/81705718(但该代码在连续特征算法中遗漏了乘以先验概率)
-        代码参考：https://blog.csdn.net/u013719780/article/details/78388056 (该代码总体正确)
+        代码参考：https://blog.csdn.net/u013597931/article/details/81705718(该代码结构清楚但在连续特征算法中遗漏了乘以先验概率)
+        代码参考：https://blog.csdn.net/u013719780/article/details/78388056
         特点：没有参数，不需要训练，支持多分类，支持连续性特征
         
         Args:
@@ -30,10 +30,7 @@ class NaiveBayesContinuous(BaseModel):
         """
         super().__init__(feats, labels, norm=norm)
         
-        self.classes_mean_dict, \
-        self.classes_std_dict, \
-        self.classes_feat_dict = self.divide_and_calc_mean_std()  
-        
+        self.classes_mean_dict, self.classes_std_dict = self.divide_and_calc_mean_std()  
         # 模型参数准备
         self.model_dict['model_name'] = 'NaiveBayesContinuous'
         self.model_dict['classes_mean'] = self.classes_mean_dict
@@ -63,7 +60,7 @@ class NaiveBayesContinuous(BaseModel):
                 c_std[i] = np.std(c_feat_dict[label][:,i], ddof = 1) # 计算样本标准差的无偏估计(ddof表示除以n-1而不是n) 
             c_mean_dict[label] = c_mean
             c_std_dict[label] = c_std
-        return c_mean_dict, c_std_dict, c_feat_dict
+        return c_mean_dict, c_std_dict
         
     def predict_single(self, sample_single):
         # 计算先验概率

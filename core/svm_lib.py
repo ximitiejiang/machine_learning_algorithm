@@ -266,7 +266,7 @@ class SVMC(BaseModel):
         predict = kernel_value.T * np.multiply(self.labels, self.alphas) + self.b
         return np.sign(predict)
         
-    def cal_accuracy(self, test_x, test_y):
+    def evaluation(self, test_x, test_y):
         '''计算预测的准确性
         input:  svm:SVM模型
                 test_x(mat):测试的特征
