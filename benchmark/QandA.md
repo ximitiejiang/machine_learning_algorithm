@@ -238,7 +238,9 @@ P(Y=ck|X=x) = argmax P(Y=ck)*连乘积P(Xj=xj|Y=ck)来计算样本属于每个�
 
 ---
 ## PART 7. decision tree classifier
-**Q. 决策树在**
+**Q. CART决策树有什么优缺点？**
+- CART优点：适合于离散数据
+- CART缺点：只能适用于离散数据，不能适用于连续数据
 
 
 

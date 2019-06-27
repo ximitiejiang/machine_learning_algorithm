@@ -23,15 +23,22 @@ class Node:
 class CART(BaseModel):
     
     def __init__(self, feats, labels, norm=False):
+        """CART分类树的特点是：基于gini指数的大小来识别最佳分隔特征，分割后gini指数越小说明这种
+        分割方式更有利于数据的确定性提高。
+        """
         super().__init__(feats, labels, norm=norm)
         
         self.dynamic_feat_id_list = list(np.arange(self.feats.shape[1]))  # 动态特征id，每分一次就去掉分过的feat id
         self.tree = self.create_tree(self.feats, self.labels)
+        
+        # 没有训练，直接保存tree
+        self.model_dict['model_name'] = 'CART classifier'
+        self.model_dict['tree'] = self.tree
     
     def create_tree(self, feats, labels):
         """创建CART树，存储特征
         """
-        current_gini = self.calc_gini(labels)  # 计算当前
+        current_gini = self.calc_gini(labels)  # 计算当前数据集的gini指数
         best_gini = 1
         best_criteria = None
         best_subsets = None
@@ -93,7 +100,6 @@ class CART(BaseModel):
     def calc_gini(self, labels):
         """计算基尼指数：本部分只用于计算单个数据集按类别分的基尼(所以只传入labels即可计算)。
         而多个数据集组合的基尼通过加权计算得到。
-         
         """
         n_samples = labels.shape[0]
         if n_samples == 0:
@@ -105,7 +111,7 @@ class CART(BaseModel):
         return gini
 
     def predict_single(self, sample):
-        
+        """单样本预测"""
         def get_result(sample, tree):
             """递归获得预测结果，嵌套这个递归是为了在predict_single()函数接口上去除tree这个变量"""
             if tree.result != None:  # 当到达叶子节点，则直接返回tree.result作为预测标签
@@ -117,6 +123,7 @@ class CART(BaseModel):
                 else:
                     branch = tree.left
                 return get_result(sample, branch)
+            
         result = get_result(sample, self.tree)
         return result
             
