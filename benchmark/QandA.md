@@ -237,8 +237,8 @@ P(Y=ck|X=x) = argmax P(Y=ck)*连乘积P(Xj=xj|Y=ck)来计算样本属于每个�
 
 
 ---
-## PART 7. CART classifier
-
+## PART 7. decision tree classifier
+**Q. 决策树在**
 
 
 

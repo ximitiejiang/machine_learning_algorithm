@@ -121,7 +121,7 @@ def createTree(data, featName):  # 创建树输入data必须是带label的数据
 # -------------------运行区-------------------------------------------
 if __name__ == '__main__':
     
-    test_id = 2    # 程序运行前，需要指定test_id
+    test_id = 1    # 程序运行前，需要指定test_id
     
     if test_id == 0:  # 调试划分数据集子函数
         filename = 'loan.txt'

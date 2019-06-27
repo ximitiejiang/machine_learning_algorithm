@@ -10,6 +10,7 @@ import numpy as np
 from dataset.multi_class_dataset import MultiClassDataset
 from core.decision_tree_lib import CART, ID3, C45
 from sklearn.model_selection import train_test_split
+import matplotlib.pyplot as plt
 
 if __name__ == "__main__":
     
@@ -27,7 +28,9 @@ if __name__ == "__main__":
         data = np.array(data)     # (200, 2)
         x = data[:,0]
         y = data[:,1]
-        cart = CART(x,y)
+        plt.scatter(x,y)
+        cart = CART(x,y,30,0.3)
+        cart.cal_error()
         point = np.array([4,2])
         label = cart.predict_single(point)
     
