@@ -5,6 +5,7 @@ trying to build a clear, modular, easy-to-use-and-modify machine learning librar
 As this is a simplified machine learning algorithm implement, the accuracy is not the main factor to be considered, but it can be taken as a baseline, a better acc result is possible to get by optimizing the training hyper params.
 
 ### update
+- 2019/06/27 add CART algorithm
 - 2019/06/26 add naive bayes algorithm
 - 2019/06/25 add kdtree algorithm
 - 2019/06/21 add svm algorithm
@@ -142,13 +143,13 @@ sm.load('model_path')
 ### PART 1.8 CART classifier 
 <br>to be update ...
 
+### PART 1.11 random forest classifer
+<br>to be update ...
+
 ### PART 1.9 MLP classifier(BP network)
 <br>to be update ...
 
 ### PART 1.10 ada boost classifer
-<br>to be update ...
-
-### PART 1.11 random forest classifer
 <br>to be update ...
 
 ### PART 1.12 OneVSOne model wrapper

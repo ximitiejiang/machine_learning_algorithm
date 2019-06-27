@@ -17,6 +17,7 @@ from dataset.lfw_faces_dataset import LFWPeopleDataset, LFWPairsDataset
 from dataset.heart_scale_dataset import HeartScaleDataset
 from dataset.diabetes_dataset import DiabetesDataset
 from dataset.pima_indians_diabetes_dataset import PimaIndiansDiabetesDataset
+from dataset.loan_dataset import LoanDataset
 
 # 1
 #bost = BostonHousePriceDataset()
@@ -91,8 +92,15 @@ from dataset.pima_indians_diabetes_dataset import PimaIndiansDiabetesDataset
 #db.statistics()
 
 #13
-db = PimaIndiansDiabetesDataset()
-idx = 15
-data, label = db[idx]
+#db = PimaIndiansDiabetesDataset()
+#idx = 15
+#data, label = db[idx]
+#print('data is: ', data)
+#print('label is: %d'%label)
+
+# 14
+loan = LoanDataset()
+idx = 10
+data, label = loan[idx]
 print('data is: ', data)
 print('label is: %d'%label)
