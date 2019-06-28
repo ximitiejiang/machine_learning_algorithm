@@ -22,7 +22,7 @@ class SVMC(BaseModel):
         assert isinstance(feats, np.matrix) and isinstance(labels, np.matrix), 'feats and labels should be mat.'
         assert labels.ndim ==2 and labels.shape[1] == 1, 'labels should be (n,1) style mat.'
         
-        super().__init__(feats, labels, norm=False)
+        super().__init__(feats, labels, norm=False, label_transform_dict={1:1, 0:-1})
         
         self.feats = np.mat(self.feats)    # scale()函数会把feat从mat变为array，所以这里增加一次变换
         self.labels = np.mat(self.labels)

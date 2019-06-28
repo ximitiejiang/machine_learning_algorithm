@@ -8,15 +8,16 @@ Created on Wed Jun 26 17:37:06 2019
 import numpy as np
 from .base_model import BaseModel
 
-class Node:
+class DTNode:
+    """DTNode代表decision tree node"""
     def __init__(self, feat_id=None, feat_value=None, points=None, labels=None, 
                  right=None, left=None, result=None):
         self.feat_id = feat_id
         self.feat_value = feat_value  
         self.right = right 
         self.left = left
-        self.points = points  
-        self.labels = labels
+        self.points = points  # (optional for leaf)
+        self.labels = labels  # (optional for leaf)
         self.result = result   # 存放最终叶子节点的result
     
 
@@ -25,6 +26,10 @@ class CART(BaseModel):
     def __init__(self, feats, labels, norm=False):
         """CART分类树的特点是：基于gini指数的大小来识别最佳分隔特征，分割后gini指数越小说明这种
         分割方式更有利于数据的确定性提高。
+        1. CART只会生成二叉树，因为判断时只判断等于特征值还是不等于(left分支是等于特征值分支，right分支是不等于特征值分支)
+        2. gini计算只跟label相关，所以可以针对离散特征，也可以针对连续特征。不过对连续特征来说每个特征的取值个数非常多，
+           计算量较大，可以考虑把连续特征离散化减少每个特征的value个数。
+        
         """
         super().__init__(feats, labels, norm=norm)
         
@@ -59,18 +64,21 @@ class CART(BaseModel):
                     best_criteria = (feat_id, value)
                     best_subsets = [(feats_yes, labels_yes), (feats_no, labels_no)]   
         
-        if current_gini > 0 and len(self.dynamic_feat_id_list) > 1:  # 如果当前数据包的gini不等于0且特征数大于1,则继续分解，此时存放中间节点，只有feat_id/feat_value/left/right
+        # 如果当前数据包的gini有下降且特征数大于1,则继续分解，此时存放中间节点，只有feat_id/feat_value/left/right
+        if current_gini - best_gini > 0 and len(self.dynamic_feat_id_list) > 1:  
             self.dynamic_feat_id_list.pop(best_criteria[0])   # 弹出当前作为分割特征的列号feat_id不再作为分割选择
-            return Node(feat_id = best_criteria[0], 
+            return DTNode(feat_id = best_criteria[0], 
                         feat_value = best_criteria[1],
                         left = self.create_tree(*best_subsets[0]),
                         right = self.create_tree(*best_subsets[1]))
                         
-        else:  # 如果当前数据包的gini=0，则说明标签分类已经干净(同种标签)，此时存放叶子节点，只有points/labels
-            return Node(points = feats,
+        else:  # 如果无法再分，此时存放叶子节点，只有points/labels/result
+            labels_count = self.count_quantity(labels)
+            max_result = max(zip(labels_count.values(), 
+                                 labels_count.keys()))
+            return DTNode(points = feats,
                         labels = labels,
-                        result = labels[0])
-                
+                        result = max_result[1])  # 存放label数量最多的标签值
                 
     def count_quantity(self, datas):
         """由于有多处要统计个数，统一写成一个函数
@@ -85,21 +93,27 @@ class CART(BaseModel):
     
     def split_dataset(self, feats, labels, feat_id, value):
         """分割指定的数据子集：小于value的一块，大于value的一块
+        注意：这里跟lihang书上P70所述稍有差别，不是分成(等于value和不等于value)，
+        而是分成(大于等于value和小于value)，因为这样改就可以兼容连续性特征操作。
+        否则连续性特征等于value的子集往往只有1个数，会导致过拟合。
+        (这种按大于等于/小于分割数据集的方法更普遍的应用在几个主要ML repo: 
+        zhaozhiyong, eriklindernoren并用于其中的决策树/随机森林/xgboost算法中)
         Args:
             feats: 被分割的特征
             labels: 被分割的标签
             feat_id: 待分割的特征id
             value: 待分割的特征值
         """
-        feats_yes = feats[feats[:, feat_id] == value]
-        labels_yes = labels[feats[:, feat_id] == value]
-        feats_no = feats[feats[:, feat_id] != value]
-        labels_no = labels[feats[:, feat_id] != value]
-        return feats_yes, labels_yes, feats_no, labels_no
+        feats_left = feats[feats[:, feat_id] >= value]
+        labels_left = labels[feats[:, feat_id] >= value]
+        feats_right = feats[feats[:, feat_id] < value]
+        labels_right = labels[feats[:, feat_id] < value]
+        return feats_left, labels_left, feats_right, labels_right
         
     def calc_gini(self, labels):
         """计算基尼指数：本部分只用于计算单个数据集按类别分的基尼(所以只传入labels即可计算)。
-        而多个数据集组合的基尼通过加权计算得到。
+        该算法兼容离散特征和连续特征
+        而多个数据集组合的基尼通过加权计算得到: 但注意加权系数在离散和连续特征中计算方法因为split_dataset改变而有区别。
         """
         n_samples = labels.shape[0]
         if n_samples == 0:
@@ -112,27 +126,31 @@ class CART(BaseModel):
 
     def predict_single(self, sample):
         """单样本预测"""
-        def get_result(sample, tree):
-            """递归获得预测结果，嵌套这个递归是为了在predict_single()函数接口上去除tree这个变量"""
-            if tree.result != None:  # 当到达叶子节点，则直接返回tree.result作为预测标签
-                return tree.result
-            else:
-                sample_value = sample[tree.feat_id]
-                if sample_value >= tree.feat_value:
-                    branch = tree.right
-                else:
-                    branch = tree.left
-                return get_result(sample, branch)
-            
-        result = get_result(sample, self.tree)
+        result = self.get_single_tree_result(sample, self.tree)
         return result
+    
+    def get_single_tree_result(self, sample, tree):
+        """递归获得预测结果，用递归子函数是为了在predict_single()函数接口上去除tree这个变量
+        同时该递归函数也是随机森林的基础函数
+        """
+        if tree.result != None:  # 当到达叶子节点，则直接返回tree.result作为预测标签
+            return tree.result
+        else:
+            sample_value = sample[tree.feat_id]
+            if sample_value == tree.feat_value:  # 如果等于节点特征值，则进左树
+                branch = tree.left
+            else:                               # 如果不等于节点特征值，则进右树
+                branch = tree.right
+            return self.get_single_tree_result(sample, branch)
             
-    
-    
 class ID3():
     def __init__(self):
+        pass
+    def create_tree(self):
         pass
     
 class C45():
     def __init__(self):
+        pass
+    def create_tree(self):
         pass

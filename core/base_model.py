@@ -20,26 +20,38 @@ class BaseModel():
             model.save()
             model.load()
     """
-    def __init__(self, feats, labels, norm=True):
+    def __init__(self, feats, labels, norm=None, label_transform_dict=None):
         assert feats.ndim ==2, 'the feats should be (n_samples, m_feats), each sample should be 1-dim flatten data.'
         self.feats = feats
         self.labels = labels.astype(np.int8)
         self.trained = False
         self.model_dict = {}
         self.norm = norm
+        self.label_transform_dict = label_transform_dict
         
         self.classes_list = sorted(list(set(np.array(self.labels).reshape(-1).tolist())))  # classes_list为排序从小到大
         self.n_classes = len(self.classes_list)
         self.n_samples = self.feats.shape[0]
         self.n_feats = self.feats.shape[1]
         
+        # TODO: may transfer to base dataset
         if self.norm:
             self.feats = scale(self.feats)
-    
-    # TODO
-    def label_transform(self):
-        """用于标签变换：从[0, 1] -> [-1,1]"""
-        raise NotImplementedError('the label_transform func is not implemented.')
+        # TODO: may transfer to base dataset
+        if self.label_transform_dict:
+            self.label_transform(label_transform_dict)
+        
+    def label_transform(self, label_transform_dict):
+        """默认不改变label的取值范围，但可以通过该函数修改labels的对应范围
+        例如svm需要label为[-1,1]，则可修改该函数。
+        """
+        if label_transform_dict is None:
+            pass
+        else:  # 如果指定了标签变换dict
+            assert isinstance(label_transform_dict, dict), 'the label_transform_dict should be a dict.' 
+            for i, label in enumerate(self.labels):
+                new_label = label_transform_dict[label]
+                self.labels[i] = int(new_label)   # 比如{1:1, 0:-1}就是要把1变为1, 0变为-1
     
     def get_batch_data(self, feats, labels, batch_size=16, type='shuffle'):
         """从特征数据中提取batch size个特征，并组合成一个特征数据
