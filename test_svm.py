@@ -40,7 +40,7 @@ if __name__ == "__main__":
 
     if dataset == 'moon':
         # acc=0.98@C=5, sigma=0.45
-        dataset = NonlinearDataset(type= 'moon', n_samples=300, noise=0.1)
+        dataset = NonlinearDataset(type= 'moon', n_samples=300, noise=0.1, label_transform_dict={1:1,0:-1})
         x = dataset.datas
         y = dataset.labels
         train_x, test_x, train_y, test_y = train_test_split(x, y, test_size=0.3) # (n, 13) (n,)
@@ -49,7 +49,7 @@ if __name__ == "__main__":
         
         svm = SVMC(train_x, train_y.T, 
                      C=1, toler=0.001, max_iter=500, 
-                     kernel_option=('rbf', 0.45))
+                     kernel_option={'type':'rbf', 'sigma':0.5})
         svm.train()
         acc = svm.evaluation(train_x, train_y.T)
         print('training acc = %f'%(acc))

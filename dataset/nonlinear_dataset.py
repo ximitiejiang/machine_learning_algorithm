@@ -14,11 +14,12 @@ class NonlinearDataset(BaseDataset):
     """sklearn自带非线性数据集，可生成二分类的非线性可分数据集
     有两种数据集可选，一种moon月亮形，一种circle圆圈形
     """
-    def __init__(self, type= 'moon', n_samples=100, noise=0.1):
+    def __init__(self, type= 'moon', n_samples=100, noise=0.1, 
+                 norm=None, label_transform_dict=None):
         self.type = type
         self.n_samples = n_samples
         self.noise = noise
-        super().__init__()
+        super().__init__(norm=norm, label_transform_dict=label_transform_dict)
         
             
     def get_dataset(self):

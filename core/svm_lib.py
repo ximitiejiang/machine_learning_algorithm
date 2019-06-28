@@ -22,10 +22,10 @@ class SVMC(BaseModel):
         assert isinstance(feats, np.matrix) and isinstance(labels, np.matrix), 'feats and labels should be mat.'
         assert labels.ndim ==2 and labels.shape[1] == 1, 'labels should be (n,1) style mat.'
         
-        super().__init__(feats, labels, norm=False, label_transform_dict={1:1, 0:-1})
+        super().__init__(feats, labels)
         
-        self.feats = np.mat(self.feats)    # scale()函数会把feat从mat变为array，所以这里增加一次变换
-        self.labels = np.mat(self.labels)
+        self.feats = np.mat(self.feats)    # scale()函数和label transform会把feat从mat变为array，所以这里增加一次变换
+        self.labels = np.mat(self.labels.reshape(-1,1))
         
         self.C = C 
         self.toler = toler 
@@ -61,7 +61,7 @@ class SVMC(BaseModel):
         '''样本之间的核函数的值
         input:  feats(mat):训练样本(n_sample, n_feat)
                 feats_i(mat):第i个训练样本
-                kernel_option(tuple):核函数的类型以及参数
+                kernel_option(dict):核函数的类型以及参数
         output: kernel_value(mat):样本之间的核函数的值
         '''
         kernel_type = kernel_option['type'] # 核函数的类型，分为rbf和linear
@@ -116,8 +116,8 @@ class SVMC(BaseModel):
         # prepare model_dict for saving
         kernel_str = ''
         for name, value in self.kernel_opt.items():
-            kernel_str += str(name) + '_' + str(value)
-        self.model_dict['model_name'] = 'SVMC'+'_c'+ str(self.C) + '_' + kernel_str
+            kernel_str += '_' + str(name) + '_' + str(value)
+        self.model_dict['model_name'] = 'SVMC'+'_c'+ str(self.C) + kernel_str
         self.model_dict['feats'] = self.feats
         self.model_dict['labels'] = self.labels
         self.model_dict['kernel_opt'] = self.kernel_opt

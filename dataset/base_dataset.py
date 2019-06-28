@@ -6,10 +6,12 @@ Created on Tue Jun 11 09:59:32 2019
 """
 
 import matplotlib.pyplot as plt
+from sklearn.preprocessing import scale
+import numpy as np
 
 class BaseDataset():
     
-    def __init__(self):
+    def __init__(self, norm=None, label_transform_dict=None):
         
         self.dataset = self.get_dataset()
         self.datas = self.dataset.get('data', [])    # (n_sample, n_feat)
@@ -22,7 +24,25 @@ class BaseDataset():
         self.classes = set(self.labels)
         self.num_classes = len(self.classes)
         self.num_features = self.datas.shape[1]  # 避免有的数据集没有feat_names这个字段
-        
+
+        if norm:
+            self.feats = scale(self.feats)
+        if label_transform_dict:
+            self.label_transform(label_transform_dict)
+            
+    def label_transform(self, label_transform_dict):
+        """默认不改变label的取值范围，但可以通过该函数修改labels的对应范围
+        例如svm需要label为[-1,1]，则可修改该函数。
+        """
+        if label_transform_dict is None:
+            pass
+        else:  # 如果指定了标签变换dict
+            self.labels = np.array(self.labels).reshape(-1)  #确保mat格式会转换成array才能操作
+            assert isinstance(label_transform_dict, dict), 'the label_transform_dict should be a dict.' 
+            for i, label in enumerate(self.labels):
+                new_label = label_transform_dict[label]
+                self.labels[i] = int(new_label)   # 比如{1:1, 0:-1}就是要把1变为1, 0变为-1
+    
     def get_dataset(self):
         raise NotImplementedError('the get_dataset function is not implemented.')
     

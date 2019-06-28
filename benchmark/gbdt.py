@@ -1,0 +1,190 @@
+#!/usr/bin/env python3
+# -*- coding: utf-8 -*-
+"""
+Created on Fri Jun 28 22:45:04 2019
+
+@author: suliang
+"""
+from __future__ import division, print_function
+import numpy as np
+from sklearn import datasets
+import matplotlib.pyplot as plt
+#import progressbar
+
+# 再增加本地一个decision tree库，这个库无比重要，牵涉到GBDT/random forest/xgboost
+from decision_tree import RegressionTree
+
+def train_test_split(X, y, test_size=0.5, shuffle=True, seed=None):
+    """ Split the data into train and test sets """
+    if shuffle:
+        X, y = shuffle_data(X, y, seed)
+    # Split the training data from test data in the ratio specified in
+    # test_size
+    split_i = len(y) - int(len(y) // (1 / test_size))
+    X_train, X_test = X[:split_i], X[split_i:]
+    y_train, y_test = y[:split_i], y[split_i:]
+
+    return X_train, X_test, y_train, y_test
+
+class GradientBoosting(object):
+    """Super class of GradientBoostingClassifier and GradientBoostinRegressor. 
+    Uses a collection of regression trees that trains on predicting the gradient
+    of the loss function. 
+    Parameters:
+    -----------
+    n_estimators: int
+        The number of classification trees that are used.
+    learning_rate: float
+        The step length that will be taken when following the negative gradient during
+        training.
+    min_samples_split: int
+        The minimum number of samples needed to make a split when building a tree.
+    min_impurity: float
+        The minimum impurity required to split the tree further. 
+    max_depth: int
+        The maximum depth of a tree.
+    regression: boolean
+        True or false depending on if we're doing regression or classification.
+    """
+    def __init__(self, n_estimators, learning_rate, min_samples_split,
+                 min_impurity, max_depth, regression):
+        self.n_estimators = n_estimators
+        self.learning_rate = learning_rate
+        self.min_samples_split = min_samples_split
+        self.min_impurity = min_impurity
+        self.max_depth = max_depth
+        self.regression = regression
+#        self.bar = progressbar.ProgressBar(widgets=bar_widgets)
+        
+        # Square loss for regression
+        # Log loss for classification
+        self.loss = SquareLoss()
+        if not self.regression:
+            self.loss = CrossEntropy()
+
+        # Initialize regression trees
+        self.trees = []
+        for _ in range(n_estimators):
+            tree = RegressionTree(
+                    min_samples_split=self.min_samples_split,
+                    min_impurity=min_impurity,
+                    max_depth=self.max_depth)
+            self.trees.append(tree)
+
+
+    def fit(self, X, y):
+        y_pred = np.full(np.shape(y), np.mean(y, axis=0))
+        for i in range(self.n_estimators):
+            gradient = self.loss.gradient(y, y_pred)
+            self.trees[i].fit(X, gradient)
+            update = self.trees[i].predict(X)
+            # Update y prediction
+            y_pred -= np.multiply(self.learning_rate, update)
+
+
+    def predict(self, X):
+        y_pred = np.array([])
+        # Make predictions
+        for tree in self.trees:
+            update = tree.predict(X)
+            update = np.multiply(self.learning_rate, update)
+            y_pred = -update if not y_pred.any() else y_pred - update
+
+        if not self.regression:
+            # Turn into probability distribution
+            y_pred = np.exp(y_pred) / np.expand_dims(np.sum(np.exp(y_pred), axis=1), axis=1)
+            # Set label to the value that maximizes probability
+            y_pred = np.argmax(y_pred, axis=1)
+        return y_pred
+
+class GradientBoostingClassifier(GradientBoosting):
+    def __init__(self, n_estimators=200, learning_rate=.5, min_samples_split=2,
+                 min_info_gain=1e-7, max_depth=2, debug=False):
+        super(GradientBoostingClassifier, self).__init__(n_estimators=n_estimators, 
+            learning_rate=learning_rate, 
+            min_samples_split=min_samples_split, 
+            min_impurity=min_info_gain,
+            max_depth=max_depth,
+            regression=False)
+
+    def fit(self, X, y):
+        y = to_categorical(y)
+        super(GradientBoostingClassifier, self).fit(X, y)
+
+def to_categorical(x, n_col=None):
+    """ One-hot encoding of nominal values """
+    if not n_col:
+        n_col = np.amax(x) + 1
+    one_hot = np.zeros((x.shape[0], n_col))
+    one_hot[np.arange(x.shape[0]), x] = 1
+    return one_hot
+
+class Loss(object):
+    def loss(self, y_true, y_pred):
+        return NotImplementedError()
+
+    def gradient(self, y, y_pred):
+        raise NotImplementedError()
+
+    def acc(self, y, y_pred):
+        return 0
+
+class SquareLoss(Loss):
+    def __init__(self): pass
+
+    def loss(self, y, y_pred):
+        return 0.5 * np.power((y - y_pred), 2)
+
+    def gradient(self, y, y_pred):
+        return -(y - y_pred)
+    
+class CrossEntropy(Loss):
+    def __init__(self): pass
+
+    def loss(self, y, p):
+        # Avoid division by zero
+        p = np.clip(p, 1e-15, 1 - 1e-15)
+        return - y * np.log(p) - (1 - y) * np.log(1 - p)
+
+    def acc(self, y, p):
+        return accuracy_score(np.argmax(y, axis=1), np.argmax(p, axis=1))
+
+    def gradient(self, y, p):
+        # Avoid division by zero
+        p = np.clip(p, 1e-15, 1 - 1e-15)
+        return - (y / p) + (1 - y) / (1 - p)
+
+def accuracy_score(y_true, y_pred):
+    """ Compare y_true to y_pred and return the accuracy """
+    accuracy = np.sum(y_true == y_pred, axis=0) / len(y_true)
+    return accuracy
+
+
+def main():
+
+    print ("-- Gradient Boosting Classification --")
+
+    data = datasets.load_iris()
+    X = data.data
+    y = data.target
+
+    X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.4)
+
+    clf = GradientBoostingClassifier()
+    clf.fit(X_train, y_train)
+    y_pred = clf.predict(X_test)
+
+    accuracy = accuracy_score(y_test, y_pred)
+
+    print ("Accuracy:", accuracy)
+
+
+#    Plot().plot_in_2d(X_test, y_pred, 
+#        title="Gradient Boosting", 
+#        accuracy=accuracy, 
+#        legend_labels=data.target_names)
+
+
+
+if __name__ == "__main__":
+    main()

@@ -16,9 +16,10 @@ class PimaIndiansDiabetesDataset(BaseDataset):
 
     其中data(768, 8), target(768,)
     """
-    def __init__(self, path='./dataset/simple/pima_indians_diabetes.csv'):
+    def __init__(self, path='./dataset/simple/pima_indians_diabetes.csv', 
+                 norm=None, label_transform_dict=None):
         self.path = path
-        super().__init__()
+        super().__init__(norm=norm, label_transform_dict=label_transform_dict)
     
     def get_dataset(self):
         raw = np.array(pd.read_csv(self.path))
