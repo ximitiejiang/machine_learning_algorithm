@@ -5,6 +5,7 @@ import sys
 from sklearn import datasets
 import matplotlib.pyplot as plt
 import os
+from plot import Plot
 #from mlfromscratch.utils import divide_on_feature, train_test_split, standardize, mean_squared_error
 #from mlfromscratch.utils import calculate_entropy, accuracy_score, calculate_variance
 
@@ -383,10 +384,10 @@ def main():
 
     print ("Accuracy:", accuracy)
 
-#    Plot().plot_in_2d(X_test, y_pred, 
-#        title="Decision Tree", 
-#        accuracy=accuracy, 
-#        legend_labels=data.target_names)
+    Plot().plot_in_2d(X_test, y_pred, 
+        title="Decision Tree", 
+        accuracy=accuracy, 
+        legend_labels=data.target_names)
 
 
 if __name__ == "__main__":

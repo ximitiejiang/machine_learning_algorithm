@@ -13,6 +13,7 @@ import matplotlib.pyplot as plt
 
 # 再增加本地一个decision tree库，这个库无比重要，牵涉到GBDT/random forest/xgboost
 from decision_tree import RegressionTree
+from plot import Plot
 
 def train_test_split(X, y, test_size=0.5, shuffle=True, seed=None):
     """ Split the data into train and test sets """
@@ -179,10 +180,10 @@ def main():
     print ("Accuracy:", accuracy)
 
 
-#    Plot().plot_in_2d(X_test, y_pred, 
-#        title="Gradient Boosting", 
-#        accuracy=accuracy, 
-#        legend_labels=data.target_names)
+    Plot().plot_in_2d(X_test, y_pred, 
+        title="Gradient Boosting", 
+        accuracy=accuracy, 
+        legend_labels=data.target_names)
 
 
 

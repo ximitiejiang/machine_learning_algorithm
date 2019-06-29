@@ -11,8 +11,15 @@ import numpy as np
 
 class BaseDataset():
     
-    def __init__(self, norm=None, label_transform_dict=None):
-        
+    def __init__(self, 
+                 norm=None, 
+                 label_transform_dict=None, 
+                 one_hot=None):
+        """数据集基类，默认支持如下变换：
+        - 归一化： norm=True
+        - 标签值变换: label_transform_dict = {1:1, 0:-1}
+        - 标签独热编码: one_hot=True
+        """
         self.dataset = self.get_dataset()
         self.datas = self.dataset.get('data', [])    # (n_sample, n_feat)
         self.labels = self.dataset.get('target', []) # (n_sample,)
@@ -29,6 +36,8 @@ class BaseDataset():
             self.feats = scale(self.feats)
         if label_transform_dict:
             self.label_transform(label_transform_dict)
+        if one_hot:
+            self.label_to_one_hot()
             
     def label_transform(self, label_transform_dict):
         """默认不改变label的取值范围，但可以通过该函数修改labels的对应范围
@@ -42,6 +51,18 @@ class BaseDataset():
             for i, label in enumerate(self.labels):
                 new_label = label_transform_dict[label]
                 self.labels[i] = int(new_label)   # 比如{1:1, 0:-1}就是要把1变为1, 0变为-1
+    
+    def label_to_one_hot(self):
+        """标签转换为独热编码：输入的labels需要是从0开始的整数，比如[0,1,2,...]
+        输出的独热编码为[[1,0,0,...],
+                      [0,1,0,...],
+                      [0,0,1,...]]  分别代表0/1/2的独热编码
+        """
+        assert self.labels.ndim ==1, 'labels should be 1-dim array.'
+        n_col = np.max(self.labels) + 1   # 独热编码列数，这里可以额外增加列数，填0即可，默认是最少列数
+        one_hot = np.zeros((self.labels.shape[0], n_col))
+        one_hot[np.arange(self.labels.shape[0]), self.labels] = 1
+        self.labels = one_hot  # (n_samples, n_col)
     
     def get_dataset(self):
         raise NotImplementedError('the get_dataset function is not implemented.')

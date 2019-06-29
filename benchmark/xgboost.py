@@ -5,10 +5,65 @@ Created on Fri Jun 28 22:47:38 2019
 
 @author: suliang
 """
+from __future__ import division, print_function
 import numpy as np
 from sklearn import datasets
 import matplotlib.pyplot as plt
 import progressbar
+from sklearn import datasets
+
+#from mlfromscratch.utils import train_test_split, standardize, to_categorical, normalize
+#from mlfromscratch.utils import mean_squared_error, accuracy_score, Plot
+#from mlfromscratch.supervised_learning import XGBoost
+from plot import Plot
+from activation_functions import Sigmoid
+
+def normalize(X, axis=-1, order=2):
+    """ Normalize the dataset X """
+    l2 = np.atleast_1d(np.linalg.norm(X, order, axis))
+    l2[l2 == 0] = 1
+    return X / np.expand_dims(l2, axis)
+
+def to_categorical(x, n_col=None):
+    """ One-hot encoding of nominal values """
+    if not n_col:
+        n_col = np.amax(x) + 1
+    one_hot = np.zeros((x.shape[0], n_col))
+    one_hot[np.arange(x.shape[0]), x] = 1
+    return one_hot
+
+def train_test_split(X, y, test_size=0.5, shuffle=True, seed=None):
+    """ Split the data into train and test sets """
+    if shuffle:
+        X, y = shuffle_data(X, y, seed)
+    # Split the training data from test data in the ratio specified in
+    # test_size
+    split_i = len(y) - int(len(y) // (1 / test_size))
+    X_train, X_test = X[:split_i], X[split_i:]
+    y_train, y_test = y[:split_i], y[split_i:]
+
+    return X_train, X_test, y_train, y_test
+
+def standardize(X):
+    """ Standardize the dataset X """
+    X_std = X
+    mean = X.mean(axis=0)
+    std = X.std(axis=0)
+    for col in range(np.shape(X)[1]):
+        if std[col]:
+            X_std[:, col] = (X_std[:, col] - mean[col]) / std[col]
+    # X_std = (X - X.mean(axis=0)) / X.std(axis=0)
+    return X_std
+
+def mean_squared_error(y_true, y_pred):
+    """ Returns the mean squared error between y_true and y_pred """
+    mse = np.mean(np.power(y_true - y_pred, 2))
+    return mse
+
+def accuracy_score(y_true, y_pred):
+    """ Compare y_true to y_pred and return the accuracy """
+    accuracy = np.sum(y_true == y_pred, axis=0) / len(y_true)
+    return accuracy
 
 class LogisticLoss():
     def __init__(self):
@@ -56,7 +111,7 @@ class XGBoost(object):
         self.min_impurity = min_impurity              # Minimum variance reduction to continue
         self.max_depth = max_depth                  # Maximum depth for tree
 
-        self.bar = progressbar.ProgressBar(widgets=bar_widgets)
+#        self.bar = progressbar.ProgressBar(widgets=bar_widgets)
         
         # Log loss for classification
         self.loss = LogisticLoss()
@@ -76,7 +131,7 @@ class XGBoost(object):
         y = to_categorical(y)
 
         y_pred = np.zeros(np.shape(y))
-        for i in self.bar(range(self.n_estimators)):
+        for i in range(self.n_estimators):
             tree = self.trees[i]
             y_and_pred = np.concatenate((y, y_pred), axis=1)
             tree.fit(X, y_and_pred)

@@ -12,7 +12,7 @@ import math
 from sklearn import datasets
 import matplotlib.pyplot as plt
 import pandas as pd
-
+from plot import Plot
 # Import helper functions
 #from mlfromscratch.utils import train_test_split, accuracy_score, Plot
 
@@ -171,7 +171,7 @@ def main():
     print ("Accuracy:", accuracy)
 
     # Reduce dimensions to 2d using pca and plot the results
-#    Plot().plot_in_2d(X_test, y_pred, title="Adaboost", accuracy=accuracy)
+    Plot().plot_in_2d(X_test, y_pred, title="Adaboost", accuracy=accuracy)
 
 
 if __name__ == "__main__":
