@@ -93,8 +93,12 @@ class BaseDataset():
             plt.scatter(self.datas[:,0], self.datas[:,1], c=color)
         
         # 绘制类别统计结果图片
-#        plt.subplot(1,1,1)
-#        plt.hist()
+        feat_names = self.feat_names if self.feat_names else np.arange(self.datas.shape[1])
+        df_data = pd.DataFrame(self.datas, columms=feat_names)
+        grr = pd.scatter_matrix(df_data, c=self.labels, 
+                                figsize=(15,15),
+                                marker='o',
+                                hist_kwds={'bins':20}, s=60, alpha=0.8)
     
     def show(self, idx):
         """用于显示图片样本"""

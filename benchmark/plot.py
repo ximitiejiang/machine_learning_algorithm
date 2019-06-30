@@ -14,19 +14,19 @@ bar_widgets = [
     ' ', progressbar.ETA()
 ]
     
-def calculate_variance(X):
+def calculate_variance(X):  # 计算方差
     """ Return the variance of the features in dataset X """
     mean = np.ones(np.shape(X)) * X.mean(0)
     n_samples = np.shape(X)[0]
     variance = (1 / n_samples) * np.diag((X - mean).T.dot(X - mean))
     return variance
 
-def calculate_std_dev(X):
+def calculate_std_dev(X):  # 计算标准差
     """ Calculate the standard deviations of the features in dataset X """
     std_dev = np.sqrt(calculate_variance(X))
     return std_dev
 
-def standardize(X):
+def standardize(X):        # 标准化
     """ Standardize the dataset X """
     X_std = X
     mean = X.mean(axis=0)
@@ -37,7 +37,7 @@ def standardize(X):
     # X_std = (X - X.mean(axis=0)) / X.std(axis=0)
     return X_std
 
-def calculate_covariance_matrix(X, Y=None):
+def calculate_covariance_matrix(X, Y=None):  # 计算协方差矩阵
     """ Calculate the covariance matrix for the dataset X """
     if Y is None:
         Y = X
@@ -47,7 +47,7 @@ def calculate_covariance_matrix(X, Y=None):
     return np.array(covariance_matrix, dtype=float)
  
 
-def calculate_correlation_matrix(X, Y=None):
+def calculate_correlation_matrix(X, Y=None):  # 计算相关系数矩阵
     """ Calculate the correlation matrix for the dataset X """
     if Y is None:
         Y = X
@@ -64,14 +64,14 @@ class Plot():
         self.cmap = plt.get_cmap('viridis')
 
     def _transform(self, X, dim):
-        covariance = calculate_covariance_matrix(X)
-        eigenvalues, eigenvectors = np.linalg.eig(covariance)
+        covariance = calculate_covariance_matrix(X)            # 计算协方差covariance
+        eigenvalues, eigenvectors = np.linalg.eig(covariance)  # 计算协方差矩阵的特征值eigenvalues和特征向量eigenvectors
         # Sort eigenvalues and eigenvector by largest eigenvalues
-        idx = eigenvalues.argsort()[::-1]
-        eigenvalues = eigenvalues[idx][:dim]
-        eigenvectors = np.atleast_1d(eigenvectors[:, idx])[:, :dim]
+        idx = eigenvalues.argsort()[::-1]                      #对特征值从大到小排序
+        eigenvalues = eigenvalues[idx][:dim]                   #提取前dim个特征值
+        eigenvectors = np.atleast_1d(eigenvectors[:, idx])[:, :dim]  # 提取特征值对应特征向量
         # Project the data onto principal components
-        X_transformed = X.dot(eigenvectors)
+        X_transformed = X.dot(eigenvectors)                    # X*eigenvectors 特征乘以特征向量
 
         return X_transformed
 
