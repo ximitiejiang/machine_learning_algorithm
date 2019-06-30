@@ -303,8 +303,8 @@ def main():
     clf.add(Activation('relu'))
     clf.add(Dropout(0.25))
     clf.add(BatchNormalization())
-    clf.add(Flatten())
-    clf.add(Dense(256))
+    clf.add(Flatten())      # 展平层
+    clf.add(Dense(256))     # 全连接层
     clf.add(Activation('relu'))
     clf.add(Dropout(0.4))
     clf.add(BatchNormalization())
