@@ -18,7 +18,7 @@ from core.kd_tree_lib import KdTree
 
 if __name__ == "__main__":
     
-    source = 'circle'
+    source = 'digits'
     
     if source == 'digits':
         # get dataset
@@ -34,6 +34,9 @@ if __name__ == "__main__":
         plt.figure()
         plt.subplot(1,1,1)
         plt.imshow(sample.reshape(8,8), cmap='gray')
+        
+        train_x, test_x, train_y, test_y = train_test_split(dataset.datas, dataset.labels, test_size=0.3)
+        knn.evaluation(test_x, test_y)
     
     if source == 'multi':
         dataset = MultiClassDataset(n_samples=500, centers=4, n_features=2)

@@ -16,7 +16,7 @@ import numpy as np
 
 if __name__ == "__main__":
     
-    dataset = '4class'
+    dataset = 'digits'
     
     if dataset == '4class':
         import pandas as pd
@@ -58,7 +58,7 @@ if __name__ == "__main__":
         
         # get model
         soft = SoftmaxReg(train_feats, train_labels)
-        soft.train(lr=0.0001, n_epoch=1000, batch_size=16)
+        soft.train(lr=0.0001, n_epoch=1000, batch_size=128)
         
         # evaluation
         acc = soft.evaluation(test_feats, test_labels)

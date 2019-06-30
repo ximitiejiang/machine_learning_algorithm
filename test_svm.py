@@ -8,6 +8,8 @@ Created on Tue Jun 11 14:50:44 2019
 
 from dataset.heart_scale_dataset import HeartScaleDataset
 from dataset.nonlinear_dataset import NonlinearDataset
+from dataset.digits_dataset import DigitsDataset
+from dataset.breast_cancer_dataset import BreastCancerDataset
 from core.svm_lib import SVMC
 from sklearn.model_selection import train_test_split
 import numpy as np
@@ -15,7 +17,7 @@ import numpy as np
 
 if __name__ == "__main__":
     
-    dataset = 'moon'
+    dataset = 'cancer'
     
     if dataset == 'heart':
         filename = './dataset/simple/'  # 一个简单的2个特征的多分类数据集
@@ -24,17 +26,17 @@ if __name__ == "__main__":
         x = dataset.datas    # (270, 13)
         y = dataset.labels   # (270,)   取值1, -1
         train_x, test_x, train_y, test_y = train_test_split(x, y, test_size=0.2) # (n, 13) (n,)
-        # array to mat
-        train_x, test_x, train_y, test_y = np.mat(train_x), np.mat(test_x), np.mat(train_y), np.mat(test_y)
+#         array to mat
+#        train_x, test_x, train_y, test_y = np.mat(train_x), np.mat(test_x), np.mat(train_y), np.mat(test_y)
         
-        svm = SVMC(train_x, train_y.T, 
+        svm = SVMC(train_x, train_y, 
                      C=5, toler=0.001, max_iter=500, 
-                     kernel_option=('rbf', 0.9))
+                     kernel_option={'type':'rbf', 'sigma':0.9})
         svm.train()
-        acc = svm.evaluation(train_x, train_y.T)
+        acc = svm.evaluation(train_x, train_y)
         print('training acc = %f'%(acc))
         
-        acc2 = svm.evaluation(test_x, test_y.T)
+        acc2 = svm.evaluation(test_x, test_y)
         print('test acc = %f'%(acc2))
         
 
@@ -45,16 +47,16 @@ if __name__ == "__main__":
         y = dataset.labels
         train_x, test_x, train_y, test_y = train_test_split(x, y, test_size=0.3) # (n, 13) (n,)
         # array to mat
-        train_x, test_x, train_y, test_y = np.mat(train_x), np.mat(test_x), np.mat(train_y), np.mat(test_y)
+#        train_x, test_x, train_y, test_y = np.mat(train_x), np.mat(test_x), np.mat(train_y), np.mat(test_y)
         
-        svm = SVMC(train_x, train_y.T, 
+        svm = SVMC(train_x, train_y, 
                      C=1, toler=0.001, max_iter=500, 
                      kernel_option={'type':'rbf', 'sigma':0.5})
         svm.train()
-        acc = svm.evaluation(train_x, train_y.T)
+        acc = svm.evaluation(train_x, train_y)
         print('training acc = %f'%(acc))
         
-        acc2 = svm.evaluation(test_x, test_y.T)
+        acc2 = svm.evaluation(test_x, test_y)
         print('test acc = %f'%(acc2))
         
         svm.vis_boundary(plot_step=0.05)
@@ -67,22 +69,39 @@ if __name__ == "__main__":
         y = dataset.labels
         train_x, test_x, train_y, test_y = train_test_split(x, y, test_size=0.3) # (n, 13) (n,)
         # array to mat
-        train_x, test_x, train_y, test_y = np.mat(train_x), np.mat(test_x), np.mat(train_y), np.mat(test_y)
+#        train_x, test_x, train_y, test_y = np.mat(train_x), np.mat(test_x), np.mat(train_y), np.mat(test_y)
         
-        svm = SVMC(train_x, train_y.T, 
+        svm = SVMC(train_x, train_y, 
                      C=10, toler=0.001, max_iter=500, 
-                     kernel_option=('rbf', 0.5))
+                     kernel_option={'type':'rbf', 'sigma':0.5})
         svm.train()
-        acc = svm.evaluation(train_x, train_y.T)
+        acc = svm.evaluation(train_x, train_y)
         print('training acc = %f'%(acc))
         
-        acc2 = svm.evaluation(test_x, test_y.T)
+        acc2 = svm.evaluation(test_x, test_y)
         print('test acc = %f'%(acc2))
         
         svm.vis_boundary(plot_step=0.05)
         svm.save(path = './demo/')
-
         
+    if dataset == 'cancer':
+        dataset = BreastCancerDataset(label_transform_dict={1:1,0:-1})
+        x = dataset.datas
+        y = dataset.labels
+        train_x, test_x, train_y, test_y = train_test_split(x, y, test_size=0.3) # (n, 13) (n,)
+        svm = SVMC(train_x, train_y, 
+                   C=10, toler=0.001, max_iter=500, 
+                   kernel_option={'type':'rbf', 'sigma':30})
+        svm.train()
+        acc = svm.evaluation(train_x, train_y)
+        print('training acc = %f'%(acc))
+        
+        acc2 = svm.evaluation(test_x, test_y)
+        print('test acc = %f'%(acc2))
+        
+#        svm.vis_boundary(plot_step=0.05)
+
+    
     if dataset == 'load':
         # acc=0.98@C=5, sigma=0.5
         dataset = NonlinearDataset(type= 'circle', n_samples=300, noise=0.02, 
@@ -93,13 +112,13 @@ if __name__ == "__main__":
         # array to mat
         train_x, test_x, train_y, test_y = np.mat(train_x), np.mat(test_x), np.mat(train_y), np.mat(test_y)
         
-        svm = SVMC(train_x, train_y.T, 
+        svm = SVMC(train_x, train_y, 
                    C=5, toler=0.001, max_iter=500, 
-                   kernel_option=('rbf', 0.5))
+                   kernel_option={'type':'rbf', 'sigma':0.5})
         
         # 不进行训练，直接加载参数进行预测
         svm.load(path = './demo/SVMC_20190621_232511.pkl')
-        acc = svm.evaluation(test_x, test_y.T)
+        acc = svm.evaluation(test_x, test_y)
         print('test acc = %f'%(acc))
         svm.vis_boundary(plot_step=0.05)
 

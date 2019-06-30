@@ -19,8 +19,8 @@ class SVMC(BaseModel):
         3. 特征norm=False，否则无法收敛
     """
     def __init__(self, feats, labels, C, toler, max_iter, kernel_option=dict(type='rbf', sigma=0.5)):
-        assert isinstance(feats, np.matrix) and isinstance(labels, np.matrix), 'feats and labels should be mat.'
-        assert labels.ndim ==2 and labels.shape[1] == 1, 'labels should be (n,1) style mat.'
+#        assert isinstance(feats, np.matrix) and isinstance(labels, np.matrix), 'feats and labels should be mat.'
+#        assert labels.ndim ==2 and labels.shape[1] == 1, 'labels should be (n,1) style.'
         
         super().__init__(feats, labels)
         
@@ -273,8 +273,11 @@ class SVMC(BaseModel):
                 test_y(mat):测试的标签
         output: accuracy(float):预测的准确性
         '''
-        assert isinstance(test_x, np.matrix) and isinstance(test_y, np.matrix), 'feats and labels should be mat.'
-        assert test_y.ndim ==2 and test_y.shape[1] == 1, 'labels should be (n,1) style mat.'
+#        assert isinstance(test_x, np.matrix) and isinstance(test_y, np.matrix), 'feats and labels should be mat.'
+#        assert test_y.ndim ==2 and test_y.shape[1] == 1, 'labels should be (n,1) style mat.'
+        
+        self.feats = np.mat(self.feats)    # scale()函数和label transform会把feat从mat变为array，所以这里增加一次变换
+        self.labels = np.mat(self.labels.reshape(-1,1))
         
         # assert labels are [-1, 1]
         label_set = set(np.array(test_y).flatten().astype(np.int8).tolist()) # mat格式不支持set

@@ -596,7 +596,7 @@ class Dropout(Layer):
     def forward_pass(self, X, training=True):
         c = (1 - self.p)
         if training:
-            self._mask = np.random.uniform(size=X.shape) > self.p
+            self._mask = np.random.uniform(size=X.shape) > self.p  # 取0-1之间的均匀分布的实数，大于0.75的位置为True
             c = self._mask
         return X * c
 

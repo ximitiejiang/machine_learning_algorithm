@@ -56,8 +56,8 @@ class BaseModel():
     def evaluation(self, test_feats, test_labels):
         """评价整个验证数据集
         """
-        if self.norm:
-            test_feats = scale(test_feats)
+#        if self.norm:  # 已放到base dataset来解决
+#            test_feats = scale(test_feats)
         
         correct = 0
         total_sample = len(test_feats)
