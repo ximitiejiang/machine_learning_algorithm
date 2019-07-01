@@ -104,6 +104,7 @@ class CART(BaseModel):
             feat_id: 待分割的特征id
             value: 待分割的特征值
         """
+        # 为了
         feats_left = feats[feats[:, feat_id] >= value]
         labels_left = labels[feats[:, feat_id] >= value]
         feats_right = feats[feats[:, feat_id] < value]

@@ -151,7 +151,7 @@ class DecisionTree(object):
 
     def fit(self, X, y, loss=None):
         """ Build decision tree """
-        self.one_dim = len(np.shape(y)) == 1
+        self.one_dim = len(np.shape(y)) == 1  # 说明标签是一维标签，不是one hot或其他多维标签
         self.root = self._build_tree(X, y)
         self.loss=None
 
@@ -165,18 +165,18 @@ class DecisionTree(object):
 
         # Check if expansion of y is needed
         if len(np.shape(y)) == 1:
-            y = np.expand_dims(y, axis=1)
+            y = np.expand_dims(y, axis=1)  # (n,) to (n,1)
 
         # Add y as last column of X
         Xy = np.concatenate((X, y), axis=1)
 
         n_samples, n_features = np.shape(X)
 
-        if n_samples >= self.min_samples_split and current_depth <= self.max_depth:
+        if n_samples >= self.min_samples_split and current_depth <= self.max_depth: #样本数大于最小可分样本且深度小于最大深度
             # Calculate the impurity for each feature
             for feature_i in range(n_features):
                 # All values of feature_i
-                feature_values = np.expand_dims(X[:, feature_i], axis=1)
+                feature_values = np.expand_dims(X[:, feature_i], axis=1)  # (n,1)
                 unique_values = np.unique(feature_values)
 
                 # Iterate through all unique values of feature column i and
