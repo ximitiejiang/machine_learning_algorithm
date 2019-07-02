@@ -58,7 +58,7 @@ if __name__ == "__main__":
         # array to mat
 #        train_x, test_x, train_y, test_y = np.mat(train_x), np.mat(test_x), np.mat(train_y), np.mat(test_y)
         
-        cart = CART(train_x, train_y, min_samples_split=1)
+        cart = CART(train_x, train_y, min_samples_split=2)
         acc1 = cart.evaluation(train_x, train_y)
         print('train acc = %f'%(acc1))
         

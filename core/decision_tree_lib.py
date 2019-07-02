@@ -43,15 +43,15 @@ class CART(BaseModel):
         self.tree = self.create_tree(self.feats, self.labels, current_depth=0)
         
         # 没有训练，直接保存tree
-        self.model_dict['model_name'] = 'CART classifier_depth' \
-            + str(self.tree_final_params['final_depth']) \
+        self.model_dict['model_name'] = 'CART classifier'\
+            + '_depth' + str(self.tree_final_params['final_depth']) \
             + '_gini'+ str(round(self.tree_final_params['final_gini'], 3))
         self.model_dict['tree'] = self.tree
     
     def create_tree(self, feats, labels, current_depth=0):
         """创建CART树，存储特征
         """
-        current_gini = self.calc_gini(labels)  # 计算当前数据集的gini指数
+        current_gini = self.calc_impurity(labels)  # 计算当前数据集的gini指数
         best_gini = 1
         best_criteria = None
         best_subsets = None
@@ -67,8 +67,8 @@ class CART(BaseModel):
                     feats_ge, labels_ge, feats_lt, labels_lt = \
                     self.split_dataset(feats, labels, feat_id, value)
                     
-                    gini = len(feats_ge) / len(feats) * self.calc_gini(labels_ge) + \
-                           len(feats_lt) / len(feats) * self.calc_gini(labels_lt)
+                    gini = len(feats_ge) / len(feats) * self.calc_impurity(labels_ge) + \
+                           len(feats_lt) / len(feats) * self.calc_impurity(labels_lt)
                            
                     if gini < best_gini and len(feats_ge) > 0 and len(feats_lt) > 0:
                         best_gini = gini
@@ -123,8 +123,8 @@ class CART(BaseModel):
         labels_right = labels[feats[:, feat_id] < value]
         return feats_left, labels_left, feats_right, labels_right
         
-    def calc_gini(self, labels):
-        """计算基尼指数：本部分只用于计算单个数据集按类别分的基尼(所以只传入labels即可计算)。
+    def calc_impurity(self, labels):
+        """计算系统不纯度：在cart中用基尼指数来评价系统不纯度，只用于计算单个数据集按类别分的基尼(所以只传入labels即可计算)。
         该算法兼容离散特征和连续特征
         而多个数据集组合的基尼通过加权计算得到: 但注意加权系数在离散和连续特征中计算方法因为split_dataset改变而有区别。
         """
@@ -163,14 +163,25 @@ class ID3(CART):
                  min_impurity = 1e-7):
         super().__init__(feats, labels, min_samples_split, max_depth, min_impurity)
         self.min_info_gain = min_impurity
+
         
-        self.tree = self.create_tree()
-        
-    def create_tree(self):
+    def calc_impurity(self):
+        """ID3算法采用信息增益来评估系统不纯度，信息增益 = 经验熵 - 条件熵
+        """
         pass
     
+    
 class C45():
-    def __init__(self):
+    def __init__(self, feats, labels, 
+                 min_samples_split=2, 
+                 max_depth=10,
+                 min_impurity = 1e-7):
+        super().__init__(feats, labels, min_samples_split, max_depth, min_impurity)
+        self.min_gain_ratio = min_impurity
+    
+    def calc_impurity(self):
+        """C45算法采用信息增益比来评估系统不纯度，信息增益比 = 信息增益 / 经验熵"""
         pass
-    def create_tree(self):
-        pass
+        
+        
+        

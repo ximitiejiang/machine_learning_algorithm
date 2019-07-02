@@ -12,7 +12,8 @@ from math import log
 
 class RandomForest(CART):
     
-    def __init__(self, feats, labels, n_trees):
+    def __init__(self, feats, labels, n_trees, max_features=None,
+                 min_samples_split=2, max_depth=10, min_impurity = 1e-7):
         """随机森林分类算法特点：随机取样本生成森林，属于2种集成学习方法(bagging和boosting)中的bagging
         - bagging：代表是random forest，对数据集进行有放回抽样，形成多个训练数据的子集，并在每个子集训练一个分类器，
           然后多个分类器的结果投票决定预测结果。
@@ -20,21 +21,22 @@ class RandomForest(CART):
           同时更新分类器的系数，最后对基本分类器进行线性组合得到最终的一个分类器。
          - bagging与boosting的区别：bagging是多个分类器的组合，boosting是单个分类器的增强。
         """
-        super().__init__(feats, labels)
+        super().__init__(feats, labels, min_samples_split, max_depth, min_impurity)
         self.n_trees = n_trees
+
+        self.max_features = max_features
+        if not self.max_features:
+            self.max_features = int(np.sqrt(n_features))   # 一般每棵树取特征个数为原特征的子集，可取sqrt(n_feats)，也可取log(n_feats)
         
-    
-    def train(self):
-        n_subfeats = int(log(self.n_feats , 2)) + 1 if self.n_feats > 2 else 1 # 特征个数，其中k=log2(n_feats),
         n_subsets = self.n_trees         # 子集个数
         
-        self.tree_list = []
-        self.tree_feat_idx = []
         subsets, feats_id_list = self.get_random_subsets(self.feats, 
                                                         self.labels, 
                                                         n_subsets, 
-                                                        n_subfeats)
-        # 构建n棵树        
+                                                        self.max_features)
+        # 构建n棵树 
+        self.tree_list = []
+        self.tree_feat_idx = []
         for i in range(self.n_trees):
             tree = self.create_tree(*subsets[i])
             self.tree_list.append(tree)
@@ -47,7 +49,7 @@ class RandomForest(CART):
         self.model_dict['tree_feat_idx'] = self.tree_feat_idx
         
     @staticmethod
-    def get_random_subsets(feats, labels, n_subsets, n_subfeats):
+    def get_random_subsets(feats, labels, n_subsets, n_subfeats, sub_samples_ratio=0.5):
         """用于生成k个随机的子数据集: 随机打乱样本排序，然后抽取所有样本
         Args:
             feats(n_sample, n_feats)
@@ -59,7 +61,7 @@ class RandomForest(CART):
             feats_id_list: 每个subset对应的feat id
         """
         n_samples, n_feats = feats.shape[0], feats.shape[1]
-        n_sub_samples = n_samples  # 默认抽样个数就是总样本个数
+        n_sub_samples = int(n_samples * sub_samples_ratio)  # 默认抽样个数是原样本的0.5
                 
         subsets = []
         feats_id_list = []
