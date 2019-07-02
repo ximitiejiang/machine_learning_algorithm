@@ -5,7 +5,8 @@ trying to build a clear, modular, easy-to-use-and-modify machine learning librar
 As this is a simplified machine learning algorithm implement, the accuracy is not the main factor to be considered, but it can be taken as a baseline, a better acc result is possible to get by optimizing the training hyper params.
 
 ### update
-- 2019/06/27 add CART algorithm
+- 2019/07/02 add random forest algorithm
+- 2019/06/27 add cart algorithm
 - 2019/06/26 add naive bayes algorithm
 - 2019/06/25 add kdtree algorithm
 - 2019/06/21 add svm algorithm
@@ -19,7 +20,7 @@ As this is a simplified machine learning algorithm implement, the accuracy is no
 - pure python code to implement all the algorithm.
 - all the algorithms integrated as Class, easy to use and modify.
 - all the datasets integrated as Class, easy to use and modify.
-- all the algorithms are validated on several datasets(sklearn exist datasets or Mnist/Digits).
+- all the algorithms are validated on several datasets(mainly focus on sklearn exist datasets include digits dataset).
 - support multi class classify by using multi-class-model_wrapper on top of two-class-classify-model.
 - support training hyper-parameters modify: batch_size change, learning rate change, model save and load.
 - visualization training process: log text and loss curve generation.

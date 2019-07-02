@@ -6,14 +6,14 @@ Created on Thu Jun 27 21:59:21 2019
 @author: suliang
 """
 
-from decision_tree import CART
+from .decision_tree_lib import CART
 import numpy as np
-from math import log
 
 class RandomForest(CART):
     
-    def __init__(self, feats, labels, n_trees, max_features=None,
-                 min_samples_split=2, max_depth=10, min_impurity = 1e-7):
+    def __init__(self, feats, labels, n_trees, 
+                 min_samples_split=2, max_depth=10, min_impurity = 1e-7,
+                 max_features=None, sub_samples_ratio=None):
         """随机森林分类算法特点：随机取样本生成森林，属于2种集成学习方法(bagging和boosting)中的bagging
         - bagging：代表是random forest，对数据集进行有放回抽样，形成多个训练数据的子集，并在每个子集训练一个分类器，
           然后多个分类器的结果投票决定预测结果。
@@ -25,32 +25,38 @@ class RandomForest(CART):
         self.n_trees = n_trees
 
         self.max_features = max_features
+        self.sub_samples_ratio = sub_samples_ratio
         if not self.max_features:
-            self.max_features = int(np.sqrt(n_features))   # 一般每棵树取特征个数为原特征的子集，可取sqrt(n_feats)，也可取log(n_feats)
+            self.max_features = int(np.sqrt(feats.shape[0]))   # 一般每棵树取特征个数为原特征的子集，可取sqrt(n_feats)，也可取log(n_feats)
         
-        n_subsets = self.n_trees         # 子集个数
-        
+        if not self.sub_samples_ratio:
+            self.sub_samples_ratio = 0.5                  # 一般每棵树取原样本个数的一半
+            
         subsets, feats_id_list = self.get_random_subsets(self.feats, 
-                                                        self.labels, 
-                                                        n_subsets, 
-                                                        self.max_features)
+                                                         self.labels, 
+                                                         self.n_trees, 
+                                                         self.max_features,
+                                                         self.sub_samples_ratio)
         # 构建n棵树 
         self.tree_list = []
-        self.tree_feat_idx = []
+        self.tree_feats_id_list = []
         for i in range(self.n_trees):
-            tree = self.create_tree(*subsets[i])
+            tree = self.create_tree(*subsets[i], 0)
             self.tree_list.append(tree)
-            self.tree_feat_idx.append(feats_id_list[i])
+            self.tree_feats_id_list.append(feats_id_list[i])
                 
         self.trained = True
         # 保存模型参数
-        self.model_dict['model_name'] = 'RandomForest classifier'
+        self.model_dict['model_name'] = 'RandomForest classifier' + '_' \
+                                        + str(self.n_trees) + 'trees_' \
+                                        + str(self.max_features) + 'subfeats_' \
+                                        + str(self.sub_samples_ratio) + 'subsamples'
         self.model_dict['tree_list'] = self.tree_list
-        self.model_dict['tree_feat_idx'] = self.tree_feat_idx
+        self.model_dict['tree_feats_id_list'] = self.tree_feats_id_list
         
     @staticmethod
     def get_random_subsets(feats, labels, n_subsets, n_subfeats, sub_samples_ratio=0.5):
-        """用于生成k个随机的子数据集: 随机打乱样本排序，然后抽取所有样本
+        """用于生成k个随机的子数据集: 随机打乱样本排序，然后抽取部分行和部分列
         Args:
             feats(n_sample, n_feats)
             labels(n_sample,)
@@ -79,48 +85,20 @@ class RandomForest(CART):
             feats_id_list.append(feats_idx)
             
         return subsets, feats_id_list
-        
-    
-    def choose_samples(self, k):
-        """从基础数据中随机抽取包含k个特征的样本
-        """
-        pass
-        
-#    def predict_single(self, sample):
-#        """单样本预测"""
-#        def get_result(sample, tree):
-#            """递归获得预测结果，用递归子函数是为了在predict_single()函数接口上去除tree这个变量"""
-#            if tree.result != None:  # 当到达叶子节点，则直接返回tree.result作为预测标签
-#                return tree.result
-#            else:
-#                sample_value = sample[tree.feat_id]
-#                if sample_value == tree.feat_value:  # 如果等于节点特征值，则进左树
-#                    branch = tree.left
-#                else:                               # 如果不等于节点特征值，则进右树
-#                    branch = tree.right
-#                return get_result(sample, branch)
-#            
-#        result = get_result(sample, self.tree)
-#        return result    
-    
+
     
     def predict_single(self, sample):
         """单样本预测，但一个样本需要遍历一个森林的所有树
         """
+        result_i = []
         for i in range(len(self.tree_list)):
             tree = self.tree_list[i]
-            feat_id = self.tree_feat_idx[i]
-            sample_refined = sample[:, feat_id]
+            feats_id = self.tree_feats_id_list[i]
+            sample_refined = sample[feats_id]   # 先对样本提取对应特征列
             
-            result_i.append(self.get_single_tree_result(sample_refined, tree))
-        
-        result = np.sum(result_i)
+            result_i.append(self.get_single_tree_result(sample_refined, tree)) #单颗树结果
+        result = self.majority_vote(result_i)  # 投票计算结果
         return result
     
-    def evaluation(self):
-        """所有样本的预测"""
-        result = []
-        for i in range(len(self.tree_list)):
-            
     
     

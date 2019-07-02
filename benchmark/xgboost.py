@@ -11,12 +11,20 @@ from sklearn import datasets
 import matplotlib.pyplot as plt
 import progressbar
 from sklearn import datasets
-
+from decision_tree import XGBoostRegressionTree
 #from mlfromscratch.utils import train_test_split, standardize, to_categorical, normalize
 #from mlfromscratch.utils import mean_squared_error, accuracy_score, Plot
 #from mlfromscratch.supervised_learning import XGBoost
 from plot import Plot
 from activation_functions import Sigmoid
+
+def shuffle_data(X, y, seed=None):
+    """ Random shuffle of the samples in X and y """
+    if seed:
+        np.random.seed(seed)
+    idx = np.arange(X.shape[0])
+    np.random.shuffle(idx)
+    return X[idx], y[idx]
 
 def normalize(X, axis=-1, order=2):
     """ Normalize the dataset X """

@@ -61,8 +61,9 @@ class CART(BaseModel):
             for feat_id in range(n_features): # 外循环提取特征列
                 # 统计一个特征列的取值个数
                 feat = feats[:, feat_id]
-                feat_value_dict = self.count_quantity(feat)
-                for value in feat_value_dict.keys(): # 内循环提取特征值
+                feat_value_unique = np.unique(feat)
+#                feat_value_dict = self.count_quantity(feat)
+                for value in feat_value_unique: # 内循环提取特征值
                     # 计算一个特征列的每个取值的gini: ge(great equal), lt(less than)
                     feats_ge, labels_ge, feats_lt, labels_lt = \
                     self.split_dataset(feats, labels, feat_id, value)
@@ -84,25 +85,24 @@ class CART(BaseModel):
                           right = self.create_tree(*best_subsets[1], current_depth + 1))
                         
         # 如果无法再分，此时存放叶子节点，只有points/labels/result
-        labels_count_dict = self.count_quantity(labels)
-        max_result = max(zip(labels_count_dict.values(), 
-                             labels_count_dict.keys()))
+        leaf_result = self.majority_vote(labels)
         self.tree_final_params = dict(final_depth = current_depth + 1,
                                       final_gini = best_gini)  # 这里final_depth是包含叶子节点所以+1, 但不包含root节点
         return DTNode(points = feats,
                       labels = labels,
-                      result = max_result[1])  # 存放label数量最多的标签值
-                
-    def count_quantity(self, datas):
-        """由于有多处要统计个数，统一写成一个函数
-        Args:
-            datas(n,)
+                      result = leaf_result)  # 存放label数量最多的标签值
+    
+    def majority_vote(self, labels):
+        """投票方式获得最多类别的label作为叶节点的预测结果
+        Args: labels()
         """
-        count_dict = {}
-        for value in datas:
-            count_dict[value] = count_dict.get(value, 0) + 1
-        
-        return count_dict
+        labels_count_dict = {}
+        for label in labels:
+            labels_count_dict[label] = labels_count_dict.get(label, 0) + 1
+        max_result = max(zip(labels_count_dict.values(), 
+                             labels_count_dict.keys()))
+        return max_result[1]
+            
     
     def split_dataset(self, feats, labels, feat_id, value):
         """分割指定的数据子集：小于value的一块，大于value的一块
@@ -131,7 +131,9 @@ class CART(BaseModel):
         n_samples = labels.shape[0]
         if n_samples == 0:
             return 0
-        label_dict = self.count_quantity(labels)
+        label_dict = {}
+        for label in labels:
+            label_dict[label] = label_dict.get(label, 0) + 1
         gini = 1
         for value in label_dict.values():
             gini -= pow(value / n_samples, 2)
