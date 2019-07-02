@@ -131,8 +131,8 @@ C = (cov(X,X), cov(X,Y), cov(X,Z),
 <br>设置：采用7：3的训练测试集比例
 <br>M表示多分类，2表示二分类
 
-|模型名称        |特点                      |cancer(2)    |iris(M) |digits(M)| 
-|------------- |:-                        |:-           |:-      |:-       |
+|模型名称       |特点                       |cancer(2)    |iris(M) |digits(M)| 
+|------------- |:-                         |:-            |:-      |:-       |
 |knn           |多分类/非线性可分           |              |0.985   |         |
 |kdtree        |多分类/非线性可分           |              |        |         |
 |logistic      |二分类/线性可分             |              |x       | x       |
@@ -143,7 +143,7 @@ C = (cov(X,X), cov(X,Y), cov(X,Z),
 |svmc          |二分类/非线性可分           |0.92          |x       | x       |
 |svmc ovo      |多分类/非线性可分           |              |        |         |
 |naive bayes   |多分类/非线性可分           |              |        |         |
-|dt-cart       |多分类/非线性可分           |              |        |         |
+|dt-cart       |多分类/非线性可分           |              |0.956   |         |
 |random forest |多分类/非线性可分           |              |        |         |
 |ada boost     |多分类/非线性可分           |              |        |         |
 |gradient boost|多分类/非线性可分           |              |        |         |
@@ -287,7 +287,7 @@ P(Y=ck|X=x) = argmax P(Y=ck)*连乘积P(Xj=xj|Y=ck)来计算样本属于每个�
 ---
 ## PART 7. decision tree classifier
 **Q. CART决策树有什么优缺点？**
-- CART优点：可同时适合于离散数据和连续数据
+- CART优点：可同时适合于离散数据和连续数据，非线性拟合能力极强(变态的存在，可能超过svm了)，甚至很容易过拟合
 - CART缺点：容易过拟合。改进过拟合的方法包括：采用随机森林
 
 

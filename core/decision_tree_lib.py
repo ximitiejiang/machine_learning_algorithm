@@ -23,62 +23,75 @@ class DTNode:
 
 class CART(BaseModel):
     
-    def __init__(self, feats, labels, norm=False):
+    def __init__(self, feats, labels, 
+                 min_samples_split=2, 
+                 max_depth=10,
+                 min_impurity = 1e-7):
         """CART分类树的特点是：基于gini指数的大小来识别最佳分隔特征，分割后gini指数越小说明这种
         分割方式更有利于数据的确定性提高。
         1. CART只会生成二叉树，因为判断时只判断等于特征值还是不等于(left分支是等于特征值分支，right分支是不等于特征值分支)
         2. gini计算只跟label相关，所以可以针对离散特征，也可以针对连续特征。不过对连续特征来说每个特征的取值个数非常多，
            计算量较大，可以考虑把连续特征离散化减少每个特征的value个数。
-        
         """
-        super().__init__(feats, labels, norm=norm)
+        self.min_samples_split = min_samples_split  # 最少可分样本个数
+        self.max_depth = max_depth                  # 最大树的深度
+        self.min_gini = min_impurity                # 最小基尼指数，接近于0的一个值
         
-        self.dynamic_feat_id_list = list(np.arange(self.feats.shape[1]))  # 动态特征id，每分一次就去掉分过的feat id
-        self.tree = self.create_tree(self.feats, self.labels)
+        super().__init__(feats, labels)
+        
+#        self.dynamic_feat_id_list = list(np.arange(self.feats.shape[1]))  # 动态特征id，每分一次就去掉分过的feat id
+        self.tree = self.create_tree(self.feats, self.labels, current_depth=0)
         
         # 没有训练，直接保存tree
-        self.model_dict['model_name'] = 'CART classifier'
+        self.model_dict['model_name'] = 'CART classifier_depth' \
+            + str(self.tree_final_params['final_depth']) \
+            + '_gini'+ str(round(self.tree_final_params['final_gini'], 3))
         self.model_dict['tree'] = self.tree
     
-    def create_tree(self, feats, labels):
+    def create_tree(self, feats, labels, current_depth=0):
         """创建CART树，存储特征
         """
         current_gini = self.calc_gini(labels)  # 计算当前数据集的gini指数
         best_gini = 1
         best_criteria = None
         best_subsets = None
-        for feat_id in self.dynamic_feat_id_list: # 外循环提取特征列
-            # 统计一个特征列的取值个数
-            feat = feats[:, feat_id]
-            feat_value_dict = self.count_quantity(feat)
-            for value in feat_value_dict.keys(): # 内循环提取特征值
-                # 计算一个特征列的每个取值的gini
-                feats_yes, labels_yes, feats_no, labels_no = \
-                self.split_dataset(feats, labels, feat_id, value)
-                
-                gini = len(feats_yes) / len(feats) * self.calc_gini(labels_yes) + \
-                       len(feats_no) / len(feats) * self.calc_gini(labels_no)
-                       
-                if gini < best_gini and len(feats_yes) > 0 and len(feats_no) > 0:
-                    best_gini = gini
-                    best_criteria = (feat_id, value)
-                    best_subsets = [(feats_yes, labels_yes), (feats_no, labels_no)]   
+        
+        n_samples, n_features = feats.shape
+        if n_samples >= self.min_samples_split and current_depth <= self.max_depth:
+            for feat_id in range(n_features): # 外循环提取特征列
+                # 统计一个特征列的取值个数
+                feat = feats[:, feat_id]
+                feat_value_dict = self.count_quantity(feat)
+                for value in feat_value_dict.keys(): # 内循环提取特征值
+                    # 计算一个特征列的每个取值的gini: ge(great equal), lt(less than)
+                    feats_ge, labels_ge, feats_lt, labels_lt = \
+                    self.split_dataset(feats, labels, feat_id, value)
+                    
+                    gini = len(feats_ge) / len(feats) * self.calc_gini(labels_ge) + \
+                           len(feats_lt) / len(feats) * self.calc_gini(labels_lt)
+                           
+                    if gini < best_gini and len(feats_ge) > 0 and len(feats_lt) > 0:
+                        best_gini = gini
+                        best_criteria = (feat_id, value)
+                        best_subsets = [(feats_ge, labels_ge), (feats_lt, labels_lt)]   
         
         # 如果当前数据包的gini有下降且特征数大于1,则继续分解，此时存放中间节点，只有feat_id/feat_value/left/right
-        if current_gini - best_gini > 0 and len(self.dynamic_feat_id_list) > 1:  
-            self.dynamic_feat_id_list.pop(best_criteria[0])   # 弹出当前作为分割特征的列号feat_id不再作为分割选择
+        if current_gini - best_gini > self.min_gini:  
+#            self.dynamic_feat_id_list.pop(best_criteria[0])   # 弹出当前作为分割特征的列号feat_id不再作为分割选择
             return DTNode(feat_id = best_criteria[0], 
-                        feat_value = best_criteria[1],
-                        left = self.create_tree(*best_subsets[0]),
-                        right = self.create_tree(*best_subsets[1]))
+                          feat_value = best_criteria[1],
+                          left = self.create_tree(*best_subsets[0], current_depth + 1),
+                          right = self.create_tree(*best_subsets[1], current_depth + 1))
                         
-        else:  # 如果无法再分，此时存放叶子节点，只有points/labels/result
-            labels_count = self.count_quantity(labels)
-            max_result = max(zip(labels_count.values(), 
-                                 labels_count.keys()))
-            return DTNode(points = feats,
-                        labels = labels,
-                        result = max_result[1])  # 存放label数量最多的标签值
+        # 如果无法再分，此时存放叶子节点，只有points/labels/result
+        labels_count_dict = self.count_quantity(labels)
+        max_result = max(zip(labels_count_dict.values(), 
+                             labels_count_dict.keys()))
+        self.tree_final_params = dict(final_depth = current_depth + 1,
+                                      final_gini = best_gini)  # 这里final_depth是包含叶子节点所以+1, 但不包含root节点
+        return DTNode(points = feats,
+                      labels = labels,
+                      result = max_result[1])  # 存放label数量最多的标签值
                 
     def count_quantity(self, datas):
         """由于有多处要统计个数，统一写成一个函数
@@ -103,8 +116,7 @@ class CART(BaseModel):
             labels: 被分割的标签
             feat_id: 待分割的特征id
             value: 待分割的特征值
-        """
-        # 为了
+        """        
         feats_left = feats[feats[:, feat_id] >= value]
         labels_left = labels[feats[:, feat_id] >= value]
         feats_right = feats[feats[:, feat_id] < value]
@@ -138,15 +150,22 @@ class CART(BaseModel):
             return tree.result
         else:
             sample_value = sample[tree.feat_id]
-            if sample_value == tree.feat_value:  # 如果等于节点特征值，则进左树
+            if sample_value >= tree.feat_value:  # 如果大于等于节点特征值，则进左树
                 branch = tree.left
             else:                               # 如果不等于节点特征值，则进右树
                 branch = tree.right
             return self.get_single_tree_result(sample, branch)
             
-class ID3():
-    def __init__(self):
-        pass
+class ID3(CART):
+    def __init__(self, feats, labels, 
+                 min_samples_split=2, 
+                 max_depth=10,
+                 min_impurity = 1e-7):
+        super().__init__(feats, labels, min_samples_split, max_depth, min_impurity)
+        self.min_info_gain = min_impurity
+        
+        self.tree = self.create_tree()
+        
     def create_tree(self):
         pass
     

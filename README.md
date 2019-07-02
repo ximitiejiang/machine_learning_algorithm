@@ -141,7 +141,14 @@ sm.load('model_path')
 <div align=center><img src="https://github.com/ximitiejiang/machine_learning_algorithm/blob/master/demo/naive_bayes_continuous2.png"/></div>
 
 ### PART 1.8 CART classifier 
-<br>to be update ...
+<br>feature:
+- support two-classes-classification and multi-classes-classification.
+- support linear separable features and nonlinear separable features(but strongly restricted by features distribution).
+- support continuous features and discrete features
+<br>test code: [test_decision_tree](https://github.com/ximitiejiang/machine_learning_algorithm/blob/master/test_decision_tree.py).
+<br>source code: [decision_tree_lib](https://github.com/ximitiejiang/machine_learning_algorithm/blob/master/core/decision_tree_lib.py).
+<div align=center><img src="https://github.com/ximitiejiang/machine_learning_algorithm/blob/master/demo/cart.png"/></div>
+<div align=center><img src="https://github.com/ximitiejiang/machine_learning_algorithm/blob/master/demo/cart2.png"/></div>
 
 ### PART 1.11 random forest classifer
 <br>to be update ...
