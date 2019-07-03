@@ -17,7 +17,7 @@ import matplotlib.pyplot as plt
 
 if __name__ == "__main__":
     
-    source = '5class'
+    source = 'moon'
     
     if source == 'treedata':  # 2 classes: from book of zhaozhiyong
         data = []
@@ -35,7 +35,9 @@ if __name__ == "__main__":
         
         x = data[:, :-1]  # (400,2)
         y = data[:, -1]  # (400,)
-        rf = RandomForest(x, y, n_trees=100, sub_samples_ratio=0.5)
+        rf = RandomForest(x, y, 
+                          min_samples_split=3, max_depth=5,
+                          n_trees=100, sub_samples_ratio=0.5)
         rf.evaluation(x,y)
         rf.vis_boundary(plot_step=0.01)
     
@@ -55,7 +57,7 @@ if __name__ == "__main__":
         y = dataset.labels
         train_x, test_x, train_y, test_y = train_test_split(x, y, test_size=0.3) # (n, 13) (n,)
         rf = RandomForest(train_x, train_y, 
-                          min_samples_split=2, max_depth=10,
+                          min_samples_split=3, max_depth=10,
                           n_trees=50, sub_samples_ratio=0.5)
         acc1 = rf.evaluation(train_x, train_y)
         print('train acc = %f'%(acc1))
@@ -75,8 +77,8 @@ if __name__ == "__main__":
 #        train_x, test_x, train_y, test_y = np.mat(train_x), np.mat(test_x), np.mat(train_y), np.mat(test_y)
         
         rf = RandomForest(train_x, train_y, 
-                          min_samples_split=2, max_depth=10,
-                          n_trees=100, sub_samples_ratio=0.8)
+                          min_samples_split=4, max_depth=10, max_features=3,
+                          n_trees=100, sub_samples_ratio=0.5)
         acc1 = rf.evaluation(train_x, train_y)
         print('train acc = %f'%(acc1))
         

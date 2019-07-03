@@ -27,7 +27,7 @@ class RandomForest(CART):
         self.max_features = max_features
         self.sub_samples_ratio = sub_samples_ratio
         if not self.max_features:
-            self.max_features = int(np.sqrt(feats.shape[0]))   # 一般每棵树取特征个数为原特征的子集，可取sqrt(n_feats)，也可取log(n_feats)
+            self.max_features = int(np.sqrt(feats.shape[1]))   # 一般每棵树取特征个数为原特征的子集，可取sqrt(n_feats)，也可取log(n_feats)
         
         if not self.sub_samples_ratio:
             self.sub_samples_ratio = 0.5                  # 一般每棵树取原样本个数的一半
@@ -86,7 +86,6 @@ class RandomForest(CART):
             
         return subsets, feats_id_list
 
-    
     def predict_single(self, sample):
         """单样本预测，但一个样本需要遍历一个森林的所有树
         """

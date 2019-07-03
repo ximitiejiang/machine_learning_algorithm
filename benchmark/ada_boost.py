@@ -52,6 +52,8 @@ class DecisionStump():
         self.threshold = None
         # Value indicative of the classifier's accuracy
         self.alpha = None
+        # 加了一个误差
+        self.min_error=1
 
 class Adaboost():
     """Boosting method that uses a number of weak classifiers in 
@@ -69,7 +71,7 @@ class Adaboost():
         n_samples, n_features = np.shape(X)
 
         # Initialize weights to 1/N
-        w = np.full(n_samples, (1 / n_samples))
+        w = np.full(n_samples, (1 / n_samples))  # (n_sample, )用1/n_sample的值初始化
         
         self.clfs = []
         # Iterate through classifiers
@@ -81,49 +83,51 @@ class Adaboost():
             # Iterate throught every unique feature value and see what value
             # makes the best threshold for predicting y
             for feature_i in range(n_features):
-                feature_values = np.expand_dims(X[:, feature_i], axis=1)
+                feature_values = np.expand_dims(X[:, feature_i], axis=1) # 提取某列特征
                 unique_values = np.unique(feature_values)
                 # Try every unique feature value as threshold
                 for threshold in unique_values:
                     p = 1
                     # Set all predictions to '1' initially
-                    prediction = np.ones(np.shape(y))
+                    prediction = np.ones(np.shape(y))   # 先把预测值初始化为1 (n_sample,)
                     # Label the samples whose values are below threshold as '-1'
-                    prediction[X[:, feature_i] < threshold] = -1
+                    prediction[X[:, feature_i] < threshold] = -1  # 基于该列特征的某一特征值，把预测结果更新为-1, 1
                     # Error = sum of weights of misclassified samples
-                    error = sum(w[y != prediction])
-                    
+                    error = sum(w[y != prediction])   # 用预测值与标签对比，把错误预测值对应的权值w提取出来，求和作为分类误差率
                     # If the error is over 50% we flip the polarity so that samples that
                     # were classified as 0 are classified as 1, and vice versa
                     # E.g error = 0.8 => (1 - error) = 0.2
                     if error > 0.5:
                         error = 1 - error
-                        p = -1
-
+                        p = -1                # p=1代表小于threhold的为-1,大于的为+1, 
+                                              # 如果这种分法导致error大于0.5, 则改为p=-1也就是小于threshold为1大于为-1,误差自然也就相反为1-error
+                                              # 由于这里只能分成-1/1两类，注定只能进行二分类操作。
                     # If this threshold resulted in the smallest error we save the
                     # configuration
-                    if error < min_error:
+                    if error < min_error:         # 搜索每列特征的每个特征值，迭代寻找一个最小的特征分割点，保存下来作为一个分类器
                         clf.polarity = p
                         clf.threshold = threshold
                         clf.feature_index = feature_i
+                        clf.min_error = error  # 自己新增的一个属性，便于查看
                         min_error = error
             # Calculate the alpha which is used to update the sample weights,
             # Alpha is also an approximation of this classifier's proficiency
-            clf.alpha = 0.5 * math.log((1.0 - min_error) / (min_error + 1e-10))
+            clf.alpha = 0.5 * math.log((1.0 - min_error) / (min_error + 1e-10))  # 计算该分类器的alpha
             # Set all predictions to '1' initially
             predictions = np.ones(np.shape(y))
             # The indexes where the sample values are below threshold
             negative_idx = (clf.polarity * X[:, clf.feature_index] < clf.polarity * clf.threshold)
             # Label those as '-1'
-            predictions[negative_idx] = -1
+            predictions[negative_idx] = -1    # 基于该分类器，获取预测错误值设为-1
             # Calculate new weights 
             # Missclassified samples gets larger weights and correctly classified samples smaller
-            w *= np.exp(-clf.alpha * y * predictions)
+            w *= np.exp(-clf.alpha * y * predictions)  # 根据该预测值更新权重
             # Normalize to one
-            w /= np.sum(w)
+            w /= np.sum(w) # 规范化w，使w的值类似与概率分布值，在(0,1)之间，且所有w之和为1
 
             # Save classifier
             self.clfs.append(clf)
+            print("current CLF acc: %.5f, current alpha: %.2f" % (1-clf.min_error, clf.alpha))
 
     def predict(self, X):
         n_samples = np.shape(X)[0]

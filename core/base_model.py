@@ -56,10 +56,10 @@ class BaseModel():
     
     def evaluation(self, test_feats, test_labels):
         """评价整个验证数据集
-        """
-#        if self.norm:  # 已放到base dataset来解决
-#            test_feats = scale(test_feats)
-        
+        Args:
+            test_feats: (n_sample, n_feat)
+            test_labels: (n_sample,)
+        """       
         correct = 0
         total_sample = len(test_feats)
         start = time.time()
@@ -114,6 +114,7 @@ class BaseModel():
                              np.arange(ymin, ymax, plot_step))
         xx_flatten = xx.flatten()
         yy_flatten = yy.flatten()
+        
         z = []
         for i in range(len(xx_flatten)):
             point = np.array([xx_flatten[i], yy_flatten[i]]) 
