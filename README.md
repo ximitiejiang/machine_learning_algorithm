@@ -144,7 +144,7 @@ sm.load('model_path')
 ### PART 1.8 CART classifier 
 <br>feature:
 - support two-classes-classification and multi-classes-classification.
-- support linear separable features and nonlinear separable features(but strongly restricted by features distribution).
+- support linear separable features and nonlinear separable features.
 - support continuous features and discrete features
 <br>test code: [test_decision_tree](https://github.com/ximitiejiang/machine_learning_algorithm/blob/master/test_decision_tree.py).
 <br>source code: [decision_tree_lib](https://github.com/ximitiejiang/machine_learning_algorithm/blob/master/core/decision_tree_lib.py).
@@ -152,6 +152,17 @@ sm.load('model_path')
 <div align=center><img src="https://github.com/ximitiejiang/machine_learning_algorithm/blob/master/demo/cart2.png"/></div>
 
 ### PART 1.11 random forest classifer
+<br>feature:
+- support two-classes-classification and multi-classes-classification.
+- support linear separable features and nonlinear separable features.
+- support continuous features and discrete features
+<br>test code: [test_random_forest](https://github.com/ximitiejiang/machine_learning_algorithm/blob/master/test_random_forest.py).
+<br>source code: [random_forest_lib](https://github.com/ximitiejiang/machine_learning_algorithm/blob/master/core/random_forest_lib.py).
+<div align=center><img src="https://github.com/ximitiejiang/machine_learning_algorithm/blob/master/demo/random_forest3.png"/></div>
+<div align=center><img src="https://github.com/ximitiejiang/machine_learning_algorithm/blob/master/demo/random_forest.png"/></div>
+<div align=center><img src="https://github.com/ximitiejiang/machine_learning_algorithm/blob/master/demo/random_forest2.png"/></div>
+
+### PART 1.11 ada boost classifer
 <br>to be update ...
 
 ### PART 1.9 MLP classifier(BP network)

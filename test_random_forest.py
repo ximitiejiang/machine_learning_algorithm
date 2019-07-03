@@ -10,13 +10,14 @@ import numpy as np
 from dataset.loan_dataset import LoanDataset
 from dataset.iris_dataset import IrisDataset
 from dataset.nonlinear_dataset import NonlinearDataset
+from dataset.multi_class_dataset import MultiClassDataset
 from core.random_forest_lib import RandomForest
 from sklearn.model_selection import train_test_split
 import matplotlib.pyplot as plt
 
 if __name__ == "__main__":
     
-    source = 'treedata'
+    source = '5class'
     
     if source == 'treedata':  # 2 classes: from book of zhaozhiyong
         data = []
@@ -47,9 +48,25 @@ if __name__ == "__main__":
         rf = RandomForest(x, y, n_trees=30, sub_samples_ratio=0.5)
         rf.evaluation(x, y)
 
-    
+    if source == '5class':
+        dataset = MultiClassDataset(n_samples=500, centers=4, n_features=2,
+                                    center_box=(-8,+8), cluster_std=0.8)
+        x = dataset.datas
+        y = dataset.labels
+        train_x, test_x, train_y, test_y = train_test_split(x, y, test_size=0.3) # (n, 13) (n,)
+        rf = RandomForest(train_x, train_y, 
+                          min_samples_split=2, max_depth=10,
+                          n_trees=50, sub_samples_ratio=0.5)
+        acc1 = rf.evaluation(train_x, train_y)
+        print('train acc = %f'%(acc1))
+        
+        acc2 = rf.evaluation(test_x, test_y)
+        print('test acc = %f'%(acc2))
+        
+        rf.vis_boundary(plot_step=0.1)
+        
     if source == 'moon':
-        dataset = NonlinearDataset(type= 'moon', n_samples=300, noise=0.05, 
+        dataset = NonlinearDataset(type= 'circle', n_samples=500, noise=0.05, 
                                    label_transform_dict={1:1, 0:-1})
         x = dataset.datas
         y = dataset.labels
@@ -57,7 +74,9 @@ if __name__ == "__main__":
         # array to mat
 #        train_x, test_x, train_y, test_y = np.mat(train_x), np.mat(test_x), np.mat(train_y), np.mat(test_y)
         
-        rf = RandomForest(train_x, train_y, n_trees=100, sub_samples_ratio=0.5)
+        rf = RandomForest(train_x, train_y, 
+                          min_samples_split=2, max_depth=10,
+                          n_trees=100, sub_samples_ratio=0.8)
         acc1 = rf.evaluation(train_x, train_y)
         print('train acc = %f'%(acc1))
         

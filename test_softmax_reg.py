@@ -16,7 +16,7 @@ import numpy as np
 
 if __name__ == "__main__":
     
-    dataset = 'digits'
+    dataset = '4class'
     
     if dataset == '4class':
         import pandas as pd

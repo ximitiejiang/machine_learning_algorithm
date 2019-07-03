@@ -11,6 +11,7 @@ import matplotlib.pyplot as plt
 import time, datetime
 import pickle
 import os
+from utils.vis import voc_colors
 
 class BaseModel():
     """ core function:
@@ -67,7 +68,7 @@ class BaseModel():
             if int(pred_label) == int(label):
                 correct += 1
         acc = correct / total_sample
-        print('evaluation finished, with %f seconds. Accuracy = %f'%((time.time() - start), acc))
+        print('Evaluation finished in %f seconds with accuracy = %f.'%((time.time() - start), acc))
         
         return acc
     
@@ -123,9 +124,14 @@ class BaseModel():
         plt.subplot(1,1,1)
         plt.contourf(xx, yy, zz, cmap=plt.cm.Paired)
         # 绘制训练数据
+#        colors = voc_colors(self.n_classes)
+#        colors = colors[self.labels] / 255
         plt.scatter(np.array(self.feats)[:,0], 
                     np.array(self.feats)[:,1], 
-                    c = np.array(self.labels).flatten() * 64 + 128)
+                    c = np.array(self.labels).flatten() * 64 + 64)
+#        plt.scatter(np.array(self.feats)[:,0], 
+#                    np.array(self.feats)[:,1], 
+#                    c = colors)
         if self.model_dict:
             model_name = self.model_dict['model_name']
         else:
