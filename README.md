@@ -5,6 +5,7 @@ trying to build a clear, modular, easy-to-use-and-modify machine learning librar
 As this is a simplified machine learning algorithm implement, the accuracy is not the main factor to be considered, but it can be taken as a baseline, a better acc result is possible to get by optimizing the training hyper params.
 
 ### update
+- 2019/07/04 add ada boost algorithm
 - 2019/07/02 add random forest algorithm
 - 2019/06/27 add cart algorithm
 - 2019/06/26 add naive bayes algorithm
@@ -162,7 +163,16 @@ sm.load('model_path')
 <div align=center><img src="https://github.com/ximitiejiang/machine_learning_algorithm/blob/master/demo/random_forest.png"/></div>
 <div align=center><img src="https://github.com/ximitiejiang/machine_learning_algorithm/blob/master/demo/random_forest2.png"/></div>
 
-### PART 1.11 ada boost classifer
+### PART 1.12 ada boost classifer
+<br>feature:
+- only support two-classes-classification.
+- support linear separable features and nonlinear separable features.
+- support continuous features and discrete features
+
+### PART 1.13 gbdt classifer
+<br>to be update ...
+
+### PART 1.14 xgboost classifer
 <br>to be update ...
 
 ### PART 1.9 MLP classifier(BP network)
@@ -176,9 +186,6 @@ sm.load('model_path')
 - as a wrapper to transform 2-class classifer to multi-class classifier, can be used on logistic-reg/svm/perceptron 
 <br>test code: [test_cart](https://github.com/ximitiejiang/machine_learning_algorithm/blob/master/test_ovo_model.py).
 <br>source code: [cart_lib](https://github.com/ximitiejiang/machine_learning_algorithm/blob/master/core/multi_class_model_wrapper.py).
-
-### PART 1.13 xgboost classifier
-<br>to be update ...
 
 ### PART 2.1 linear regressor
 <br>to be update ...

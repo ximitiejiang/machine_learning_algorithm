@@ -8,6 +8,7 @@ Created on Thu Jun 27 21:59:21 2019
 
 from .decision_tree_lib import CART
 import numpy as np
+import time
 
 class RandomForest(CART):
     
