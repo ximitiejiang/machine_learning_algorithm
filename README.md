@@ -168,6 +168,10 @@ sm.load('model_path')
 - only support two-classes-classification.
 - support linear separable features and nonlinear separable features.
 - support continuous features and discrete features
+<br>test code: [test_ada_boost](https://github.com/ximitiejiang/machine_learning_algorithm/blob/master/test_ada_boost.py).
+<br>source code: [ada_boost_lib](https://github.com/ximitiejiang/machine_learning_algorithm/blob/master/core/ada_boost_lib.py).
+<div align=center><img src="https://github.com/ximitiejiang/machine_learning_algorithm/blob/master/demo/ada_boost.png"/></div>
+<div align=center><img src="https://github.com/ximitiejiang/machine_learning_algorithm/blob/master/demo/ada_boost2.png"/></div>
 
 ### PART 1.13 gbdt classifer
 <br>to be update ...

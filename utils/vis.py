@@ -41,11 +41,12 @@ def generate_table(str_list):
     2. 增加wrapper: AsciiTable(table_list)
     3. 转换成字符table: AsciiTable(table_list).table
     4. 打印
-    """    
-    # 生成一行table
-    table_data = [str_list]  # list嵌套: 内层每个list就是一行
-    table = AsciiTable(table_data).table
-    return table
+    """
+    if isinstance(str_list, list) and not isinstance(str_list[0], list):    
+        table = AsciiTable([str_list]).table
+    elif isinstance(str_list, list) and isinstance(str_list[0], list):  
+        table = AsciiTable(str_list).table
+    print(table)
 
 def vis_boundary(feats, labels, model, title = None, plot_step=0.02):
     """可视化分隔边界，可适用于线性可分和非线性可分特征，比较普适
@@ -82,4 +83,4 @@ def vis_boundary(feats, labels, model, title = None, plot_step=0.02):
 
 
 if __name__ == "__main__":
-    colors = voc_colors(5)
+    generate_table([['姓名','eason','winnie'],[1,2,3]])

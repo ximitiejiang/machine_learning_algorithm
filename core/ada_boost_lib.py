@@ -58,7 +58,7 @@ class AdaBoost(BaseModel):
                 for value in feat_unique:
                     polarity = 1
                     preds = np.ones((self.n_samples,)) # 初始化单个分类器的预测值为1
-                    preds[feat < value] = -1           # 在polarity=1条件下，小于预测值时，预测为-1
+                    preds[feat < value] = -1           # 在polarity=1条件下，小于阈值则输出预测为-1, 而polarity=-1时，则是小于阈值输出预测1，乘以polarity之后就统一标准为小于阈值输出-1。
                     error = sum(W[preds != labels])    # 计算误差率(w的创建和更新都做了概率化处理，sum(wi)=1,所以可以用错分样本的w之和作为误差率)
                     
                     if error > 0.5:
@@ -70,7 +70,7 @@ class AdaBoost(BaseModel):
                         best_polarity = polarity
                         best_feat_id = feat_id
                         best_value = value
-                        best_preds = preds
+                        best_preds = preds * polarity  # 乘以polarity后就是真实的预测结果
                         
             # 生成1个分类器
             alpha = 0.5 * math.log((1.0 - min_error) / (min_error + 1e-10)) 
@@ -80,11 +80,9 @@ class AdaBoost(BaseModel):
                       min_error = min_error,
                       alpha = alpha)
             self.clf_list.append(clf)
-            print("finish no. %d stump build, acc is: %.3f, alpha is: "%(clf_id, 1 - clf.min_error, alpha))
-            # 更新w
-            wrong_preds = best_preds[best_polarity * best_preds]
-            
-            W *= np.exp(-clf.alpha * y * predictions)  # 根据该预测值更新权重
+            print("finish no. %d stump build, acc is: %.3f, alpha is: %.5f"%(clf_id, 1 - clf.min_error, alpha))
+            # 获取该分类器的预测结果后更新样本参数w
+            W *= np.exp(-clf.alpha * labels * best_preds)  # 根据该预测值更新权重
             W /= np.sum(W) # 概率化，使w的值类似与概率分布值，在(0,1)之间，且所有w之和为1
     
         # 保存参数
@@ -94,7 +92,17 @@ class AdaBoost(BaseModel):
         self.model_dict['clf_list'] = self.clf_list
                                          
                     
-    def predict_single(self):
-        pass
+    def predict_single(self, sample):
+        """单样本预测"""
+        result = 0
+        for clf in self.clf_list:
+            if sample[clf.feat_id] < clf.feat_value:
+                pred = -1 * clf.polarity
+            else:
+                pred = 1 * clf.polarity
+            result += pred * clf.alpha
+        result = np.sign(result)
+        return result
+            
         
         
