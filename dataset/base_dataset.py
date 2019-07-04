@@ -8,36 +8,43 @@ Created on Tue Jun 11 09:59:32 2019
 import matplotlib.pyplot as plt
 from sklearn.preprocessing import scale
 import numpy as np
+import pandas as pd
 
 class BaseDataset():
     
     def __init__(self, 
                  norm=None, 
                  label_transform_dict=None, 
-                 one_hot=None):
+                 one_hot=None,
+                 binary=None):
         """数据集基类，默认支持如下变换：
         - 归一化： norm=True
         - 标签值变换: label_transform_dict = {1:1, 0:-1}
         - 标签独热编码: one_hot=True
+        - 二分类化：binary=True
         """
+        # 1.提取数据
         self.dataset = self.get_dataset()
         self.datas = self.dataset.get('data', [])    # (n_sample, n_feat)
-        self.labels = self.dataset.get('target', []) # (n_sample,)
-        
+        self.labels = self.dataset.get('target', []) # (n_sample,)        
         self.label_names = self.dataset.get('target_names', None)
         self.imgs = self.dataset.get('images', None)
         self.feat_names = self.dataset.get('feature_names', None)
         
-        self.classes = set(self.labels)
-        self.num_classes = len(self.classes)
-        self.num_features = self.datas.shape[1]  # 避免有的数据集没有feat_names这个字段
-
+        # 2.数据变换
         if norm:
-            self.feats = scale(self.feats)
+            self.datas = scale(self.datas)
         if label_transform_dict:
             self.label_transform(label_transform_dict)
         if one_hot:
             self.label_to_one_hot()
+        if binary:
+            self.get_binary_dataset()
+            
+        # 3.扩展变量
+        self.classes = set(self.labels)
+        self.num_classes = len(self.classes)
+        self.num_features = self.datas.shape[1]  # 避免有的数据集没有feat_names这个字段
             
     def label_transform(self, label_transform_dict):
         """默认不改变label的取值范围，但可以通过该函数修改labels的对应范围
@@ -63,6 +70,19 @@ class BaseDataset():
         one_hot = np.zeros((self.labels.shape[0], n_col))
         one_hot[np.arange(self.labels.shape[0]), self.labels] = 1
         self.labels = one_hot  # (n_samples, n_col)
+    
+    def get_binary_dataset(self):
+        """从原多分类数据集随机提取其中两类得到二分类数据集"""
+        label_unique = np.unique(self.labels)
+        random_labels = np.random.permutation(label_unique)[:2]  # 提取前2个标签
+        idx = self.labels == random_labels[0] or self.labels == random_labels[1]
+        
+        labels_binary = self.labels[idx]
+        feats_binary = self.datas[idx]
+        # 转换数据集        
+        self.datas = feats_binary
+        self.labels = labels_binary
+        self.label_names = random_labels        
     
     def get_dataset(self):
         raise NotImplementedError('the get_dataset function is not implemented.')

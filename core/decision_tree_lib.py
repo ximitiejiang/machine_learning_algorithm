@@ -35,13 +35,14 @@ class CART(BaseModel):
         """
         self.min_samples_split = min_samples_split  # 最少可分样本个数
         self.max_depth = max_depth                  # 最大树的深度
-        self.min_gini = min_impurity                # 最小基尼指数，接近于0的一个值
-        
+        self.min_gini = min_impurity                # 最小基尼指数，接近于0的一个值        
         super().__init__(feats, labels)
         
-#        self.dynamic_feat_id_list = list(np.arange(self.feats.shape[1]))  # 动态特征id，每分一次就去掉分过的feat id
-        self.tree = self.create_tree(self.feats, self.labels, current_depth=0)
+        # 为了兼容回归树，抽象出2个差异性函数
+        self.calc_impurity = self.calc_gini
+        self.calc_leaf_value = self.majority_vote
         
+        self.tree = self.create_tree(self.feats, self.labels, current_depth=0)
         # 没有训练，直接保存tree
         self.model_dict['model_name'] = 'CART classifier'\
             + '_depth' + str(self.tree_final_params['final_depth']) \
@@ -62,7 +63,6 @@ class CART(BaseModel):
                 # 统计一个特征列的取值个数
                 feat = feats[:, feat_id]
                 feat_value_unique = np.unique(feat)
-#                feat_value_dict = self.count_quantity(feat)
                 for value in feat_value_unique: # 内循环提取特征值
                     # 计算一个特征列的每个取值的gini: ge(great equal), lt(less than)
                     feats_ge, labels_ge, feats_lt, labels_lt = \
@@ -78,14 +78,13 @@ class CART(BaseModel):
         
         # 如果当前数据包的gini有下降且特征数大于1,则继续分解，此时存放中间节点，只有feat_id/feat_value/left/right
         if current_gini - best_gini > self.min_gini:  
-#            self.dynamic_feat_id_list.pop(best_criteria[0])   # 弹出当前作为分割特征的列号feat_id不再作为分割选择
             return DTNode(feat_id = best_criteria[0], 
                           feat_value = best_criteria[1],
                           left = self.create_tree(*best_subsets[0], current_depth + 1),
                           right = self.create_tree(*best_subsets[1], current_depth + 1))
                         
         # 如果无法再分，此时存放叶子节点，只有points/labels/result
-        leaf_result = self.majority_vote(labels)
+        leaf_result = self.calc_leaf_value(labels)
         self.tree_final_params = dict(final_depth = current_depth + 1,
                                       final_gini = best_gini)  # 这里final_depth是包含叶子节点所以+1, 但不包含root节点
         return DTNode(points = feats,
@@ -123,7 +122,7 @@ class CART(BaseModel):
         labels_right = labels[feats[:, feat_id] < value]
         return feats_left, labels_left, feats_right, labels_right
         
-    def calc_impurity(self, labels):
+    def calc_gini(self, labels):
         """计算系统不纯度：在cart中用基尼指数来评价系统不纯度，只用于计算单个数据集按类别分的基尼(所以只传入labels即可计算)。
         该算法兼容离散特征和连续特征
         而多个数据集组合的基尼通过加权计算得到: 但注意加权系数在离散和连续特征中计算方法因为split_dataset改变而有区别。
@@ -157,7 +156,7 @@ class CART(BaseModel):
             else:                               # 如果不等于节点特征值，则进右树
                 branch = tree.right
             return self.get_single_tree_result(sample, branch)
-            
+
 class ID3(CART):
     def __init__(self, feats, labels, 
                  min_samples_split=2, 
@@ -186,4 +185,36 @@ class C45():
         pass
         
         
+class CARTReg(CART):
+    """CART回归树算法，其建立树的方式跟分类树基本一样，唯2差别就是到叶子节点时决定叶子节点值采用取平均，而不是投票，
+    因为回归的目的是尽可能靠近训练值的均值；同时在评估系统不纯度不是采用基尼指数，而是采用计算方差缩减(李航书P69)
+    """
+    def __init__(self):
+        self.calc_leaf_value = self._mean_of_y
+        self.calc_impurity = self._calculate_variance_reduction
+        super().__init__()   # 基于叶子节点的值计算方法不同以及系统不纯度判断方法不同，回归树跟分类树也就不同
+    
+    def _calculate_variance_reduction(self, y, y1, y2):
+        var_tot = self.calculate_variance(y)
+        var_1 = self.calculate_variance(y1)
+        var_2 = self.calculate_variance(y2)
+        frac_1 = len(y1) / len(y)
+        frac_2 = len(y2) / len(y)
+
+        # Calculate the variance reduction
+        variance_reduction = var_tot - (frac_1 * var_1 + frac_2 * var_2)
+
+        return sum(variance_reduction)
+
+    def _mean_of_y(self, y):
+        value = np.mean(y, axis=0)
+        return value if len(value) > 1 else value[0]
+    
+    def calculate_variance(self, X):
+        """ Return the variance of the features in dataset X """
+        mean = np.ones(np.shape(X)) * X.mean(0)
+        n_samples = np.shape(X)[0]
+        variance = (1 / n_samples) * np.diag((X - mean).T.dot(X - mean))
         
+        return variance    
+    

@@ -10,7 +10,7 @@ import numpy as np
 from dataset.loan_dataset import LoanDataset
 from dataset.iris_dataset import IrisDataset
 from dataset.nonlinear_dataset import NonlinearDataset
-from core.decision_tree_lib import CART, ID3, C45
+from core.decision_tree_lib import CART, ID3, C45, CARTReg
 from sklearn.model_selection import train_test_split
 import matplotlib.pyplot as plt
 
@@ -78,7 +78,8 @@ if __name__ == "__main__":
         cart.evaluation(test_x, test_y)
         
 
-        
+    if source == 'reg':
+        reg = CARTReg()
         
 
 

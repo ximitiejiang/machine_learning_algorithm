@@ -15,6 +15,14 @@ import matplotlib.pyplot as plt
 from decision_tree import RegressionTree
 from plot import Plot
 
+def shuffle_data(X, y, seed=None):
+    """ Random shuffle of the samples in X and y """
+    if seed:
+        np.random.seed(seed)
+    idx = np.arange(X.shape[0])
+    np.random.shuffle(idx)
+    return X[idx], y[idx]
+
 def train_test_split(X, y, test_size=0.5, shuffle=True, seed=None):
     """ Split the data into train and test sets """
     if shuffle:

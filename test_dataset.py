@@ -18,6 +18,7 @@ from dataset.heart_scale_dataset import HeartScaleDataset
 from dataset.diabetes_dataset import DiabetesDataset
 from dataset.pima_indians_diabetes_dataset import PimaIndiansDiabetesDataset
 from dataset.loan_dataset import LoanDataset
+from dataset.regression_dataset import RegressionDataset
 
 # 1
 #bost = BostonHousePriceDataset()
@@ -99,8 +100,13 @@ from dataset.loan_dataset import LoanDataset
 #print('label is: %d'%label)
 
 # 14
-loan = LoanDataset()
-idx = 10
-data, label = loan[idx]
-print('data is: ', data)
-print('label is: %d'%label)
+#loan = LoanDataset()
+#idx = 10
+#data, label = loan[idx]
+#print('data is: ', data)
+#print('label is: %d'%label)
+
+# 15
+reg = RegressionDataset(n_features=2, n_samples=100, noise=1)
+datas = reg.datas
+labels = reg.labels
