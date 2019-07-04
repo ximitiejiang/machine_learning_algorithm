@@ -208,7 +208,7 @@ class CARTReg(CART):
 
     def _mean_of_y(self, y):
         value = np.mean(y, axis=0)
-        return value if len(value) > 1 else value[0]
+        return value if len(value) > 1 else value[0]  # 均值计算：如果是one hot编码，返回多个平均，否则返回单个平均值
     
     def calculate_variance(self, X):
         """ Return the variance of the features in dataset X """

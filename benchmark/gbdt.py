@@ -82,13 +82,13 @@ class GradientBoosting(object):
 
 
     def fit(self, X, y):
-        y_pred = np.full(np.shape(y), np.mean(y, axis=0))
+        y_pred = np.full(np.shape(y), np.mean(y, axis=0))  # 用训练标签的平均值作为预测值，类似于回归树的叶节点获得方式
         for i in range(self.n_estimators):
-            gradient = self.loss.gradient(y, y_pred)
-            self.trees[i].fit(X, gradient)
-            update = self.trees[i].predict(X)
+            gradient = self.loss.gradient(y, y_pred)  # 计算梯度：用损失函数的导数作为梯度（跟深度学习什么区别？）
+            self.trees[i].fit(X, gradient)            # 创建回归树，每个leaf是采用分隔出来的样本平均值
+            update = self.trees[i].predict(X)         # 一棵回归树创建好以后马上进行预测，
             # Update y prediction
-            y_pred -= np.multiply(self.learning_rate, update)
+            y_pred -= np.multiply(self.learning_rate, update)  # 
 
 
     def predict(self, X):
