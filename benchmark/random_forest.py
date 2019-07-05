@@ -63,19 +63,19 @@ def accuracy_score(y_true, y_pred):
 
 def normalize(X, axis=-1, order=2):
     """ Normalize the dataset X """
-    l2 = np.atleast_1d(np.linalg.norm(X, order, axis))
-    l2[l2 == 0] = 1
+    l2 = np.atleast_1d(np.linalg.norm(X, order, axis))   # 求np.linalg.norm(data, ord=None, axis=None)为求ord=1 or 2(一范数/二范数),axis=0按列向量,=1按行向量
+    l2[l2 == 0] = 1                                      # 
     return X / np.expand_dims(l2, axis)
 
 
 def standardize(X):
     """ Standardize the dataset X """
     X_std = X
-    mean = X.mean(axis=0)
-    std = X.std(axis=0)
+    mean = X.mean(axis=0)    # 按列求均值
+    std = X.std(axis=0)      # 按列求标准差
     for col in range(np.shape(X)[1]):
         if std[col]:
-            X_std[:, col] = (X_std[:, col] - mean[col]) / std[col]
+            X_std[:, col] = (X_std[:, col] - mean[col]) / std[col]  # 每一列特征单独做自己的标准化(减列均值，除列标准差)
     # X_std = (X - X.mean(axis=0)) / X.std(axis=0)
     return X_std
 

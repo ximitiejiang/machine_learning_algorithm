@@ -88,10 +88,18 @@ def main():
 
     # Plot the results
     # Plot the results
-    m1 = plt.scatter(366 * X_train, y_train, color=cmap(0.9), s=10)
+#    m1 = plt.scatter(366 * X_train, y_train, color=cmap(0.9), s=10)
     m2 = plt.scatter(366 * X_test, y_test, color=cmap(0.5), s=10)
-    m3 = plt.scatter(366 * X_test, y_pred, color='black', s=10)
+#    m3 = plt.scatter(366 * X_test, y_pred, color='black', s=10)
 #    m3 = plt.plot(366 * X_test, y_pred, color='black')
+    train_x_sorted = np.sort(X_train, axis=0)
+    train_y_sorted = np.array(y_train)[np.argsort(X_train, axis=0)]
+    m1 = plt.plot(366 * train_x_sorted, train_y_sorted, color='red', linestyle='--')
+    
+    x_sorted = np.sort(X_test, axis=0)
+    y_sorted = np.array(y_pred)[np.argsort(X_test, axis=0)]
+    m3 = plt.plot(366 * x_sorted, y_sorted, color='blue')
+    
     plt.suptitle("Regression Tree")
     plt.title("MSE: %.2f" % mse, fontsize=10)
     plt.xlabel('Day')

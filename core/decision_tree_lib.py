@@ -6,6 +6,7 @@ Created on Wed Jun 26 17:37:06 2019
 @author: ubuntu
 """
 import numpy as np
+import math
 from .base_model import BaseModel
 
 class DTNode:
@@ -20,40 +21,38 @@ class DTNode:
         self.labels = labels  # (optional for leaf)
         self.result = result   # 存放最终叶子节点的result
     
-
-class CART(BaseModel):
+class BaseTree(BaseModel):
     
     def __init__(self, feats, labels, 
                  min_samples_split=2, 
                  max_depth=10,
-                 min_impurity = 1e-7):
-        """CART分类树的特点是：基于gini指数的大小来识别最佳分隔特征，分割后gini指数越小说明这种
-        分割方式更有利于数据的确定性提高。
-        1. CART只会生成二叉树，因为判断时只判断等于特征值还是不等于(left分支是等于特征值分支，right分支是不等于特征值分支)
-        2. gini计算只跟label相关，所以可以针对离散特征，也可以针对连续特征。不过对连续特征来说每个特征的取值个数非常多，
-           计算量较大，可以考虑把连续特征离散化减少每个特征的value个数。
+                 min_impurity_reduction = 1e-7):
+        """分类和回归树的基类：创建决策树的核心过程在这个基类实现
+                   ____BaseModel_______
+                  /           \        \
+             __CARTClf_       CARTReg  ada_boost
+            /  |   \   \         \
+          ID3 C45 RandF XGBoost   GBDT
         """
+        super().__init__(feats, labels)
         self.min_samples_split = min_samples_split  # 最少可分样本个数
         self.max_depth = max_depth                  # 最大树的深度
-        self.min_gini = min_impurity                # 最小基尼指数，接近于0的一个值        
-        super().__init__(feats, labels)
-        
-        # 为了兼容回归树，抽象出2个差异性函数
-        self.calc_impurity = self.calc_gini
-        self.calc_leaf_value = self.majority_vote
-        
+        self.min_impurity_reduction = min_impurity_reduction # 最小系统不纯度缩减量，接近于0的一个值        
         self.tree = self.create_tree(self.feats, self.labels, current_depth=0)
-        # 没有训练，直接保存tree
-        self.model_dict['model_name'] = 'CART classifier'\
-            + '_depth' + str(self.tree_final_params['final_depth']) \
-            + '_gini'+ str(round(self.tree_final_params['final_gini'], 3))
-        self.model_dict['tree'] = self.tree
+    
+    def calc_impurity_reduction(self):
+        """统一用系统不纯度缩减量来描述系统：可以选择信息增益(也就是熵减少量,比如ID3)，或基尼减少量(比如CART)，
+        或者均方值减少量(比如回归树)"""
+        raise NotImplementedError('functions of clac_impurity or calc_leaf_value is not implemented.')
+        
+    def calc_leaf_value(self):
+        raise NotImplementedError('functions of clac_impurity or calc_leaf_value is not implemented.')
     
     def create_tree(self, feats, labels, current_depth=0):
         """创建CART树，存储特征
         """
-        current_gini = self.calc_impurity(labels)  # 计算当前数据集的gini指数
-        best_gini = 1
+#        current_impurity = self.calc_impurity(labels)  # 计算当前数据集的gini指数
+        best_impurity_reduction = 0
         best_criteria = None
         best_subsets = None
         
@@ -68,16 +67,16 @@ class CART(BaseModel):
                     feats_ge, labels_ge, feats_lt, labels_lt = \
                     self.split_dataset(feats, labels, feat_id, value)
                     
-                    gini = len(feats_ge) / len(feats) * self.calc_impurity(labels_ge) + \
-                           len(feats_lt) / len(feats) * self.calc_impurity(labels_lt)
-                           
-                    if gini < best_gini and len(feats_ge) > 0 and len(feats_lt) > 0:
-                        best_gini = gini
+
+                    impurity_reduction = self.calc_impurity_reduction(labels, labels_ge, labels_lt)
+                    
+                    if impurity_reduction > best_impurity_reduction and len(feats_ge) > 0 and len(feats_lt) > 0:
+                        best_impurity_reduction = impurity_reduction
                         best_criteria = (feat_id, value)
                         best_subsets = [(feats_ge, labels_ge), (feats_lt, labels_lt)]   
         
         # 如果当前数据包的gini有下降且特征数大于1,则继续分解，此时存放中间节点，只有feat_id/feat_value/left/right
-        if current_gini - best_gini > self.min_gini:  
+        if best_impurity_reduction > self.min_impurity_reduction:  
             return DTNode(feat_id = best_criteria[0], 
                           feat_value = best_criteria[1],
                           left = self.create_tree(*best_subsets[0], current_depth + 1),
@@ -85,23 +84,10 @@ class CART(BaseModel):
                         
         # 如果无法再分，此时存放叶子节点，只有points/labels/result
         leaf_result = self.calc_leaf_value(labels)
-        self.tree_final_params = dict(final_depth = current_depth + 1,
-                                      final_gini = best_gini)  # 这里final_depth是包含叶子节点所以+1, 但不包含root节点
+        self.tree_final_params = dict(final_depth = current_depth + 1)  # 这里final_depth是包含叶子节点所以+1, 但不包含root节点
         return DTNode(points = feats,
                       labels = labels,
                       result = leaf_result)  # 存放label数量最多的标签值
-    
-    def majority_vote(self, labels):
-        """投票方式获得最多类别的label作为叶节点的预测结果
-        Args: labels()
-        """
-        labels_count_dict = {}
-        for label in labels:
-            labels_count_dict[label] = labels_count_dict.get(label, 0) + 1
-        max_result = max(zip(labels_count_dict.values(), 
-                             labels_count_dict.keys()))
-        return max_result[1]
-            
     
     def split_dataset(self, feats, labels, feat_id, value):
         """分割指定的数据子集：小于value的一块，大于value的一块
@@ -121,23 +107,7 @@ class CART(BaseModel):
         feats_right = feats[feats[:, feat_id] < value]
         labels_right = labels[feats[:, feat_id] < value]
         return feats_left, labels_left, feats_right, labels_right
-        
-    def calc_gini(self, labels):
-        """计算系统不纯度：在cart中用基尼指数来评价系统不纯度，只用于计算单个数据集按类别分的基尼(所以只传入labels即可计算)。
-        该算法兼容离散特征和连续特征
-        而多个数据集组合的基尼通过加权计算得到: 但注意加权系数在离散和连续特征中计算方法因为split_dataset改变而有区别。
-        """
-        n_samples = labels.shape[0]
-        if n_samples == 0:
-            return 0
-        label_dict = {}
-        for label in labels:
-            label_dict[label] = label_dict.get(label, 0) + 1
-        gini = 1
-        for value in label_dict.values():
-            gini -= pow(value / n_samples, 2)
-        return gini
-
+    
     def predict_single(self, sample):
         """单样本预测"""
         result = self.get_single_tree_result(sample, self.tree)
@@ -156,65 +126,155 @@ class CART(BaseModel):
             else:                               # 如果不等于节点特征值，则进右树
                 branch = tree.right
             return self.get_single_tree_result(sample, branch)
+    
 
-class ID3(CART):
+class CARTClf(BaseTree):
+    
     def __init__(self, feats, labels, 
                  min_samples_split=2, 
                  max_depth=10,
-                 min_impurity = 1e-7):
-        super().__init__(feats, labels, min_samples_split, max_depth, min_impurity)
-        self.min_info_gain = min_impurity
-
-        
-    def calc_impurity(self):
-        """ID3算法采用信息增益来评估系统不纯度，信息增益 = 经验熵 - 条件熵
+                 min_impurity_reduction = 1e-7):
+        """CART分类树的特点是：基于gini指数的大小来识别最佳分隔特征，分割后gini指数越小说明这种
+        分割方式更有利于数据的确定性提高。
+        1. CART只会生成二叉树，因为判断时只判断等于特征值还是不等于(left分支是等于特征值分支，right分支是不等于特征值分支)
+        2. gini计算只跟label相关，所以可以针对离散特征，也可以针对连续特征。不过对连续特征来说每个特征的取值个数非常多，
+           计算量较大，可以考虑把连续特征离散化减少每个特征的value个数。
+        """     
+        self.calc_impurity_reduction = self.calc_gini_reduction
+        self.calc_leaf_value = self.majority_vote
+        super().__init__(feats, labels,
+                         min_samples_split=2, 
+                         max_depth=10,
+                         min_impurity_reduction = 1e-7)
+        # 没有训练，直接保存tree
+        self.model_dict['model_name'] = 'CARTClf'\
+            + '_depth' + str(self.tree_final_params['final_depth'])
+        self.model_dict['tree'] = self.tree
+    
+    def majority_vote(self, labels):
+        """投票方式获得最多类别的label作为叶节点的预测结果
+        Args: labels()
         """
-        pass
+        labels_count_dict = {}
+        for label in labels:
+            labels_count_dict[label] = labels_count_dict.get(label, 0) + 1
+        max_result = max(zip(labels_count_dict.values(), 
+                             labels_count_dict.keys()))
+        return max_result[1]
     
+    def calc_gini_reduction(self, labels, labels_ge, labels_lt):
+        """基尼缩减量可用于评估系统不纯度下降等级: 选择基尼缩减量最大的特征列和特征值
+        基尼缩减量 = 系统分割前的gini - 系统分割后的gini = G(D) - (p1*gini(D1) + p2*gini(D2))
+        (1-sum(pk^2)) - (D1/D*gini(D1) +D2/D*gini(D2) 
+        """
+        p = len(labels_ge) / len(labels)
+        gini_split =  p * self.calc_gini(labels_ge) + \
+                      (1 - p) * self.calc_gini(labels_lt)
+        gini_reduction = self.calc_gini(labels) - gini_split
+        return gini_reduction
     
-class C45():
+    def calc_gini(self, labels):
+        """计算系统不分割前的不纯度gini = 1-sum(p^2), p为每种类别标签的比例，也就是每种类别的概率
+        """
+        n_samples = labels.shape[0]
+        if n_samples == 0:
+            return 0
+        label_dict = {}
+        for label in labels:
+            label_dict[label] = label_dict.get(label, 0) + 1
+        gini = 1
+        for value in label_dict.values():
+            gini -= pow(value / n_samples, 2)
+        return gini
+
+
+class ID3Clf(CARTClf):
     def __init__(self, feats, labels, 
                  min_samples_split=2, 
                  max_depth=10,
-                 min_impurity = 1e-7):
-        super().__init__(feats, labels, min_samples_split, max_depth, min_impurity)
-        self.min_gain_ratio = min_impurity
+                 min_impurity_reduction = 1e-7):
+        """ID3分类算法：采用信息增益作为系统不纯度的评价标准"""
+        self.calc_impurity = self.calc_info_gain
+        super().__init__(feats, labels, min_samples_split, max_depth, min_impurity_reduction)
+        
+    def calc_info_gain(self, labels, labels_ge, labels_lt):
+        """ID3算法，信息增益 = 经验熵 - 条件熵，条件熵是指H(Y|X)也就是分割后的熵
+        info_gain = H(D) - (p1*H(D1) + p2*H(D2))
+        """
+        p = len(labels_ge) / len(labels)
+        entropy_split = p * self.calc_entropy(labels_ge) + (1-p) * self.calc_entropy(labels_lt) 
+        info_gain = self.calc_entropy(labels) - entropy_split
+        return info_gain
     
-    def calc_impurity(self):
-        """C45算法采用信息增益比来评估系统不纯度，信息增益比 = 信息增益 / 经验熵"""
+    def calc_entropy(self, labels):
+        """计算经验熵H=-sum(p*log(p,2)), p为每种类别标签的比例，也就相当于每种类别的概率, log为2为底
+        """
+        entropy = 0
+        labels_unique = np.unique(labels)
+        for label in labels_unique:
+            p = len(labels[labels == label]) / len(labels)
+            entropy += -p * math.log(p, 2)
+        return entropy
+            
+    
+class C45Clf(CARTClf):
+    def __init__(self, feats, labels, 
+                 min_samples_split=2, 
+                 max_depth=10,
+                 min_impurity_reduction = 1e-7):
+        """C4.5分类算法：采用信息增益比作为系统不纯度的评价标准"""
+        self.calc_impurity = self.calc_info_gain_ratio
+        super().__init__(feats, labels, min_samples_split, max_depth, min_impurity_reduction)
+    
+    def calc_info_gain_ratio(self):
+        """C4.5算法，信息增益比 = 信息增益 / 经验熵"""
         pass
         
         
-class CARTReg(CART):
+class CARTReg(BaseTree):
     """CART回归树算法，其建立树的方式跟分类树基本一样，唯2差别就是到叶子节点时决定叶子节点值采用取平均，而不是投票，
     因为回归的目的是尽可能靠近训练值的均值；同时在评估系统不纯度不是采用基尼指数，而是采用计算方差缩减(李航书P69)
     """
-    def __init__(self):
-        self.calc_leaf_value = self._mean_of_y
-        self.calc_impurity = self._calculate_variance_reduction
-        super().__init__()   # 基于叶子节点的值计算方法不同以及系统不纯度判断方法不同，回归树跟分类树也就不同
+    def __init__(self, feats, labels,    
+                 min_samples_split=2, 
+                 max_depth=10,
+                 min_impurity_reduction = 1e-7):
+        self.calc_leaf_value = self.mean_of_y
+        self.calc_impurity = self.calculate_variance_reduction
+        super().__init__(feats, labels, 
+                         min_samples_split=2, 
+                         max_depth=10,
+                         min_impurity_reduction = 1e-7)
+        # 没有训练，直接保存tree
+        self.model_dict['model_name'] = 'CARTReg'\
+            + '_depth' + str(self.tree_final_params['final_depth']) \
+            + '_variance'+ str(round(self.tree_final_params['final_impurity'], 3))
+        self.model_dict['tree'] = self.tree
     
-    def _calculate_variance_reduction(self, y, y1, y2):
-        var_tot = self.calculate_variance(y)
-        var_1 = self.calculate_variance(y1)
-        var_2 = self.calculate_variance(y2)
-        frac_1 = len(y1) / len(y)
-        frac_2 = len(y2) / len(y)
-
-        # Calculate the variance reduction
-        variance_reduction = var_tot - (frac_1 * var_1 + frac_2 * var_2)
-
-        return sum(variance_reduction)
-
-    def _mean_of_y(self, y):
+    def mean_of_y(self, y):
+        """均值计算，用于在回归树中获得叶子节点的取值
+        """
         value = np.mean(y, axis=0)
         return value if len(value) > 1 else value[0]  # 均值计算：如果是one hot编码，返回多个平均，否则返回单个平均值
     
+    def calculate_variance_reduction(self, y, y1, y2):
+        """平方和缩减计算，用于评估系统做分割的特征和特征值是否最优
+        """
+        var = self.calculate_variance(y)
+        var_1 = self.calculate_variance(y1)
+        var_2 = self.calculate_variance(y2)
+        p = len(y1) / len(y)
+        # Calculate the variance reduction
+        variance_reduction = var - (p * var_1 + (1 - p) * var_2)
+
+        return sum(variance_reduction)
+
+    
     def calculate_variance(self, X):
         """ Return the variance of the features in dataset X """
-        mean = np.ones(np.shape(X)) * X.mean(0)
+        mean = np.ones(np.shape(X)) * X.mean(0)   # (n_sample, n_feat) = 1
         n_samples = np.shape(X)[0]
-        variance = (1 / n_samples) * np.diag((X - mean).T.dot(X - mean))
+        variance = (1 / n_samples) * np.diag((X - mean).T.dot(X - mean))  #
         
         return variance    
     

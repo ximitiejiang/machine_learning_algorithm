@@ -18,7 +18,7 @@ import matplotlib.pyplot as plt
 
 if __name__ == "__main__":
     
-    source = '2class2'
+    source = 'moon'
     
     if source == 'treedata':  # 2 classes: from book of zhaozhiyong
         data = []
@@ -40,8 +40,6 @@ if __name__ == "__main__":
         ab.evaluation(x,y)
         ab.vis_boundary(plot_step=0.01)
     
-
-        
     if source == 'moon':
         dataset = NonlinearDataset(type= 'circle', n_samples=500, noise=0.05, 
                                    label_transform_dict={1:1, 0:-1})

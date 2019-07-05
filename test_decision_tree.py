@@ -10,13 +10,25 @@ import numpy as np
 from dataset.loan_dataset import LoanDataset
 from dataset.iris_dataset import IrisDataset
 from dataset.nonlinear_dataset import NonlinearDataset
-from core.decision_tree_lib import CART, ID3, C45, CARTReg
+from core.decision_tree_lib import CARTClf, ID3Clf, C45Clf, CARTReg
 from sklearn.model_selection import train_test_split
 import matplotlib.pyplot as plt
+import pandas as pd
+
+def standardize(X):
+    """ Standardize the dataset X """
+    X_std = X
+    mean = X.mean(axis=0)    # 按列求均值
+    std = X.std(axis=0)      # 按列求标准差
+    for col in range(np.shape(X)[1]):
+        if std[col]:
+            X_std[:, col] = (X_std[:, col] - mean[col]) / std[col]  # 每一列特征单独做自己的标准化(减列均值，除列标准差)
+    # X_std = (X - X.mean(axis=0)) / X.std(axis=0)
+    return X_std
 
 if __name__ == "__main__":
     
-    source = 'moon'
+    source = 'iris'
     
     if source == 'treedata':  # 2 classes: from book of zhaozhiyong
         data = []
@@ -34,7 +46,7 @@ if __name__ == "__main__":
         
         x = data[:, :-1]  # (400,2)
         y = data[:, -1]  # (400,)
-        cart = CART(x, y)
+        cart = CARTClf(x, y)
         cart.evaluation(x,y)
         cart.vis_boundary(plot_step=0.01)
     
@@ -44,7 +56,7 @@ if __name__ == "__main__":
         y = dataset.labels
 #        train_x, test_x, train_y, test_y = train_test_split(x, y, test_size=0.3)
         
-        cart = CART(x, y)
+        cart = CARTClf(x, y)
         cart.evaluation(x, y)
         print("final tree depth: %d, final gini: %d"%(cart.tree_final_params['final_depth'],
                                                       cart.tree_final_params['final_gini']))
@@ -58,7 +70,7 @@ if __name__ == "__main__":
         # array to mat
 #        train_x, test_x, train_y, test_y = np.mat(train_x), np.mat(test_x), np.mat(train_y), np.mat(test_y)
         
-        cart = CART(train_x, train_y, min_samples_split=2)
+        cart = CARTClf(train_x, train_y, min_samples_split=2)
         acc1 = cart.evaluation(train_x, train_y)
         print('train acc = %f'%(acc1))
         
@@ -73,14 +85,56 @@ if __name__ == "__main__":
         x = dataset.datas
         y = dataset.labels
         train_x, test_x, train_y, test_y = train_test_split(x, y, test_size=0.3)
-        cart = CART(train_x, train_y)
+        cart = CARTClf(train_x, train_y)
         cart.evaluation(train_x, train_y)
         cart.evaluation(test_x, test_y)
         
 
     if source == 'reg':
-        reg = CARTReg()
+        data = pd.read_csv('./dataset/simple/TempLinkoping2016.txt', sep="\t")
+
+        time = np.atleast_2d(data["time"].values).T
+        temp = np.atleast_2d(data["temp"].values).T
+    
+        X = standardize(time)        # Time. Fraction of the year [0, 1]
+        y = temp[:, 0]  # Temperature. Reduce to one-dim
+    
+        X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.3)
+    
+        model = CARTReg(X, y)
+        model.fit(X_train, y_train)
+        y_pred = model.predict(X_test)
+    
+        y_pred_line = model.predict(X)
+    
+        # Color map
+        cmap = plt.get_cmap('viridis')
+    
+#        mse = mean_squared_error(y_test, y_pred)
+    
+#        print ("Mean Squared Error:", mse)
+    
+        # Plot the results
+        # Plot the results
+    #    m1 = plt.scatter(366 * X_train, y_train, color=cmap(0.9), s=10)
+        m2 = plt.scatter(366 * X_test, y_test, color=cmap(0.5), s=10)
+    #    m3 = plt.scatter(366 * X_test, y_pred, color='black', s=10)
+    #    m3 = plt.plot(366 * X_test, y_pred, color='black')
+        train_x_sorted = np.sort(X_train, axis=0)
+        train_y_sorted = np.array(y_train)[np.argsort(X_train, axis=0)]
+        m1 = plt.plot(366 * train_x_sorted, train_y_sorted, color='red', linestyle='--')
         
+        x_sorted = np.sort(X_test, axis=0)
+        y_sorted = np.array(y_pred)[np.argsort(X_test, axis=0)]
+        m3 = plt.plot(366 * x_sorted, y_sorted, color='blue')
+        
+        plt.suptitle("Regression Tree")
+#        plt.title("MSE: %.2f" % mse, fontsize=10)
+        plt.xlabel('Day')
+        plt.ylabel('Temperature in Celcius')
+        plt.legend((m1, m2, m3), ("Training data", "Test data", "Prediction"), loc='lower right')
+        plt.show()
+            
 
 
 

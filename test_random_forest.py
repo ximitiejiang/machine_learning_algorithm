@@ -78,7 +78,7 @@ if __name__ == "__main__":
         
         rf = RandomForest(train_x, train_y, 
                           min_samples_split=4, max_depth=10, max_features=3,
-                          n_trees=100, sub_samples_ratio=0.5)
+                          n_trees=200, sub_samples_ratio=0.5)
         acc1 = rf.evaluation(train_x, train_y)
         print('train acc = %f'%(acc1))
         

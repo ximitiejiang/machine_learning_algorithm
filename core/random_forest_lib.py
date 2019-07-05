@@ -6,11 +6,11 @@ Created on Thu Jun 27 21:59:21 2019
 @author: suliang
 """
 
-from .decision_tree_lib import CART
+from .decision_tree_lib import CARTClf
 import numpy as np
 import time
 
-class RandomForest(CART):
+class RandomForest(CARTClf):
     
     def __init__(self, feats, labels, n_trees, 
                  min_samples_split=2, max_depth=10, min_impurity = 1e-7,
@@ -97,7 +97,7 @@ class RandomForest(CART):
             sample_refined = sample[feats_id]   # 先对样本提取对应特征列
             
             result_i.append(self.get_single_tree_result(sample_refined, tree)) #单颗树结果
-        result = self.majority_vote(result_i)  # 投票计算结果
+        result = self._majority_vote(result_i)  # 投票计算结果
         return result
     
     
