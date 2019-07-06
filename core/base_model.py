@@ -68,6 +68,7 @@ class BaseModel():
             if int(pred_label) == int(label):
                 correct += 1
         acc = correct / total_sample
+        print('======%s======'%self.model_dict['model_name'])
         print('Evaluation finished in %f seconds with accuracy = %f.'%((time.time() - start), acc))
         
         return acc

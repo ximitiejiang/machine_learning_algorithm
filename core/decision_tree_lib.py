@@ -147,6 +147,7 @@ class CARTClf(BaseTree):
                          max_depth=10,
                          min_impurity_reduction = 1e-7)
         # 没有训练，直接保存tree
+        self.trained = True
         self.model_dict['model_name'] = 'CARTClf'\
             + '_depth' + str(self.tree_final_params['final_depth'])
         self.model_dict['tree'] = self.tree
@@ -197,6 +198,12 @@ class ID3Clf(CARTClf):
         self.calc_impurity = self.calc_info_gain
         super().__init__(feats, labels, min_samples_split, max_depth, min_impurity_reduction)
         
+        # 没有训练，直接保存tree
+        self.trained = True
+        self.model_dict['model_name'] = 'ID3Clf'\
+            + '_depth' + str(self.tree_final_params['final_depth'])
+        self.model_dict['tree'] = self.tree
+        
     def calc_info_gain(self, labels, labels_ge, labels_lt):
         """ID3算法，信息增益 = 经验熵 - 条件熵，条件熵是指H(Y|X)也就是分割后的熵
         info_gain = H(D) - (p1*H(D1) + p2*H(D2))
@@ -225,6 +232,12 @@ class C45Clf(CARTClf):
         """C4.5分类算法：采用信息增益比作为系统不纯度的评价标准"""
         self.calc_impurity = self.calc_info_gain_ratio
         super().__init__(feats, labels, min_samples_split, max_depth, min_impurity_reduction)
+        
+        # 没有训练，直接保存tree
+        self.trained = True
+        self.model_dict['model_name'] = 'C45Clf'\
+            + '_depth' + str(self.tree_final_params['final_depth'])
+        self.model_dict['tree'] = self.tree
     
     def calc_info_gain_ratio(self):
         """C4.5算法，信息增益比 = 信息增益 / 经验熵"""

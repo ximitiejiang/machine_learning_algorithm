@@ -28,7 +28,7 @@ def standardize(X):
 
 if __name__ == "__main__":
     
-    source = 'iris'
+    source = 'moon'
     
     if source == 'treedata':  # 2 classes: from book of zhaozhiyong
         data = []
@@ -78,6 +78,16 @@ if __name__ == "__main__":
         print('test acc = %f'%(acc2))
         
         cart.vis_boundary(plot_step=0.05)
+        
+        
+        id3 = ID3Clf(train_x, train_y, min_samples_split=2)
+        acc1 = id3.evaluation(train_x, train_y)
+        print('train acc = %f'%(acc1))
+        
+        acc2 = id3.evaluation(test_x, test_y)
+        print('test acc = %f'%(acc2))
+        
+        id3.vis_boundary(plot_step=0.05)
 
         
     if source == 'iris':
