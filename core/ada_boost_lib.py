@@ -21,7 +21,9 @@ class DTStump:
 
 
 class LogisticStump:
-    """尝试用logistic reg分类器来做基础弱分类器(作为弱分类器需要足够差异性)"""
+    """尝试用logistic reg分类器来做基础弱分类器，要求：
+    1.分类器分类精度>0.5, 2.分类器有一定的多样性
+    """
     def __init__():
         pass
 
@@ -43,7 +45,7 @@ class AdaBoost(BaseModel):
         label_set = set(np.array(self.labels).flatten().astype(np.int8).tolist())
         for label in label_set:
             if label != 1 and label != -1:
-                raise ValueError('labels should be 1 or -1.')
+                raise ValueError('labels should be 1 or -1.')  # adaboost只适合二分类问题，标签限制在-1, 1
         
         self.n_clfs = n_clfs
         self.clf_list = []
@@ -73,7 +75,7 @@ class AdaBoost(BaseModel):
                         best_preds = preds * polarity  # 乘以polarity后就是真实的预测结果
                         
             # 生成1个分类器
-            alpha = 0.5 * math.log((1.0 - min_error) / (min_error + 1e-10)) 
+            alpha = 0.5 * math.log((1.0 - min_error) / (min_error + 1e-10)) # 计算单个分类器的加权系数：误差越大加权值越小
             clf = CLF(feat_id = best_feat_id,
                       feat_value = best_value,
                       polarity = best_polarity,
@@ -100,8 +102,8 @@ class AdaBoost(BaseModel):
                 pred = -1 * clf.polarity
             else:
                 pred = 1 * clf.polarity
-            result += pred * clf.alpha
-        result = np.sign(result)
+            result += pred * clf.alpha    # 单个分类器的输出结果是+1或-1，把所有分类器的分类结果乘以alpha做累加，就相当与所有分类器的加权投票
+        result = np.sign(result)         # 最后用累加结果的符号来判定，如果判定+1的分类器超过判定-1的分类器，则累加符号为正，否则为负
         return result
             
         

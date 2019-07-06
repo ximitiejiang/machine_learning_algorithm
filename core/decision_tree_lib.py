@@ -295,6 +295,7 @@ class CARTReg(BaseTree):
     
     def calculate_variance_reduction(self, y, y1, y2):
         """平方误差缩减 = 未分割前平方误差 - 分割后平方误差
+        未分割前的平方误差就是直接跟平均值的误差，而分割后的平方误差就是p1*var(D1) + p2*var(D2), 这里var理解为平方误差而不是方差(方差一般是指平方误差的均值)
         """
         var = self.calculate_variance(y)
         var_1 = self.calculate_variance(y1)
@@ -308,8 +309,9 @@ class CARTReg(BaseTree):
     
     def calculate_variance(self, X):
         """ 计算平方误差sum((y-y')^2) ，用于评估系统做分割的特征和特征值是否最优，
-        平方误差 = 子数据集1最小的平方误差+子数据集2的最小平方误差 = min(sum((y-y')^2))，
-        平方误差越小，
+        注意这里计算的是平方误差，而不是var方差，因为方差通常是平方误差的均值。
+        平方误差 = 数据集整体平方误差 = sum((y-y')^2)
+        平方误差越小，说明该预测越精确
         """
         if X.ndim ==1:  # 如果是(n_sample,)则转为(n_sample, 1); 如果是one hot的形式(n_sample, n_class)，直接可以兼容
             X = X.reshape(-1, 1)

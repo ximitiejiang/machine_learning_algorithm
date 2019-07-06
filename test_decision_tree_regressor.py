@@ -9,6 +9,7 @@ import numpy as np
 from dataset.loan_dataset import LoanDataset
 from dataset.iris_dataset import IrisDataset
 from dataset.nonlinear_dataset import NonlinearDataset
+from dataset.regression_dataset import RegressionDataset
 from core.decision_tree_lib import CARTClf, ID3Clf, C45Clf, CARTReg
 from sklearn.model_selection import train_test_split
 import matplotlib.pyplot as plt
@@ -27,9 +28,9 @@ def standardize(X):
 
 if __name__ == "__main__":
     
-    source = 'reg'
+    source = 'linear'
     
-    if source == 'reg':
+    if source == 'temp':
         data = pd.read_csv('./dataset/simple/TempLinkoping2016.txt', sep="\t")
 
         time = np.atleast_2d(data["time"].values).T
@@ -40,7 +41,14 @@ if __name__ == "__main__":
     
         X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.3)
     
-        model = CARTReg(X, y)
+        model = CARTReg(X_train, y_train)
         y_pred = model.evaluation(X_test, y_test)
         
+    if source == 'linear':
+        dataset = RegressionDataset(n_samples=500, n_features=1, n_targets=1, noise=3)
+        X = dataset.datas
+        y = dataset.labels
+        X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.3)
+        model = CARTReg(X_train, y_train)
+        y_pred = model.evaluation(X_test, y_test)
            

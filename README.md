@@ -207,6 +207,6 @@ sm.load('model_path')
 - Machine Learning in Action, Peter Harrington
 - Python Machine learning Algorithm, Zhiyong Zhao
 - Statical learning method, Hang Li
-- https://github.com/WenDesi/lihang_book_algorithm
+
   
 
