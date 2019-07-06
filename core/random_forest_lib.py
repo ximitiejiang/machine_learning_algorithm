@@ -13,7 +13,7 @@ import time
 class RandomForest(CARTClf):
     
     def __init__(self, feats, labels, n_trees, 
-                 min_samples_split=2, max_depth=10, min_impurity = 1e-7,
+                 min_samples_split=2, max_depth=10, min_impurity_reduction = 1e-7,
                  max_features=None, sub_samples_ratio=None):
         """随机森林分类算法特点：随机取样本生成森林，属于2种集成学习方法(bagging和boosting)中的bagging
         - bagging：代表是random forest，对数据集进行有放回抽样，形成多个训练数据的子集，并在每个子集训练一个分类器，
@@ -22,14 +22,13 @@ class RandomForest(CARTClf):
           同时更新分类器的系数，最后对基本分类器进行线性组合得到最终的一个分类器。
          - bagging与boosting的区别：bagging是多个分类器的组合，boosting是单个分类器的增强。
         """
-        super().__init__(feats, labels, min_samples_split, max_depth, min_impurity)
+        super().__init__(feats, labels, min_samples_split, max_depth, min_impurity_reduction)
         self.n_trees = n_trees
 
         self.max_features = max_features
         self.sub_samples_ratio = sub_samples_ratio
         if not self.max_features:
             self.max_features = int(np.sqrt(feats.shape[1]))   # 一般每棵树取特征个数为原特征的子集，可取sqrt(n_feats)，也可取log(n_feats)
-        
         if not self.sub_samples_ratio:
             self.sub_samples_ratio = 0.5                  # 一般每棵树取原样本个数的一半
             
@@ -41,17 +40,18 @@ class RandomForest(CARTClf):
         # 构建n棵树 
         self.tree_list = []
         self.tree_feats_id_list = []
+        start = time.time()
         for i in range(self.n_trees):
             tree = self.create_tree(*subsets[i], 0)
             self.tree_list.append(tree)
             self.tree_feats_id_list.append(feats_id_list[i])
-                
+        print('Finished building trees in %f seconds.'%(time.time() - start))
         self.trained = True
         # 保存模型参数
-        self.model_dict['model_name'] = 'RandomForest classifier' + '_' \
+        self.model_dict['model_name'] = 'RandomForest' + '_' \
                                         + str(self.n_trees) + 'trees_' \
                                         + str(self.max_features) + 'subfeats_' \
-                                        + str(self.sub_samples_ratio) + 'subsamples'
+                                        + str(self.sub_samples_ratio * 100) + '%subsamples'
         self.model_dict['tree_list'] = self.tree_list
         self.model_dict['tree_feats_id_list'] = self.tree_feats_id_list
         
@@ -97,7 +97,7 @@ class RandomForest(CARTClf):
             sample_refined = sample[feats_id]   # 先对样本提取对应特征列
             
             result_i.append(self.get_single_tree_result(sample_refined, tree)) #单颗树结果
-        result = self._majority_vote(result_i)  # 投票计算结果
+        result = self.majority_vote(result_i)  # 投票计算结果
         return result
     
     

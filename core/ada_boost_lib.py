@@ -52,10 +52,10 @@ class AdaBoost(BaseModel):
         # 创建n个分类器
         for clf_id in range(self.n_clfs):
             min_error = 1
-            for feat_id in range(self.n_feats):  # 遍历每个特征的每个特征值
+            for feat_id in range(self.n_feats):  # 遍历每个特征
                 feat = feats[:, feat_id]
                 feat_unique = np.unique(feat)
-                for value in feat_unique:
+                for value in feat_unique:        # 遍历每个特征值
                     polarity = 1
                     preds = np.ones((self.n_samples,)) # 初始化单个分类器的预测值为1
                     preds[feat < value] = -1           # 在polarity=1条件下，小于阈值则输出预测为-1, 而polarity=-1时，则是小于阈值输出预测1，乘以polarity之后就统一标准为小于阈值输出-1。
@@ -80,13 +80,13 @@ class AdaBoost(BaseModel):
                       min_error = min_error,
                       alpha = alpha)
             self.clf_list.append(clf)
-            print("finish no. %d stump build, acc is: %.3f, alpha is: %.5f"%(clf_id, 1 - clf.min_error, alpha))
+            print("finish no. %d/%d stump build, acc is: %.3f, alpha is: %.5f"%(clf_id+1, self.n_clfs, 1 - clf.min_error, alpha))
             # 获取该分类器的预测结果后更新样本参数w
             W *= np.exp(-clf.alpha * labels * best_preds)  # 根据该预测值更新权重
             W /= np.sum(W) # 概率化，使w的值类似与概率分布值，在(0,1)之间，且所有w之和为1
     
         # 保存参数
-        self.model_dict['model_name'] = 'AdaBoost Classifier' + '_'  \
+        self.model_dict['model_name'] = 'AdaBoost' + '_'  \
                                         + clf_type + '_' + str(self.n_clfs) \
                                         + 'clfs'
         self.model_dict['clf_list'] = self.clf_list

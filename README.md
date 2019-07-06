@@ -191,8 +191,11 @@ sm.load('model_path')
 <br>test code: [test_cart](https://github.com/ximitiejiang/machine_learning_algorithm/blob/master/test_ovo_model.py).
 <br>source code: [cart_lib](https://github.com/ximitiejiang/machine_learning_algorithm/blob/master/core/multi_class_model_wrapper.py).
 
-### PART 2.1 linear regressor
+### PART 2.1 cart reg
 <br>to be update ...
+<br>test code: [test_decision_tree_regressor](https://github.com/ximitiejiang/machine_learning_algorithm/blob/master/test_ovo_model.py).
+<br>source code: [decision_tree_lib](https://github.com/ximitiejiang/machine_learning_algorithm/blob/master/core/multi_class_model_wrapper.py).
+<div align=center><img src="https://github.com/ximitiejiang/machine_learning_algorithm/blob/master/demo/cart_reg.png"/></div>
 
 ### PART 3.1 K-means
 <br>to be update ...
