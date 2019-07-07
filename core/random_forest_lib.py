@@ -31,7 +31,8 @@ class RandomForest(CARTClf):
             self.max_features = int(np.sqrt(feats.shape[1]))   # 一般每棵树取特征个数为原特征的子集，可取sqrt(n_feats)，也可取log(n_feats)
         if not self.sub_samples_ratio:
             self.sub_samples_ratio = 0.5                  # 一般每棵树取原样本个数的一半
-            
+    
+    def train(self):        
         subsets, feats_id_list = self.get_random_subsets(self.feats, 
                                                          self.labels, 
                                                          self.n_trees, 
@@ -54,6 +55,7 @@ class RandomForest(CARTClf):
                                         + str(self.sub_samples_ratio * 100) + '%subsamples'
         self.model_dict['tree_list'] = self.tree_list
         self.model_dict['tree_feats_id_list'] = self.tree_feats_id_list
+        return self
         
     @staticmethod
     def get_random_subsets(feats, labels, n_subsets, n_subfeats, sub_samples_ratio=0.5):

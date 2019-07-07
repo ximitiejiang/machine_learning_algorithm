@@ -16,10 +16,13 @@ class DigitsDataset(BaseDataset):
     其中imgaes为(8,8)ndarray, data为(1797,64)ndarray展开的图片值， target为(1797,)标签值
     
     """
-    def __init__(self, data_type = None, norm=None, label_transform_dict=None):
+    def __init__(self, data_type = None, norm=None, label_transform_dict=None, one_hot=None, binary=None):
         """可以设置data_type = 'binary'，从而输出标签变为1(数字1-9),0(数字0)
         """
-        super().__init__(norm=norm, label_transform_dict=label_transform_dict)
+        super().__init__(norm=norm, 
+                         label_transform_dict=label_transform_dict, 
+                         one_hot=one_hot,
+                         binary=binary)
         
         if data_type == 'binary':
             # 如果是二分类问题，则把标签数据修改：0依旧是0, 1-9改为1

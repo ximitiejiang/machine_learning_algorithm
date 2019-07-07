@@ -12,6 +12,7 @@ from dataset.iris_dataset import IrisDataset
 from dataset.nonlinear_dataset import NonlinearDataset
 from dataset.multi_class_dataset import MultiClassDataset
 from core.random_forest_lib import RandomForest
+from core.gbdt_lib import GBDT
 from sklearn.model_selection import train_test_split
 import matplotlib.pyplot as plt
 
@@ -35,20 +36,13 @@ if __name__ == "__main__":
         
         x = data[:, :-1]  # (400,2)
         y = data[:, -1]  # (400,)
-        rf = RandomForest(x, y, 
-                          min_samples_split=3, max_depth=5,
-                          n_trees=100, sub_samples_ratio=0.5).train()
-        rf.evaluation(x,y)
-        rf.vis_boundary(plot_step=0.01)
+        gb = GBDT(x, y,
+                  n_clfs=20, learning_rate=0.5,
+                  min_samples_split=3, max_depth=5,
+                  min_impurity_reduction=1e-7)
+        gb.evaluation(x,y)
+        gb.vis_boundary(plot_step=0.01)
     
-    if source == 'loan': # from lihang
-        dataset = LoanDataset()
-        x = dataset.datas
-        y = dataset.labels
-#        train_x, test_x, train_y, test_y = train_test_split(x, y, test_size=0.3)
-        
-        rf = RandomForest(x, y, n_trees=30, sub_samples_ratio=0.5).train()
-        rf.evaluation(x, y)
 
     if source == '5class':
         dataset = MultiClassDataset(n_samples=500, centers=4, n_features=2,
@@ -56,47 +50,52 @@ if __name__ == "__main__":
         x = dataset.datas
         y = dataset.labels
         train_x, test_x, train_y, test_y = train_test_split(x, y, test_size=0.3) # (n, 13) (n,)
-        rf = RandomForest(train_x, train_y, 
-                          min_samples_split=3, max_depth=10,
-                          n_trees=50, sub_samples_ratio=0.5).train()
-        acc1 = rf.evaluation(train_x, train_y)
+        gb = GBDT(x, y,
+                  n_clfs=20, learning_rate=0.5,
+                  min_samples_split=3, max_depth=5,
+                  min_impurity_reduction=1e-7)
+        acc1 = gb.evaluation(train_x, train_y)
         print('train acc = %f'%(acc1))
         
-        acc2 = rf.evaluation(test_x, test_y)
+        acc2 = gb.evaluation(test_x, test_y)
         print('test acc = %f'%(acc2))
         
-        rf.vis_boundary(plot_step=0.1)
+        gb.vis_boundary(plot_step=0.1)
         
     if source == 'moon':
         dataset = NonlinearDataset(type= 'circle', n_samples=500, noise=0.05, 
-                                   label_transform_dict={1:1, 0:-1})
+                                   one_hot=True)
         x = dataset.datas
         y = dataset.labels
         train_x, test_x, train_y, test_y = train_test_split(x, y, test_size=0.3) # (n, 13) (n,)
         # array to mat
 #        train_x, test_x, train_y, test_y = np.mat(train_x), np.mat(test_x), np.mat(train_y), np.mat(test_y)
         
-        rf = RandomForest(train_x, train_y, 
-                          min_samples_split=4, max_depth=10, max_features=3,
-                          n_trees=200, sub_samples_ratio=0.5).train()
-        acc1 = rf.evaluation(train_x, train_y)
+        gb = GBDT(x, y,
+                  n_clfs=20, learning_rate=0.5,
+                  min_samples_split=3, max_depth=5,
+                  min_impurity_reduction=1e-7)
+        acc1 = gb.evaluation(train_x, train_y)
         print('train acc = %f'%(acc1))
         
-        acc2 = rf.evaluation(test_x, test_y)
+        acc2 = gb.evaluation(test_x, test_y)
         print('test acc = %f'%(acc2))
         
-        rf.vis_boundary(plot_step=0.05)
+        gb.vis_boundary(plot_step=0.05)
 
         
     if source == 'iris':
-        dataset = IrisDataset()
+        dataset = IrisDataset(one_hot=True)
         x = dataset.datas
         y = dataset.labels
         train_x, test_x, train_y, test_y = train_test_split(x, y, test_size=0.3)
-        rf = RandomForest(train_x, train_y, n_trees=100, sub_samples_ratio=0.5).train()
-        acc1 = rf.evaluation(train_x, train_y)
+        gb = GBDT(x, y,
+                  n_clfs=20, learning_rate=0.5,
+                  min_samples_split=3, max_depth=5,
+                  min_impurity_reduction=1e-7).train()
+        acc1 = gb.evaluation(train_x, train_y)
         print('train acc = %f'%(acc1))
-        acc2 = rf.evaluation(test_x, test_y)
+        acc2 = gb.evaluation(test_x, test_y)
         print('test acc = %f'%(acc2))
         
 

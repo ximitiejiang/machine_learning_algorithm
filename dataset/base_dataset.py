@@ -16,7 +16,8 @@ class BaseDataset():
                  norm=None, 
                  label_transform_dict=None, 
                  one_hot=None,
-                 binary=None):
+                 binary=None,
+                 shuffle=None):
         """数据集基类，默认支持如下变换：
         - 归一化： norm=True
         - 标签值变换: label_transform_dict = {1:1, 0:-1}
@@ -30,8 +31,16 @@ class BaseDataset():
         self.label_names = self.dataset.get('target_names', None)
         self.imgs = self.dataset.get('images', None)
         self.feat_names = self.dataset.get('feature_names', None)
-        
-        # 2.数据变换
+        # 2.扩展变量 
+        self.classes = set(self.labels)
+        self.num_classes = len(self.classes)
+        self.num_features = self.datas.shape[1]  # 避免有的数据集没有feat_names这个字段
+        # 3.数据变换
+        if shuffle:
+            idx = np.random.permutation(self.labels)
+            self.datas = self.datas[idx]
+            self.labels = self.labels[idx]
+            self.imgs = self.imgs[idx] if self.imgs is not None else None
         if norm:
             self.datas = scale(self.datas)
         if label_transform_dict:
@@ -40,12 +49,7 @@ class BaseDataset():
             self.label_to_one_hot()
         if binary:
             self.get_binary_dataset()
-            
-        # 3.扩展变量
-        self.classes = set(self.labels)
-        self.num_classes = len(self.classes)
-        self.num_features = self.datas.shape[1]  # 避免有的数据集没有feat_names这个字段
-            
+
     def label_transform(self, label_transform_dict):
         """默认不改变label的取值范围，但可以通过该函数修改labels的对应范围
         例如svm需要label为[-1,1]，则可修改该函数。

@@ -28,7 +28,10 @@ class BaseModel():
         self.trained = False
         self.model_dict = {}
         
-        self.classes_list = sorted(list(set(np.array(self.labels).reshape(-1).tolist())))  # classes_list为排序从小到大
+        if self.labels.ndim >= 2:  # 独热编码标签处理
+            self.classes_list = list(range(self.labels.shape[1]))
+        else:   # 一维标签处理
+            self.classes_list = sorted(list(set(np.array(self.labels).reshape(-1).tolist())))  # classes_list为排序从小到大
         self.n_classes = len(self.classes_list)
         self.n_samples = self.feats.shape[0]
         self.n_feats = self.feats.shape[1]

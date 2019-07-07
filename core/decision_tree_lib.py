@@ -39,7 +39,11 @@ class BaseTree(BaseModel):
         self.min_samples_split = min_samples_split  # 最少可分样本个数
         self.max_depth = max_depth                  # 最大树的深度
         self.min_impurity_reduction = min_impurity_reduction # 最小系统不纯度缩减量，接近于0的一个值        
+    
+    def train(self):
+        """构建决策树"""
         self.tree = self.create_tree(self.feats, self.labels, current_depth=0)
+        self.trained = True
     
     def calc_impurity_reduction(self, labels, labels_ge, labels_lt):
         """统一用系统不纯度缩减量来描述系统：可以选择信息增益(也就是熵减少量,比如ID3)，或基尼减少量(比如CART)，
@@ -76,7 +80,6 @@ class BaseTree(BaseModel):
                         best_criteria = (feat_id, value)
                         best_subsets = [(feats_ge, labels_ge), (feats_lt, labels_lt)]   
         
-        # 如果当前数据包的gini有下降且特征数大于1,则继续分解，此时存放中间节点，只有feat_id/feat_value/left/right
         if best_impurity_reduction > self.min_impurity_reduction:  
             return DTNode(feat_id = best_criteria[0], 
                           feat_value = best_criteria[1],
@@ -118,7 +121,7 @@ class BaseTree(BaseModel):
         """递归获得预测结果，用递归子函数是为了在predict_single()函数接口上去除tree这个变量
         同时该递归函数也是随机森林的基础函数
         """
-        if tree.result != None:  # 当到达叶子节点，则直接返回tree.result作为预测标签
+        if tree.result is not None:  # 当到达叶子节点，则直接返回tree.result作为预测标签
             return tree.result
         else:
             sample_value = sample[tree.feat_id]
@@ -141,17 +144,21 @@ class CARTClf(BaseTree):
         2. gini计算只跟label相关，所以可以针对离散特征，也可以针对连续特征。不过对连续特征来说每个特征的取值个数非常多，
            计算量较大，可以考虑把连续特征离散化减少每个特征的value个数。
         """     
-        self.calc_impurity_reduction = self.calc_gini_reduction
-        self.calc_leaf_value = self.majority_vote
         super().__init__(feats, labels,
                          min_samples_split=2, 
                          max_depth=10,
                          min_impurity_reduction = 1e-7)
-        # 没有训练，直接保存tree
-        self.trained = True
+   
+    def train(self):
+        self.calc_impurity_reduction = self.calc_gini_reduction
+        self.calc_leaf_value = self.majority_vote
+        
+        super().train()
+
         self.model_dict['model_name'] = 'CARTClf'\
             + '_depth' + str(self.tree_final_params['final_depth'])
         self.model_dict['tree'] = self.tree
+        return self
     
     def majority_vote(self, labels):
         """投票方式获得最多类别的label作为叶节点的预测结果
@@ -196,14 +203,16 @@ class ID3Clf(CARTClf):
                  max_depth=10,
                  min_impurity_reduction = 1e-7):
         """ID3分类算法：采用信息增益作为系统不纯度的评价标准"""
-        self.calc_impurity_reduction = self.calc_info_gain
         super().__init__(feats, labels, min_samples_split, max_depth, min_impurity_reduction)
         
-        # 没有训练，直接保存tree
-        self.trained = True
+    def train(self):
+        self.calc_impurity_reduction = self.calc_info_gain
+        
+        super().train()
         self.model_dict['model_name'] = 'ID3Clf'\
             + '_depth' + str(self.tree_final_params['final_depth'])
         self.model_dict['tree'] = self.tree
+        return self
         
     def calc_info_gain(self, labels, labels_ge, labels_lt):
         """ID3算法，信息增益 = 经验熵 - 条件熵，条件熵是指H(Y|X)也就是分割后的熵
@@ -216,7 +225,11 @@ class ID3Clf(CARTClf):
     
     def calc_entropy(self, labels):
         """计算经验熵H=-sum(p*log(p,2)), p为每种类别标签的比例，也就相当于每种类别的概率, log为2为底
-        """
+        """                         norm=norm, 
+                         label_transform_dict=label_transform_dict, 
+                         one_hot=one_hot,
+                         binary=binary,
+                         shuffle=shuffle)):
         entropy = 0
         labels_unique = np.unique(labels)
         for label in labels_unique:
@@ -231,14 +244,17 @@ class C45Clf(CARTClf):
                  max_depth=10,
                  min_impurity_reduction = 1e-7):
         """C4.5分类算法：采用信息增益比作为系统不纯度的评价标准"""
-        self.calc_impurity_reduction = self.calc_info_gain_ratio
         super().__init__(feats, labels, min_samples_split, max_depth, min_impurity_reduction)
         
-        # 没有训练，直接保存tree
+    def train(self):
+        self.calc_impurity_reduction = self.calc_info_gain_ratio
+        
+        super().train()
         self.trained = True
         self.model_dict['model_name'] = 'C45Clf'\
             + '_depth' + str(self.tree_final_params['final_depth'])
         self.model_dict['tree'] = self.tree
+        return self
     
     def calc_info_gain_ratio(self, labels, labels_ge, labels_lt):
         """C4.5算法，信息增益比 = 信息增益 / 经验熵
@@ -274,16 +290,21 @@ class CARTReg(BaseTree):
                  min_samples_split=2, 
                  max_depth=10,
                  min_impurity_reduction = 1e-7):
-        self.calc_leaf_value = self.mean_of_y
-        self.calc_impurity_reduction = self.calculate_variance_reduction
+
         super().__init__(feats, labels, 
                          min_samples_split=2, 
                          max_depth=10,
                          min_impurity_reduction = 1e-7)
-        # 没有训练，直接保存tree
+        
+    def train(self):
+        self.calc_leaf_value = self.mean_of_y
+        self.calc_impurity_reduction = self.calculate_variance_reduction
+        
+        super().train()
         self.model_dict['model_name'] = 'CARTReg'\
             + '_depth' + str(self.tree_final_params['final_depth'])
         self.model_dict['tree'] = self.tree
+        return self
     
     def mean_of_y(self, y):
         """均值计算，用于在回归树中获得叶子节点的取值
@@ -297,63 +318,59 @@ class CARTReg(BaseTree):
         """平方误差缩减 = 未分割前平方误差 - 分割后平方误差
         未分割前的平方误差就是直接跟平均值的误差，而分割后的平方误差就是p1*var(D1) + p2*var(D2), 这里var理解为平方误差而不是方差(方差一般是指平方误差的均值)
         """
-        var = self.calculate_variance(y)
+        var = self.calculate_variance(y)    # 如果是普通标签得到单值，如果是one hot标签得到(var1, var2,..)
         var_1 = self.calculate_variance(y1)
         var_2 = self.calculate_variance(y2)
         p = len(y1) / len(y)
         # Calculate the variance reduction
         variance_reduction = var - (p * var_1 + (1 - p) * var_2)
 
-        return sum(variance_reduction)
+        return sum(variance_reduction)    # 如果是one hot标签，则累加平方误差缩减
 
     
-    def calculate_variance(self, X):
+    def calculate_variance(self, y):
         """ 计算平方误差sum((y-y')^2) ，用于评估系统做分割的特征和特征值是否最优，
         注意这里计算的是平方误差，而不是var方差，因为方差通常是平方误差的均值。
         平方误差 = 数据集整体平方误差 = sum((y-y')^2)
         平方误差越小，说明该预测越精确
         """
-        if X.ndim ==1:  # 如果是(n_sample,)则转为(n_sample, 1); 如果是one hot的形式(n_sample, n_class)，直接可以兼容
-            X = X.reshape(-1, 1)
-        mean = np.ones(np.shape(X)) * X.mean(0)   # 计算出数据总的均值，然后复制成样本个数大小(n_sample,)
+        if y.ndim ==1:  # 如果是(n_sample,)则转为(n_sample, 1); 如果是one hot的形式(n_sample, n_class)，直接可以兼容
+            y = y.reshape(-1, 1)
+        mean = np.ones(y.shape) * y.mean(0)   # 计算出数据总的均值，然后复制成样本个数大小(n_sample,)
 #        n_samples = np.shape(X)[0]
 #        variance = (1 / n_samples) * np.diag((X - mean).T.dot(X - mean))
-        variance = np.diag((X - mean).T.dot(X - mean))  # 计算平方误差，不除以个数算均值
+        variance = np.diag((y - mean).T.dot(y - mean))  # 计算平方误差，不除以个数算均值 (但此时数值较大)
         
         return variance
     
-    def predict_single(self, sample):
-        """单样本预测"""
-        result = self.get_single_tree_result(sample, self.tree)
-        return result
-    
-    def evaluation(self, test_feats, test_labels):
-        """回归问题的评估
+    def evaluation(self, test_feats, test_labels, show=False):
+        """回归问题的评估：跟分类问题相比的差别是不需要通过比较labels来返回acc精度，而是直接返回预测值
         """
         pred_labels = []
         for feat, label in zip(test_feats, test_labels):
-            pred_labels.append(self.predict_single(feat))
+            pred_label = self.predict_single(feat)
+            pred_labels.append(pred_label)
         pred_labels = np.array(pred_labels)
         # 平方损失计算
         # 绘图 
-        train_x_sorted = np.sort(self.feats, axis=0)
-        train_y_sorted = np.array(self.labels)[np.argsort(self.feats, axis=0)]
-        plt.figure()
-        plt.plot(366 * train_x_sorted, train_y_sorted, color='grey', linestyle=':', label='train')
-        
-        test_x_sorted = np.sort(test_feats, axis=0)
-        test_y_sorted = np.array(test_labels)[np.argsort(test_feats, axis=0)]
-        pred_y_sorted = np.array(pred_labels)[np.argsort(test_feats, axis=0)]
-        plt.plot(366 * test_x_sorted, test_y_sorted, color='red', linestyle='--', label='test')
-        plt.plot(366 * test_x_sorted, pred_y_sorted, color='blue', linestyle='-', label='pred')
-        
-        plt.title(self.model_dict['model_name'])
-#        plt.title("MSE: %.2f" % mse, fontsize=10)
-        plt.xlabel('X')
-        plt.ylabel('Y')
-        plt.legend(loc='lower right')
-        plt.grid()
-        plt.show()
+        if show and self.feats.shape[1]==1:
+            train_x_sorted = np.sort(self.feats, axis=0)
+            train_y_sorted = np.array(self.labels)[np.argsort(self.feats, axis=0)]
+            plt.figure()
+            plt.plot(train_x_sorted, train_y_sorted, color='grey', linestyle=':', label='train')
+            
+            test_x_sorted = np.sort(test_feats, axis=0)
+            test_y_sorted = np.array(test_labels)[np.argsort(test_feats, axis=0)]
+            pred_y_sorted = np.array(pred_labels)[np.argsort(test_feats, axis=0)]
+            plt.plot(test_x_sorted, test_y_sorted, color='red', linestyle='--', label='test')
+            plt.plot(test_x_sorted, pred_y_sorted, color='blue', linestyle='-', label='pred')
+            
+            plt.title(self.model_dict['model_name'])
+            plt.xlabel('X')
+            plt.ylabel('Y')
+            plt.legend(loc='lower right')
+            plt.grid()
+            plt.show()
             
         return pred_labels
             

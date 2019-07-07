@@ -36,7 +36,7 @@ if __name__ == "__main__":
         
         x = data[:, :-1]  # (400,2)
         y = data[:, -1]  # (400,)
-        ab = AdaBoost(x, y, n_clfs=10)
+        ab = AdaBoost(x, y, n_clfs=10).train()
         ab.evaluation(x,y)
         ab.vis_boundary(plot_step=0.01)
     
@@ -49,7 +49,7 @@ if __name__ == "__main__":
         # array to mat
 #        train_x, test_x, train_y, test_y = np.mat(train_x), np.mat(test_x), np.mat(train_y), np.mat(test_y)
         
-        ab = AdaBoost(x, y, n_clfs=200)
+        ab = AdaBoost(x, y, n_clfs=200).train()
         acc1 = ab.evaluation(train_x, train_y)
         print('train acc = %f'%(acc1))
         
@@ -63,7 +63,7 @@ if __name__ == "__main__":
         x = dataset.datas
         y = dataset.labels
         train_x, test_x, train_y, test_y = train_test_split(x, y, test_size=0.3) # (n, 13) (n,)
-        ab = AdaBoost(x, y, n_clfs=10)
+        ab = AdaBoost(x, y, n_clfs=10).train()
 
         acc = ab.evaluation(train_x, train_y)
         print('training acc = %f'%(acc))
@@ -79,7 +79,7 @@ if __name__ == "__main__":
         y = data[:,-1]
         train_x, test_x, train_y, test_y = train_test_split(x, y, test_size=0.2)
         
-        ab = AdaBoost(x, y, n_clfs=10)
+        ab = AdaBoost(x, y, n_clfs=10).train()
         acc = ab.evaluation(train_x, train_y)
         print('training acc = %f'%(acc))
         

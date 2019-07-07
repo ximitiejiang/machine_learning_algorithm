@@ -41,14 +41,21 @@ if __name__ == "__main__":
     
         X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.3)
     
-        model = CARTReg(X_train, y_train)
-        y_pred = model.evaluation(X_test, y_test)
+        model = CARTReg(X_train, y_train).train()
+        y_pred = model.evaluation(X_test, y_test, show=True)
         
     if source == 'linear':
         dataset = RegressionDataset(n_samples=500, n_features=1, n_targets=1, noise=3)
         X = dataset.datas
         y = dataset.labels
+#        plt.scatter(X, y)
+        
         X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.3)
-        model = CARTReg(X_train, y_train)
-        y_pred = model.evaluation(X_test, y_test)
+        plt.scatter(X_train, y_train, label='train', color='red')
+        plt.scatter(X_test, y_test, label='test', color='blue')
+        plt.legend(loc='best')
+        plt.grid()
+        
+        model = CARTReg(X_train, y_train).train()
+        y_pred = model.evaluation(X_test, y_test, show=True)
            

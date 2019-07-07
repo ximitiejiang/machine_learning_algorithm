@@ -18,7 +18,7 @@ import pandas as pd
 
 if __name__ == "__main__":
     
-    source = 'iris'
+    source = 'moon'
     
     if source == 'treedata':  # 2 classes: from book of zhaozhiyong
         data = []
@@ -36,7 +36,7 @@ if __name__ == "__main__":
         
         x = data[:, :-1]  # (400,2)
         y = data[:, -1]  # (400,)
-        cart = CARTClf(x, y)
+        cart = CARTClf(x, y).train()
         cart.evaluation(x,y)
         cart.vis_boundary(plot_step=0.01)
     
@@ -46,7 +46,7 @@ if __name__ == "__main__":
         y = dataset.labels
 #        train_x, test_x, train_y, test_y = train_test_split(x, y, test_size=0.3)
         
-        cart = CARTClf(x, y)
+        cart = CARTClf(x, y).train()
         cart.evaluation(x, y)
         print("final tree depth: %d, final gini: %d"%(cart.tree_final_params['final_depth'],
                                                       cart.tree_final_params['final_gini']))
@@ -61,7 +61,7 @@ if __name__ == "__main__":
 #        train_x, test_x, train_y, test_y = np.mat(train_x), np.mat(test_x), np.mat(train_y), np.mat(test_y)
         
         # 对比cart
-        cart = CARTClf(train_x, train_y, min_samples_split=2)
+        cart = CARTClf(train_x, train_y, min_samples_split=2).train()
         acc1 = cart.evaluation(train_x, train_y)
         print('train acc = %f'%(acc1))
         
@@ -71,7 +71,7 @@ if __name__ == "__main__":
         cart.vis_boundary(plot_step=0.05)
         
         # 对比id3
-        id3 = ID3Clf(train_x, train_y, min_samples_split=2)
+        id3 = ID3Clf(train_x, train_y, min_samples_split=2).train()
         acc1 = id3.evaluation(train_x, train_y)
         print('train acc = %f'%(acc1))
         
@@ -81,7 +81,7 @@ if __name__ == "__main__":
         id3.vis_boundary(plot_step=0.05)
         
         # 对比c45
-        c45 = C45Clf(train_x, train_y, min_samples_split=2)
+        c45 = C45Clf(train_x, train_y, min_samples_split=2).train()
         acc1 = c45.evaluation(train_x, train_y)
         print('train acc = %f'%(acc1))
         
@@ -98,7 +98,7 @@ if __name__ == "__main__":
         train_x, test_x, train_y, test_y = train_test_split(x, y, test_size=0.3)
 
         # 对比cart
-        cart = CARTClf(train_x, train_y, min_samples_split=2)
+        cart = CARTClf(train_x, train_y, min_samples_split=2).train()
         acc1 = cart.evaluation(train_x, train_y)
         print('train acc = %f'%(acc1))
         
@@ -106,7 +106,7 @@ if __name__ == "__main__":
         print('test acc = %f'%(acc2))
         
         # 对比id3
-        id3 = ID3Clf(train_x, train_y, min_samples_split=2)
+        id3 = ID3Clf(train_x, train_y, min_samples_split=2).train()
         acc1 = id3.evaluation(train_x, train_y)
         print('train acc = %f'%(acc1))
         
@@ -114,7 +114,7 @@ if __name__ == "__main__":
         print('test acc = %f'%(acc2))
         
         # 对比c45
-        c45 = C45Clf(train_x, train_y, min_samples_split=2)
+        c45 = C45Clf(train_x, train_y, min_samples_split=2).train()
         acc1 = c45.evaluation(train_x, train_y)
         print('train acc = %f'%(acc1))
         

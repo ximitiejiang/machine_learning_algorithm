@@ -15,13 +15,23 @@ class MultiClassDataset(BaseDataset):
     """
     def __init__(self, n_samples=100, centers=3, n_features=4, 
                  center_box=(-10.0,10.0),
-                 cluster_std=1.0):
+                 cluster_std=1.0,
+                 norm=None, 
+                 label_transform_dict=None, 
+                 one_hot=None,
+                 binary=None,
+                 shuffle=None):
+        
         self.n_samples = n_samples
         self.centers = centers
         self.n_features = n_features
         self.center_box = center_box
         self.cluster_std = cluster_std
-        super().__init__()
+        super().__init__(norm=norm, 
+                         label_transform_dict=label_transform_dict, 
+                         one_hot=one_hot,
+                         binary=binary,
+                         shuffle=shuffle)
         
     def get_dataset(self):
         dataset = {}
