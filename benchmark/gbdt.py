@@ -84,27 +84,26 @@ class GradientBoosting(object):
     def fit(self, X, y):
         y_pred = np.full(np.shape(y), np.mean(y, axis=0))  # 用训练标签的平均值作为预测值，类似于回归树的叶节点获得方式
         for i in range(self.n_estimators):
-            gradient = self.loss.gradient(y, y_pred)  # (90,3)计算梯度：用损失函数的导数作为梯度（跟深度学习什么区别？）
-            self.trees[i].fit(X, gradient)            # 创建回归树，每个leaf是采用分隔出来的样本平均值
-            update = self.trees[i].predict(X)         # ()一棵回归树创建好以后马上进行预测，
+            gradient = self.loss.gradient(y, y_pred)  # (90,3)计算梯度作为残差:相当于得到预测值与真值的差异
+            self.trees[i].fit(X, gradient)            # 基于残差创建回归树，用于回归出每个样本标签的偏差
+            update = self.trees[i].predict(X)         # 90x(3,)获得当前偏差
             # Update y prediction
-            y_pred -= np.multiply(self.learning_rate, update)  # 
-            print("clf_id: %d, residual: %.5f, pred: %.3f"%(gradient))
+            y_pred -= np.multiply(self.learning_rate, update)  # 累积偏差
 
 
     def predict(self, X):
         y_pred = np.array([])
         # Make predictions
         for tree in self.trees:
-            update = tree.predict(X)
-            update = np.multiply(self.learning_rate, update)
-            y_pred = -update if not y_pred.any() else y_pred - update
+            update = tree.predict(X)   # 先预测残差
+            update = np.multiply(self.learning_rate, update)  # 残差*学习率
+            y_pred = -update if not y_pred.any() else y_pred - update  # (60,3)所有树的残差累加
 
         if not self.regression:
             # Turn into probability distribution
-            y_pred = np.exp(y_pred) / np.expand_dims(np.sum(np.exp(y_pred), axis=1), axis=1)
+            y_pred = np.exp(y_pred) / np.expand_dims(np.sum(np.exp(y_pred), axis=1), axis=1) # softmax概率化
             # Set label to the value that maximizes probability
-            y_pred = np.argmax(y_pred, axis=1)
+            y_pred = np.argmax(y_pred, axis=1) # 取最大的概率位置就是预测
         return y_pred
 
 class GradientBoostingClassifier(GradientBoosting):

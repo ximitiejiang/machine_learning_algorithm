@@ -5,7 +5,7 @@ Created on Thu Jul  4 15:05:40 2019
 
 @author: ubuntu
 """
-from .decision_tree_lib import CARTReg
+from .decision_tree_lib import BaseTree, CARTReg
 import numpy as np
 import time
 
@@ -14,7 +14,7 @@ class CrossEntropy():
     loss = -(y*logy'+(1-y)*log(1-y'))
     grad = loss' = -(y/y' - (1-y)/(1-y'))
     """
-    def loss(self, y, y_pred):
+    def loss(self, y, y_pred):  # loss一般为正值，代表数据集的熵
         # Avoid division by zero
         y_pred = np.clip(y_pred, 1e-15, 1 - 1e-15)
         return - y * np.log(y_pred) - (1 - y) * np.log(1 - y_pred)
@@ -37,7 +37,7 @@ class MSE():
     
     
 
-class GBDT(CARTReg):
+class GBDT(BaseTree):
     
     def __init__(self, feats, labels,
                  n_clfs, learning_rate=0.5, 
@@ -68,13 +68,19 @@ class GBDT(CARTReg):
         self.calc_impurity_reduction = self.calculate_variance_reduction
         
         # 创建n个分类器
-        y_pred = np.ones(self.labels.shape) * self.labels.mean()       # 首轮用均值作为预测值初始化
+        y_pred = np.ones(self.labels.shape) * self.labels.mean()     # 首轮用均值作为预测值初始化
         for clf_id in range(self.n_clfs):
             residual = -self.loss.gradient(self.labels, y_pred)      # 用损失函数的负梯度作为残差的近似: 对回归树采用分类的交叉熵损失函数，是因为本质上是评估分类结果而不是回归结果。
-            self.tree = self.create_tree(self.feats, residual)       # 创建基于残差的一棵回归树：为了让evaluation工作，需要对象有self.tree属性
-            residual_pred = super().evaluation(self.feats, residual) # 输入的是残差构建一棵树，所以预测的也是残差
-            y_pred += np.multiply(self.learning_rate, residual_pred) # 残差乘以学习率后累加 (注意如果前面残差不是用负梯度而是用梯度做近似，则这里就是累减而不是累加)
-            self.clf_list.append(self.tree)
+            clf = CARTReg(self.feats, residual,    
+                          min_samples_split=self.min_samples_split, 
+                          max_depth=self.max_depth,
+                          min_impurity_reduction = 1e-7).train()     # 基于残差创建回归树模型
+            residual_pred = clf.evaluation(self.feats, residual)     # 
+            
+#            self.tree = self.create_tree(self.feats, residual)       # 创建基于残差的一棵回归树：为了让evaluation工作，需要对象有self.tree属性
+#            residual_pred = super().evaluation(self.feats, residual) # 输入的是残差构建一棵树，所以预测的也是残差
+            y_pred += np.multiply(self.learning_rate, residual_pred)  # 残差乘以学习率后累加 (注意如果前面残差不是用负梯度而是用梯度做近似，则这里就是累减而不是累加)
+            self.clf_list.append(clf)
         
         # 保存参数
         self.trained = True
@@ -85,28 +91,18 @@ class GBDT(CARTReg):
         return self
     
     def predict_single(self, sample):
+        """仅实现分类模型的单样本预测，沿用父类的分类evaluation"""
         y_pred = np.array([])
         for clf in self.clf_list:
-            self.tree = clf   # 基于回归树的模型填入self.tree，从而可以使用回归树的evalluation方法
-            residual_pred = super().predict_single(sample)
-            y_pred += residual_pred
-    
-    def evaluation(self, test_feats, test_labels, show=False):
-        """单样本预测的predict_single对分类树和回归树都一样，而全样本评估的evaluation需要改，
-        是因为gbdt继承的是回归树，但需要用分类树的evaluation(未作修改)
-        Args:
-            test_feats: (n_sample, n_feat)
-            test_labels: (n_sample,)
-        """       
-        correct = 0
-        total_sample = len(test_feats)
-        start = time.time()
-        for feat, label in zip(test_feats, test_labels):
-            pred_label = self.predict_single(feat)
-            if int(pred_label) == int(label):
-                correct += 1
-        acc = correct / total_sample
-        print('======%s======'%self.model_dict['model_name'])
-        print('Finished evaluation in %f seconds with accuracy = %f.'%((time.time() - start), acc))
+            residual_pred = clf.predict_single(sample) * self.learning_rate  
+            y_pred = y_pred + residual_pred if not y_pred.any() else residual_pred
+        # softmax概率化
+        y_pred = self.softmax(y_pred)
+        y_pred = np.argmax(y_pred, axis=1)[0]
+        return y_pred
         
-        return acc
+    def softmax(self, y):
+        y_exp = np.exp(y)
+        prob = y_exp / sum(y_exp)
+        return prob
+    

@@ -29,11 +29,11 @@ class BaseTree(BaseModel):
                  max_depth=10,
                  min_impurity_reduction = 1e-7):
         """分类和回归树的基类：创建决策树的核心过程在这个基类实现
-                   ____BaseModel_______
-                  /           \        \
-             __CARTClf_       CARTReg  ada_boost
-            /  |   \   \         \
-          ID3 C45 RandF XGBoost   GBDT
+                   _______BaseModel_________
+                  /         \       \        \
+             __CARTClf_     RandF   GBDT    ada_boost
+            /     |    \         
+          ID3    C45    XGBoost   
         """
         super().__init__(feats, labels)
         self.min_samples_split = min_samples_split  # 最少可分样本个数
@@ -225,11 +225,7 @@ class ID3Clf(CARTClf):
     
     def calc_entropy(self, labels):
         """计算经验熵H=-sum(p*log(p,2)), p为每种类别标签的比例，也就相当于每种类别的概率, log为2为底
-        """                         norm=norm, 
-                         label_transform_dict=label_transform_dict, 
-                         one_hot=one_hot,
-                         binary=binary,
-                         shuffle=shuffle)):
+        """
         entropy = 0
         labels_unique = np.unique(labels)
         for label in labels_unique:
