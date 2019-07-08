@@ -13,10 +13,11 @@ def label_transform(labels, label_transform_dict={1:1, -1:0, 0:0}):
     """
     new_labels = np.zeros(labels.shape)
     for i, label in enumerate(labels):
-        new_label = label_transform_dict[label]
+        new_label = label_transform_dict.get(label, label) # 获取标签，如果是dict里边有的就替换，否则保持原样
         new_labels[i] = int(new_label)   # 比如{1:1, 0:-1}就是要把1变为1, 0变为-1
     return new_labels
         
+
 def label_to_onehot(labels):
     """标签转换为独热编码：输入的labels需要是从0开始的整数，比如[0,1,2,...]
     输出的独热编码为[[1,0,0,...],
@@ -29,6 +30,7 @@ def label_to_onehot(labels):
     one_hot = np.zeros((labels.shape[0], n_col))
     one_hot[np.arange(labels.shape[0]), labels] = 1
     return one_hot  # (n_samples, n_col)
+
 
 def onehot_to_label(one_hot_labels):
     labels = np.argmax(one_hot_labels, axis=1)  # 提取最大值1所在列即原始从0开始的标签

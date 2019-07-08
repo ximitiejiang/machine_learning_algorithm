@@ -41,7 +41,7 @@ def label_to_one_hot(labels):
 
 if __name__ == "__main__":
     
-    source = 'moon'
+    source = '5class'
     
     if source == 'treedata':  # 2 classes: from book of zhaozhiyong
         data = []

@@ -51,7 +51,7 @@ if __name__ == "__main__":
         
         svm = SVMC(train_x, train_y, 
                      C=1, toler=0.001, max_iter=500, 
-                     kernel_option={'type':'rbf', 'sigma':0.5})
+                     kernel_option={'type':'rbf', 'sigma':0.05})
         svm.train()
         acc = svm.evaluation(train_x, train_y)
         print('training acc = %f'%(acc))
@@ -82,7 +82,7 @@ if __name__ == "__main__":
         print('test acc = %f'%(acc2))
         
         svm.vis_boundary(plot_step=0.05)
-        svm.save(path = './demo/')
+#        svm.save(path = './demo/')
         
     if dataset == 'cancer':
         dataset = BreastCancerDataset(label_transform_dict={1:1,0:-1})

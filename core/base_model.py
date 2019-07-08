@@ -11,7 +11,7 @@ import matplotlib.pyplot as plt
 import time, datetime
 import pickle
 import os
-from utils.vis import voc_colors
+from utils.vis import voc_colors, city_colors
 from utils.transformer import label_transform, label_to_onehot, onehot_to_label
 
 class BaseModel():
@@ -132,14 +132,10 @@ class BaseModel():
         labels = labels.reshape(-1,1) if labels.ndim==1 else labels  # 统一成(10,1), (10,4)
         if labels.shape[1] > 1:  # (10,1), (10,4)
             labels = onehot_to_label(labels)
-        labels = label_transform(labels.reshape(-1), label_transform_dict={1:1, -1:0, 0:0})
-        colors = voc_colors(self.n_classes, norm=True)  # 返回list [[],[],...]
-        colors = colors[labels] 
-        # one hot 标签变换
-#        labels = np.argmax(self.labels, axis=1) if self.labels.ndim >= 2 else self.labels
-#        plt.scatter(np.array(self.feats)[:,0], 
-#                    np.array(self.feats)[:,1], 
-#                    c = np.array(labels).flatten() * 64 + 64)
+        labels = label_transform(labels.reshape(-1), label_transform_dict={1:1, -1:0, 0:0}).astype(np.int8)
+        colors = city_colors(self.n_classes, norm=True)  # 返回array
+        colors = colors[labels]           
+
         plt.scatter(np.array(self.feats)[:,0], 
                     np.array(self.feats)[:,1], 
                     c = colors)

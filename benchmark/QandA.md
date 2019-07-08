@@ -217,7 +217,7 @@ c = c[idx]     # 提取其他列对应idx的数据
 1. 如下图中，很好描述了预测值的偏差，预测值的期望(样本平均值)，预测值的方差之间的差别。
    预测值的偏差就是预测值与真实值之间的距离(大圆半径)，而预测值的方差就是各预测值跟预测期望的距离(小圆半径)。
    所以可以看出高偏差输出是大圆半径很大，高方差输出就是小圆半径大。
-<div align=center><img src="https://github.com/ximitiejiang/machine_learning_algorithm/blob/master/demo/bias_vs_variance2.png"/></div>
+<div align=center><img src="https://github.com/ximitiejiang/machine_learning_algorithm/blob/master/demo/bias_variance_tradeoff2.png"/></div>
 
 2. 什么是高方差模型输出：就是针对同样的测试值，预测输出分散度很高，主要是因为预测模型太复杂想要拟合每个训练样本导致模型过拟合。
    此时，在训练样本中偏差较低，但在测试样本中偏差较高。
@@ -226,10 +226,10 @@ c = c[idx]     # 提取其他列对应idx的数据
    此时，在训练样本中偏差较大，在测试样本中偏差也大。
    
 4. 具体到各种模型，如何比较方差与偏差：通常具有参数
-<div align=center><img src="https://github.com/ximitiejiang/machine_learning_algorithm/blob/master/demo/bias_vs_variance.png"/></div>
+<div align=center><img src="https://github.com/ximitiejiang/machine_learning_algorithm/blob/master/demo/bias_variance_tradeoff.png"/></div>
 
    
-4. 什么是方差-偏差的平衡：也就是bias-variance-tradeoff，也就是模型既不能欠拟合也不能过拟合。
+5. 什么是方差-偏差的平衡：也就是bias-variance-tradeoff，也就是模型既不能欠拟合也不能过拟合。
 - 通常采用正则化的方式来进行方差-偏差的平衡，也就是在损失函数表达式中增加lambda*L2或lamba*L1，即采用L2范数 ||x||2 = sqrt(sum(xi^2))，或者L1范数||x||1 = sum(|xi|)
   其中lamba叫做惩罚因子，lamba越大说明惩罚越大，说明模型越不愿意放弃离群点，所以模型也越复杂。
 - 正则化之所以能够简化模型防止过拟合，是因为他在loss中增加了一项针对参数w的部分，相当于减慢了损失下降速度，增加模型复杂度。
@@ -515,8 +515,38 @@ Accuracy: 0.9101123595505618
     - ada boost：创建分类树，串行改变错分样本权重，使
     - gradient boost: 创建回归树，串行学习残差，使损失函数最小化
 
+
+-------------------------------------------------------------------------------
+## PART 11. XGBoost Classifier
+**Q. XGBoost的**
+<br>核心公式参考：https://xgboost.readthedocs.io/en/latest/tutorials/model.html
+
+
+-------------------------------------------------------------------------------
+## PART 1x. linear regressor/lasso regressor/rigid regressor
+
+
+
+-------------------------------------------------------------------------------
+## PART 1x. polynomial regressor
+
+
+
+-------------------------------------------------------------------------------
+## PART 1x. CARTReg regressor
+
+
+-------------------------------------------------------------------------------
+## PART 1x. kmean
+
+
+-------------------------------------------------------------------------------
+## PART 1x. dbscan
+
+
 -------------------------------------------------------------------------------
 ## PART 1x. PCA
+
 **Q. PCA的作用和理论**
 <br>PCA主成分分析，主要用来给特征降维，也就是找到方差最大的特征。
 <br>PCA主成分分析过程:

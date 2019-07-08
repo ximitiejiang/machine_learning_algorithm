@@ -9,6 +9,40 @@ import numpy as np
 import matplotlib.pyplot as plt
 from terminaltables import AsciiTable
 
+def basic_colors():
+    colors = [[]]
+
+def city_colors(n_classes, norm=False):
+    cityspallete = [
+                    128, 64, 128,
+                    244, 35, 232,
+                    70, 70, 70,
+                    102, 102, 156,
+                    190, 153, 153,
+                    153, 153, 153,
+                    250, 170, 30,
+                    220, 220, 0,
+                    107, 142, 35,
+                    152, 251, 152,
+                    0, 130, 180,
+                    220, 20, 60,
+                    255, 0, 0,
+                    0, 0, 142,
+                    0, 0, 70,
+                    0, 60, 100,
+                    0, 80, 100,
+                    0, 0, 230,
+                    119, 11, 32]
+    colors = []
+    for i in range(int(len(cityspallete)/3)):
+        colors.append([cityspallete[i*3], cityspallete[i*3+1], cityspallete[i*3+2]])
+    colors = np.array(colors)
+    colors = colors[:n_classes]
+    if norm:
+        colors = colors / 255
+    return colors
+    
+
 def voc_colors(n_classes, norm=False):
     """生成一组颜色，基于voc语义分割数据集的定义
     返回的是一组(n_class, 3)的rbg值，取值范围(0-255)。
@@ -36,10 +70,7 @@ def voc_colors(n_classes, norm=False):
         colors = np.array(colors).reshape(-1,3) / 255
     else:
         colors = np.array(colors).reshape(-1,3)
-    color_list = []
-    for i in range(n):
-        color_list.append(list(colors[i]))
-    return color_list
+    return colors
 
 def generate_table(str_list):
     """用AsciiTable库生成表格，分三步
@@ -89,6 +120,6 @@ def vis_boundary(feats, labels, model, title = None, plot_step=0.02):
 
 
 if __name__ == "__main__":
-    colors = voc_colors(500)
+    colors = city_colors(10, norm=True)
     
     generate_table([['姓名','eason','winnie'],[1,2,3]])
