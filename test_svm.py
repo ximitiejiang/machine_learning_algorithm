@@ -17,7 +17,7 @@ import numpy as np
 
 if __name__ == "__main__":
     
-    dataset = 'cancer'
+    dataset = 'circle'
     
     if dataset == 'heart':
         filename = './dataset/simple/'  # 一个简单的2个特征的多分类数据集

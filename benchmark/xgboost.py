@@ -136,9 +136,9 @@ class XGBoost(object):
             self.trees.append(tree)
 
     def fit(self, X, y):
-        y = to_categorical(y)
+        y = to_categorical(y)   # one hot编码
 
-        y_pred = np.zeros(np.shape(y))
+        y_pred = np.zeros(np.shape(y))   # 用0初始化预测
         for i in range(self.n_estimators):
             tree = self.trees[i]
             y_and_pred = np.concatenate((y, y_pred), axis=1)

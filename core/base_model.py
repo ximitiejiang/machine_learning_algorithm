@@ -12,6 +12,7 @@ import time, datetime
 import pickle
 import os
 from utils.vis import voc_colors
+from utils.transformer import label_transform, label_to_onehot, onehot_to_label
 
 class BaseModel():
     """ 所有分类回归模型的基类
@@ -126,17 +127,22 @@ class BaseModel():
         plt.figure()
         plt.subplot(1,1,1)
         plt.contourf(xx, yy, zz, cmap=plt.cm.Paired)
-        # 绘制训练数据
-#        colors = voc_colors(self.n_classes)
-#        colors = colors[self.labels] / 255
+        # 标签变换：4种标签 (10,) (10,1)array, (10,1)mat, (10,4)
+        labels = np.array(self.labels)
+        labels = labels.reshape(-1,1) if labels.ndim==1 else labels  # 统一成(10,1), (10,4)
+        if labels.shape[1] > 1:  # (10,1), (10,4)
+            labels = onehot_to_label(labels)
+        labels = label_transform(labels.reshape(-1), label_transform_dict={1:1, -1:0, 0:0})
+        colors = voc_colors(self.n_classes, norm=True)  # 返回list [[],[],...]
+        colors = colors[labels] 
         # one hot 标签变换
-        labels = np.argmax(self.labels, axis=1) if self.labels.ndim >= 2 else self.labels
-        plt.scatter(np.array(self.feats)[:,0], 
-                    np.array(self.feats)[:,1], 
-                    c = np.array(labels).flatten() * 64 + 64)
+#        labels = np.argmax(self.labels, axis=1) if self.labels.ndim >= 2 else self.labels
 #        plt.scatter(np.array(self.feats)[:,0], 
 #                    np.array(self.feats)[:,1], 
-#                    c = colors)
+#                    c = np.array(labels).flatten() * 64 + 64)
+        plt.scatter(np.array(self.feats)[:,0], 
+                    np.array(self.feats)[:,1], 
+                    c = colors)
         if self.model_dict:
             model_name = self.model_dict['model_name']
         else:

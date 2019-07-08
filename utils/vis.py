@@ -9,7 +9,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 from terminaltables import AsciiTable
 
-def voc_colors(num_cls):
+def voc_colors(n_classes, norm=False):
     """生成一组颜色，基于voc语义分割数据集的定义
     返回的是一组(n_class, 3)的rbg值，取值范围(0-255)。
     进一步颜色显示可能需要：1.颜色归一化到(0-1), 
@@ -18,7 +18,7 @@ def voc_colors(num_cls):
     Returns:
         colors(array): (n_cls, 3)
     """
-    n = num_cls
+    n = n_classes
     colors = [0] * (n * 3)
     for j in range(0, n):
         lab = j
@@ -32,8 +32,14 @@ def voc_colors(num_cls):
             colors[j * 3 + 2] |= (((lab >> 2) & 1) << (7 - i))
             i = i + 1
             lab >>= 3
-    colors = np.array(colors).reshape(-1,3)
-    return colors
+    if norm:
+        colors = np.array(colors).reshape(-1,3) / 255
+    else:
+        colors = np.array(colors).reshape(-1,3)
+    color_list = []
+    for i in range(n):
+        color_list.append(list(colors[i]))
+    return color_list
 
 def generate_table(str_list):
     """用AsciiTable库生成表格，分三步
@@ -83,4 +89,6 @@ def vis_boundary(feats, labels, model, title = None, plot_step=0.02):
 
 
 if __name__ == "__main__":
+    colors = voc_colors(500)
+    
     generate_table([['姓名','eason','winnie'],[1,2,3]])
