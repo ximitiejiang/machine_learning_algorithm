@@ -17,7 +17,7 @@ import matplotlib.pyplot as plt
 
 if __name__ == "__main__":
     
-    source = 'iris'
+    source = 'moon'
     
     if source == 'treedata':  # 2 classes: from book of zhaozhiyong
         data = []
@@ -37,7 +37,7 @@ if __name__ == "__main__":
         y = data[:, -1]  # (400,)
         rf = RandomForest(x, y, 
                           min_samples_split=3, max_depth=5,
-                          n_trees=100, sub_samples_ratio=0.5).train()
+                          n_clfs=100, sub_samples_ratio=0.5).train()
         rf.evaluation(x,y)
         rf.vis_boundary(plot_step=0.01)
     
@@ -47,7 +47,7 @@ if __name__ == "__main__":
         y = dataset.labels
 #        train_x, test_x, train_y, test_y = train_test_split(x, y, test_size=0.3)
         
-        rf = RandomForest(x, y, n_trees=30, sub_samples_ratio=0.5).train()
+        rf = RandomForest(x, y, n_clfs=30, sub_samples_ratio=0.5).train()
         rf.evaluation(x, y)
 
     if source == '5class':
@@ -58,7 +58,7 @@ if __name__ == "__main__":
         train_x, test_x, train_y, test_y = train_test_split(x, y, test_size=0.3) # (n, 13) (n,)
         rf = RandomForest(train_x, train_y, 
                           min_samples_split=3, max_depth=10,
-                          n_trees=50, sub_samples_ratio=0.5).train()
+                          n_clfs=50, sub_samples_ratio=0.5).train()
         acc1 = rf.evaluation(train_x, train_y)
         print('train acc = %f'%(acc1))
         
@@ -78,7 +78,7 @@ if __name__ == "__main__":
         
         rf = RandomForest(train_x, train_y, 
                           min_samples_split=4, max_depth=10, max_features=3,
-                          n_trees=200, sub_samples_ratio=0.5).train()
+                          n_clfs=200, sub_samples_ratio=0.5).train()
         acc1 = rf.evaluation(train_x, train_y)
         print('train acc = %f'%(acc1))
         
@@ -93,7 +93,7 @@ if __name__ == "__main__":
         x = dataset.datas
         y = dataset.labels
         train_x, test_x, train_y, test_y = train_test_split(x, y, test_size=0.3)
-        rf = RandomForest(train_x, train_y, n_trees=100, sub_samples_ratio=0.5).train()
+        rf = RandomForest(train_x, train_y, n_clfs=100, sub_samples_ratio=0.5).train()
         acc1 = rf.evaluation(train_x, train_y)
         print('train acc = %f'%(acc1))
         acc2 = rf.evaluation(test_x, test_y)

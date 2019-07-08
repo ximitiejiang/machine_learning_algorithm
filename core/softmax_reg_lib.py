@@ -90,6 +90,7 @@ class SoftmaxReg(BaseModel):
         # prepare model_dict for saving
         self.model_dict['model_name'] = 'SoftmaxReg'
         self.model_dict['W'] = self.W
+        return self
         
     def predict_single(self, single_sample_feats):
         """ 单样本预测

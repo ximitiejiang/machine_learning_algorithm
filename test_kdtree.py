@@ -32,7 +32,7 @@ if __name__ == "__main__":
         y = dataset.labels
 #        train_x, test_x, train_y, test_y = train_test_split(x, y, test_size=0.3)
         
-        kd = KdTree(x, y, k=3)
+        kd = KdTree(x, y, k=3).train()
         kd.save('./demo/')
         kd.load(path = './demo/KdTree_k3_20190624_155846.pkl')
         

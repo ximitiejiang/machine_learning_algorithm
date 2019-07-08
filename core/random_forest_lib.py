@@ -6,13 +6,17 @@ Created on Thu Jun 27 21:59:21 2019
 @author: suliang
 """
 
-from .decision_tree_lib import CARTClf
+from .decision_tree_lib import BaseTree, CARTClf
+from .softmax_reg_lib import SoftmaxReg
 import numpy as np
 import time
 
-class RandomForest(CARTClf):
+CLF_dict = {'CARTClf': CARTClf,
+            'SoftmaxReg': SoftmaxReg}
+
+class RandomForest(BaseTree):
     
-    def __init__(self, feats, labels, n_trees, 
+    def __init__(self, feats, labels, n_clfs, clf_type='CARTClf',
                  min_samples_split=2, max_depth=10, min_impurity_reduction = 1e-7,
                  max_features=None, sub_samples_ratio=None):
         """随机森林分类算法特点：随机取样本生成森林，属于2种集成学习方法(bagging和boosting)中的bagging
@@ -23,7 +27,8 @@ class RandomForest(CARTClf):
          - bagging与boosting的区别：bagging是多个分类器的组合，boosting是单个分类器的增强。
         """
         super().__init__(feats, labels, min_samples_split, max_depth, min_impurity_reduction)
-        self.n_trees = n_trees
+        self.n_clfs = n_clfs
+        self.clf_type = clf_type
 
         self.max_features = max_features
         self.sub_samples_ratio = sub_samples_ratio
@@ -35,26 +40,31 @@ class RandomForest(CARTClf):
     def train(self):        
         subsets, feats_id_list = self.get_random_subsets(self.feats, 
                                                          self.labels, 
-                                                         self.n_trees, 
+                                                         self.n_clfs, 
                                                          self.max_features,
                                                          self.sub_samples_ratio)
-        # 构建n棵树 
-        self.tree_list = []
-        self.tree_feats_id_list = []
+        # 构建n棵子树分类器
+        self.clf_list = []
+        self.clf_feats_id_list = []
         start = time.time()
-        for i in range(self.n_trees):
-            tree = self.create_tree(*subsets[i], 0)
-            self.tree_list.append(tree)
-            self.tree_feats_id_list.append(feats_id_list[i])
+        for clf_id in range(self.n_clfs):
+            clf_class = CLF_dict[self.clf_type]
+            clf = clf_class(*subsets[clf_id], 
+                          min_samples_split=2, 
+                          max_depth=10,
+                          min_impurity_reduction = 1e-7).train()
+            self.clf_list.append(clf)
+            self.clf_feats_id_list.append(feats_id_list[clf_id])
         print('Finished building trees in %f seconds.'%(time.time() - start))
         self.trained = True
         # 保存模型参数
         self.model_dict['model_name'] = 'RandomForest' + '_' \
-                                        + str(self.n_trees) + 'trees_' \
+                                        + self.clf_type + '_' \
+                                        + str(self.n_clfs) + 'trees_' \
                                         + str(self.max_features) + 'subfeats_' \
                                         + str(self.sub_samples_ratio * 100) + '%subsamples'
-        self.model_dict['tree_list'] = self.tree_list
-        self.model_dict['tree_feats_id_list'] = self.tree_feats_id_list
+        self.model_dict['clf_list'] = self.clf_list
+        self.model_dict['clf_feats_id_list'] = self.clf_feats_id_list
         return self
         
     @staticmethod
@@ -88,17 +98,28 @@ class RandomForest(CARTClf):
             feats_id_list.append(feats_idx)
             
         return subsets, feats_id_list
-
+    
+    def majority_vote(self, labels):
+        """投票方式获得最多类别的label作为叶节点的预测结果
+        Args: labels()
+        """
+        labels_count_dict = {}
+        for label in labels:
+            labels_count_dict[label] = labels_count_dict.get(label, 0) + 1
+        max_result = max(zip(labels_count_dict.values(), 
+                             labels_count_dict.keys()))
+        return max_result[1]
+    
     def predict_single(self, sample):
         """单样本预测，但一个样本需要遍历一个森林的所有树
         """
         result_i = []
-        for i in range(len(self.tree_list)):
-            tree = self.tree_list[i]
-            feats_id = self.tree_feats_id_list[i]
+        for i in range(len(self.clf_list)):
+            clf = self.clf_list[i]
+            feats_id = self.clf_feats_id_list[i]
             sample_refined = sample[feats_id]   # 先对样本提取对应特征列
             
-            result_i.append(self.get_single_tree_result(sample_refined, tree)) #单颗树结果
+            result_i.append(clf.predict_single(sample_refined)) #单颗树结果
         result = self.majority_vote(result_i)  # 投票计算结果
         return result
     

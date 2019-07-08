@@ -27,6 +27,9 @@ class KNN(BaseModel):
         self.model_dict['model_name'] = 'KNN' + '_k' + str(self._k)
         self.model_dict['k'] = self._k
     
+    def train(self):
+        return self
+    
     def predict_single(self, sample_single):
         """
         Args:

@@ -28,7 +28,7 @@ class KdNode:
 
 
 class KdTree(BaseModel):
-    def __init__(self, feats, labels, k=5, norm=False):
+    def __init__(self, feats, labels, k=5):
         """ kdtree algorithm lib
         特点：本质上是采用kdtree作为特征预存储的knn算法，支持二分类和多分类，无模型参数，支持线性可分和非线性可分数据
         相对于knn的改进：由于特征存放在kdtree这种二叉树中，在做预测时会减少计算量
@@ -37,17 +37,19 @@ class KdTree(BaseModel):
             labels(numpy): (n_samples,)
             k: k个近邻
         """
-        super().__init__(feats, labels, norm=norm)
+        super().__init__(feats, labels)
         self._k = k
         self.n_nodes = feats.shape[0]
         assert k <= self.n_nodes, 'num of k should be less than num of samples.'
-        
+    
+    def train(self):    
         self.root = self.create_kdtree(0, self.feats, self.labels) # 先创建kdtree存放特征/标签
         # kdtree不需要训练，直接保存创建的tree作为模型参数
         self.model_dict['model_name'] = 'KdTree' + '_k' + str(self._k)
         self.model_dict['k'] = self._k
         self.model_dict['kdtree'] = self.root
         self.trained = True # 由于kdtree没有训练过程，只要root创建后，就把trained设置为True，从而可保存
+        return self
     
     def create_kdtree(self, axis=0, feats=None, labels=None):
         """递归创建kdtree存放数据，生成的kdtree如下结构, 最终会到达None

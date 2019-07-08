@@ -5,6 +5,8 @@ trying to build a clear, modular, easy-to-use-and-modify machine learning librar
 As this is a simplified machine learning algorithm implement, the accuracy is not the main factor to be considered, but it can be taken as a baseline, a better acc result is possible to get by optimizing the training hyper params.
 
 ### update
+- 2019/07/08 add gbdt algorithm
+- 2019/07/06 add cart reg algorithm
 - 2019/07/04 add ada boost algorithm
 - 2019/07/02 add random forest algorithm
 - 2019/06/27 add cart algorithm
@@ -174,15 +176,23 @@ sm.load('model_path')
 <div align=center><img src="https://github.com/ximitiejiang/machine_learning_algorithm/blob/master/demo/ada_boost2.png"/></div>
 
 ### PART 1.13 gbdt classifer
-<br>to be update ...
+<br>feature:
+- support two-classes-classification and multi-classes-classification.
+- support linear separable features and nonlinear separable features.
+- support continuous features and discrete features
+<br>test code: [test_gbdt](https://github.com/ximitiejiang/machine_learning_algorithm/blob/master/test_ada_boost.py).
+<br>source code: [gbdt_lib](https://github.com/ximitiejiang/machine_learning_algorithm/blob/master/core/ada_boost_lib.py).
+<div align=center><img src="https://github.com/ximitiejiang/machine_learning_algorithm/blob/master/demo/gbdt3.png"/></div>
+<div align=center><img src="https://github.com/ximitiejiang/machine_learning_algorithm/blob/master/demo/gbdt.png"/></div>
+<div align=center><img src="https://github.com/ximitiejiang/machine_learning_algorithm/blob/master/demo/gbdt2.png"/></div>
 
 ### PART 1.14 xgboost classifer
 <br>to be update ...
 
-### PART 1.9 MLP classifier(BP network)
+### PART 1.15 MLP classifier(BP network)
 <br>to be update ...
 
-### PART 1.10 ada boost classifer
+### PART 1.15 CNN classifier
 <br>to be update ...
 
 ### PART 1.12 OneVSOne model wrapper
@@ -191,7 +201,10 @@ sm.load('model_path')
 <br>test code: [test_cart](https://github.com/ximitiejiang/machine_learning_algorithm/blob/master/test_ovo_model.py).
 <br>source code: [cart_lib](https://github.com/ximitiejiang/machine_learning_algorithm/blob/master/core/multi_class_model_wrapper.py).
 
-### PART 2.1 cart reg
+### PART 2.1 linear reg
+<br>to be update ...
+
+### PART 2.2 cart reg
 <br>to be update ...
 <br>test code: [test_decision_tree_regressor](https://github.com/ximitiejiang/machine_learning_algorithm/blob/master/test_ovo_model.py).
 <br>source code: [decision_tree_lib](https://github.com/ximitiejiang/machine_learning_algorithm/blob/master/core/multi_class_model_wrapper.py).

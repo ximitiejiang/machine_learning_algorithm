@@ -14,12 +14,7 @@ import os
 from utils.vis import voc_colors
 
 class BaseModel():
-    """ core function:
-            model.train()
-            model.evaluation()
-            model.classfify()
-            model.save()
-            model.load()
+    """ 所有分类回归模型的基类
     """
     def __init__(self, feats, labels):
         assert feats.ndim ==2, 'the feats should be (n_samples, m_feats), each sample should be 1-dim flatten data.'
@@ -62,7 +57,10 @@ class BaseModel():
         Args:
             test_feats: (n_sample, n_feat)
             test_labels: (n_sample,)
-        """       
+        """
+        # 独热恢复原始
+        if test_labels.ndim >= 2:
+            test_labels = np.argmax(test_labels, axis=1)
         correct = 0
         total_sample = len(test_feats)
         start = time.time()
@@ -131,9 +129,11 @@ class BaseModel():
         # 绘制训练数据
 #        colors = voc_colors(self.n_classes)
 #        colors = colors[self.labels] / 255
+        # one hot 标签变换
+        labels = np.argmax(self.labels, axis=1) if self.labels.ndim >= 2 else self.labels
         plt.scatter(np.array(self.feats)[:,0], 
                     np.array(self.feats)[:,1], 
-                    c = np.array(self.labels).flatten() * 64 + 64)
+                    c = np.array(labels).flatten() * 64 + 64)
 #        plt.scatter(np.array(self.feats)[:,0], 
 #                    np.array(self.feats)[:,1], 
 #                    c = colors)

@@ -41,4 +41,7 @@ class NonlinearDataset(BaseDataset):
         dataset['data'] = datas
         dataset['target'] = labels
         return dataset
-    
+
+
+
+

@@ -19,10 +19,15 @@ class CrossEntropy():
         y_pred = np.clip(y_pred, 1e-15, 1 - 1e-15)
         return - y * np.log(y_pred) - (1 - y) * np.log(1 - y_pred)
 
-    def gradient(self, y, p):
+    def gradient(self, y, y_pred):
         # Avoid division by zero
-        p = np.clip(p, 1e-15, 1 - 1e-15)
-        return - (y / p) + (1 - y) / (1 - p)
+        y_pred = np.clip(y_pred, 1e-15, 1 - 1e-15)
+        return - (y / y_pred) + (1 - y) / (1 - y_pred)
+    
+    def acc(self, y, y_pred):
+        acc = np.sum(y == y_pred, axis=0) / len(y)
+        return acc
+
 
 class MSE():
     """均方损失函数：
@@ -64,9 +69,6 @@ class GBDT(BaseTree):
         self.clf_list = []
      
     def train(self):    
-        self.calc_leaf_value = self.mean_of_y
-        self.calc_impurity_reduction = self.calculate_variance_reduction
-        
         # 创建n个分类器
         y_pred = np.ones(self.labels.shape) * self.labels.mean()     # 首轮用均值作为预测值初始化
         for clf_id in range(self.n_clfs):
@@ -76,7 +78,6 @@ class GBDT(BaseTree):
                           max_depth=self.max_depth,
                           min_impurity_reduction = 1e-7).train()     # 基于残差创建回归树模型
             residual_pred = clf.evaluation(self.feats, residual)     # 
-            
 #            self.tree = self.create_tree(self.feats, residual)       # 创建基于残差的一棵回归树：为了让evaluation工作，需要对象有self.tree属性
 #            residual_pred = super().evaluation(self.feats, residual) # 输入的是残差构建一棵树，所以预测的也是残差
             y_pred += np.multiply(self.learning_rate, residual_pred)  # 残差乘以学习率后累加 (注意如果前面残差不是用负梯度而是用梯度做近似，则这里就是累减而不是累加)
@@ -90,15 +91,17 @@ class GBDT(BaseTree):
         self.model_dict['clf_list'] = self.clf_list
         return self
     
+
+    
     def predict_single(self, sample):
         """仅实现分类模型的单样本预测，沿用父类的分类evaluation"""
         y_pred = np.array([])
         for clf in self.clf_list:
             residual_pred = clf.predict_single(sample) * self.learning_rate  
-            y_pred = y_pred + residual_pred if not y_pred.any() else residual_pred
+            y_pred = residual_pred if not y_pred.any() else y_pred + residual_pred
         # softmax概率化
         y_pred = self.softmax(y_pred)
-        y_pred = np.argmax(y_pred, axis=1)[0]
+        y_pred = np.argmax(y_pred)
         return y_pred
         
     def softmax(self, y):
