@@ -332,7 +332,10 @@ class CARTReg(BaseTree):
         """
         if y.ndim ==1:  # 如果是(n_sample,)则转为(n_sample, 1); 如果是one hot的形式(n_sample, n_class)，直接可以兼容
             y = y.reshape(-1, 1)
-        mean = np.ones(y.shape) * y.mean(0)   # 计算出数据总的均值，然后复制成样本个数大小(n_sample,)
+        if y.size == 0:  # 如果是空数组，则均值取0
+            mean = np.zeros(y.shape)
+        else:
+            mean = np.ones(y.shape) * y.mean(0)   # 计算出数据总的均值，然后复制成样本个数大小(n_sample,)
 #        n_samples = np.shape(X)[0]
 #        variance = (1 / n_samples) * np.diag((X - mean).T.dot(X - mean))
         variance = np.diag((y - mean).T.dot(y - mean))  # 计算平方误差，不除以个数算均值 (但此时数值较大)

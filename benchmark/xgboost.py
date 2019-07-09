@@ -85,8 +85,8 @@ class LogisticLoss():
         return y * np.log(p) + (1 - y) * np.log(1 - p)
 
     # gradient w.r.t y_pred
-    def gradient(self, y, y_pred):
-        p = self.log_func(y_pred)
+    def gradient(self, y, y_pred):  # logistic loss = y*log(p) + (1-y)*log(1-p)
+        p = self.log_func(y_pred)   # 该损失函数的复合变量是y', 如果y'保留则梯度表达式g=-(y-y')
         return -(y - p)
 
     # w.r.t y_pred

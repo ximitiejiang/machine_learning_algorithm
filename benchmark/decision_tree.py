@@ -286,15 +286,22 @@ class XGBoostRegressionTree(DecisionTree):
         return y, y_pred
 
     def _gain(self, y, y_pred):
-        nominator = np.power((y * self.loss.gradient(y, y_pred)).sum(), 2)
-        denominator = self.loss.hess(y, y_pred).sum()
+        nominator = np.power((y * self.loss.gradient(y, y_pred)).sum(), 2)  # 分子numerator
+        denominator = self.loss.hess(y, y_pred).sum()                      # 分母denominator
         return 0.5 * (nominator / denominator)
 
-    def _gain_by_taylor(self, y, y1, y2): # 基于泰勒级数计算
+    def _gain_by_taylor(self, y, y1, y2): # 基于泰勒级数计算增益
+        """基于泰勒级数把损失函数展开，然后使用gain=0.5*G/(H+lamba)来衡量系统不纯度。
+        分割后的gain = gain_left + gain_right = 0.5*G_l/(H_l+lamba) + 0.5*G_r/(H_r+lamba), 
+        分割前的gain = 0.5*(G_l+G_r/(H_l+H_r+lamba)
+        总的gain = 分割后的gain - 分割前的gain
+        其中G和H分别是gi和hi的累加之和，G = sum(gi), H = sum(hi)
+        而gi和hi分别是损失函数的对y_pred的一阶和二阶导数
+        """
         # Split
-        y, y_pred = self._split(y)
+        y, y_pred = self._split(y)       # 把真实值与预测标签再分开
         y1, y1_pred = self._split(y1)
-        y2, y2_pred = self._split(y2)  # 把真实值与预测标签再分开
+        y2, y2_pred = self._split(y2)  
 
         true_gain = self._gain(y1, y1_pred)  #
         false_gain = self._gain(y2, y2_pred)
@@ -302,6 +309,7 @@ class XGBoostRegressionTree(DecisionTree):
         return true_gain + false_gain - gain
 
     def _approximate_update(self, y):
+        """用牛顿法求"""
         # y split into y, y_pred
         y, y_pred = self._split(y)
         # Newton's Method

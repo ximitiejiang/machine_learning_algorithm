@@ -134,7 +134,7 @@ class BaseModel():
             labels = onehot_to_label(labels)
         labels = label_transform(labels.reshape(-1), label_transform_dict={1:1, -1:0, 0:0}).astype(np.int8)
         colors = city_colors(self.n_classes, norm=True)  # 返回array
-        colors = colors[labels]           
+        colors = colors[labels]       #获取每个label的颜色代码    
 
         plt.scatter(np.array(self.feats)[:,0], 
                     np.array(self.feats)[:,1], 
