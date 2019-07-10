@@ -6,6 +6,7 @@ Created on Mon Jul  8 15:31:12 2019
 @author: ubuntu
 """
 from .decision_tree_lib import BaseTree
+import numpy as np
 
 class LogisticLoss():
     """逻辑损失函数：
@@ -16,11 +17,11 @@ class LogisticLoss():
         # Avoid division by zero
         y_pred = np.clip(y_pred, 1e-15, 1 - 1e-15)
         y_pred = self.sigmoid(y_pred)
-        return y * np.log(p) + (1 - y) * np.log(1 - p)  # 逻辑损失跟交叉熵相比缺了个负号
+        return y * np.log(y_pred) + (1 - y) * np.log(1 - y_pred)  # 逻辑损失跟交叉熵相比缺了个负号
 
     def gradient(self, y, y_pred): # 注意这里的梯度根据xgboost的公式是对y_pred求导，梯度的求解公式似乎把负号又纠正过来了
         y_pred = self.sigmoid(y_pred)
-        return -(y - p)
+        return -(y - y_pred)
 
     def sigmoid(self, x): # 概率化到[0,1]之间
         return 1 / (1 + np.exp(-x))
@@ -36,7 +37,7 @@ class XGBoost(BaseTree):
                  min_samples_split=2, 
                  max_depth=10,
                  min_impurity_reduction = 1e-7):
-                assert self.labels.ndim >= 2, 'the labels should be one-hot labels.' # 由于采用多分类交叉熵做损失函数，需要采用标签独热编码(即概率化标签)
+        assert self.labels.ndim >= 2, 'the labels should be one-hot labels.' # 由于采用多分类交叉熵做损失函数，需要采用标签独热编码(即概率化标签)
         """XGBoost极端梯度增强算法：
         """
         super().__init__(feats=feats, 

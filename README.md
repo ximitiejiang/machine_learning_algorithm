@@ -201,7 +201,7 @@ sm.load('model_path')
 <br>test code: [test_cart](https://github.com/ximitiejiang/machine_learning_algorithm/blob/master/test_ovo_model.py).
 <br>source code: [cart_lib](https://github.com/ximitiejiang/machine_learning_algorithm/blob/master/core/multi_class_model_wrapper.py).
 
-### PART 2.1 linear reg
+### PART 2.1 linear reg/rigid reg
 <br>to be update ...
 
 ### PART 2.2 cart reg
