@@ -506,7 +506,7 @@ def main_ridge():
 
 if __name__ == "__main__":
 
-    reg = "ridge"
+    reg = "linear"
     
     if reg == "linear":
         main_linear()
