@@ -93,18 +93,22 @@ def polynomial_features(X, degree):
 
 
 class l1_regularization():
-    """ Regularization for Lasso Regression """
+    """ Regularization for Lasso Regression.
+        l1_norm = alpha * (1/2) * sum(abs(wi))
+    """
     def __init__(self, alpha):
         self.alpha = alpha
     
     def __call__(self, w):
-        return self.alpha * np.linalg.norm(w)
+        return self.alpha * np.linalg.norm(w)  #这个地方好像写错了，是不是应该改为return self.alpha * np.linalg.norm(w, 1)
 
     def grad(self, w):
         return self.alpha * np.sign(w)
 
 class l2_regularization():
-    """ Regularization for Ridge Regression """
+    """ Regularization for Ridge Regression. 
+        l2_norm = alpha * (1/2) * sum((wi)^2)
+    """
     def __init__(self, alpha):
         self.alpha = alpha
     
@@ -115,7 +119,9 @@ class l2_regularization():
         return self.alpha * w
 
 class l1_l2_regularization():
-    """ Regularization for Elastic Net Regression """
+    """ Regularization for Elastic Net Regression 
+        l2_norm = alpha * (1/2) * sum((wi)^2)
+    """
     def __init__(self, alpha, l1_ratio=0.5):
         self.alpha = alpha
         self.l1_ratio = l1_ratio

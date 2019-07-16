@@ -24,6 +24,17 @@ class none_regularization():
     def grad(self, w):
         return 0
 
+class l1_regularization():
+    """l1正则化"""
+    def __init__(self, alpha):
+        self.alpha = alpha
+        
+    def __call__(self, w):
+        return self.alpha * np.linalg.norm(w, 1)
+    
+    def grad(self, w):
+        return self.alpha * np.sign(w)
+
 class l2_regularization():
     """l2正则化"""
     def __init__(self, alpha):
@@ -143,9 +154,17 @@ class RidgeRegression(LinearRegression):
         self.regularization = l2_regularization(alpha = reg_factor)
         self.model_dict['model_name'] = 'RidgeRegressor_with_l2_regularization'
     
-
-
-
+    
+class LassoRegression(LinearRegression):
+    
+    def __init__(self, feats, labels, reg_factor, lr=0.001, n_iters=200):
+        """lasso回归：采用l1正则化，reg_factor为正则化因子
+        """
+        super().__init__(feats=feats, labels=labels, lr=lr, n_iters=n_iters)
+        self.regularization = l1_regularization(alpha = reg_factor)
+        self.model_dict['model_name'] = 'LassoRegressor_with_l1_regularization'
+        
+    
 # TODO
 class PolynomialRegression(LinearRegression):
     
