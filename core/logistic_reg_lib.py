@@ -87,4 +87,12 @@ class LogisticReg(BaseModel):
         return probs_to_label
 
     
+class LogisticReg_pytorch:
+    """采用pytorch底层的自动求导来替代手动求导
+    """
+    def __init__(self):
+        pass
     
+    def train(self):
+        pass
+        
