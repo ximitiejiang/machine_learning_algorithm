@@ -17,8 +17,11 @@ class MnistDataset(BaseDataset):
     另一个外部转换过的train_binary.cvs数据集是把tarin.csv的label列进行转换，原来label=0不变，原来label>0的改为1
     从而变成一个二分类数据集(两个类别是0或非零)
     """
-    def __init__(self, root_path='./dataset/mnist/', data_type='train'):
-        """可设置data_type = train, test, binary分别调用训练集/测试集/二值训练集"""       
+    def __init__(self, root_path='./dataset/mnist/', data_type='train',
+                 norm=None, label_transform_dict=None, one_hot=None, 
+                 binary=None, shuffle=None):
+        """可设置data_type = train, test, binary分别调用训练集/测试集/二值训练集"""      
+        
         train_path = root_path + 'train.csv'
         test_path = root_path + 'test.csv'
         train_binary_path = root_path + 'train_binary.csv'
@@ -32,7 +35,11 @@ class MnistDataset(BaseDataset):
         else:
             raise ValueError('wrong data type, only support train/binary/test.')
             
-        super().__init__() # 先准备self.path再init
+        super().__init__(norm=norm, 
+                         label_transform_dict=label_transform_dict, 
+                         one_hot=one_hot,
+                         binary=binary,
+                         shuffle=shuffle) # 先准备self.path再init中调用get_dataset()
     
     def get_dataset(self):
         raw_data = pd.read_csv(self.path, header=0).values  # (42000, 785)

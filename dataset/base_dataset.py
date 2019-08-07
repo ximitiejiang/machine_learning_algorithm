@@ -18,11 +18,21 @@ class BaseDataset():
                  one_hot=None,
                  binary=None,
                  shuffle=None):
-        """数据集基类，默认支持如下变换：
+        """数据集基类，默认先通过get_dataset()获得self.dataset，里边基于sklearn的结构
+        应包含["data", "target", "target_names", "images", "feature_names"]，然后在
+        基类中读取这些数据存放到相应self.xx变量中，但名称做了微调来满足习惯：
+        [self.datas, self.labels, self.label_names, self.imgs, self.feat_names, self.classes, self.num_classes, self.num_features]
+        
+        数据集通过继承基类可获得支持如下变换：
         - 归一化： norm=True
         - 标签值变换: label_transform_dict = {1:1, 0:-1}
         - 标签独热编码: one_hot=True
         - 二分类化：binary=True
+        
+        自定义数据集如果要继承基类的示例：
+        1. 编写get_dataset()方法，里边return一个字典{"data":data, "target":target, "target_names":target_names, "feature_names":feature_names,...}
+        2. super().__init__(norm=norm, label_transform_dict=label_transform_dict, one_hot=one_hot, binary=binary, shuffle=shuffle)
+        3. 最终自定义数据集的接口变量包括：[self.datas, self.labels, self.label_names, self.imgs, self.feat_names, self.classes, self.num_classes, self.num_features]
         """
         # 1.提取数据
         self.dataset = self.get_dataset()
@@ -79,10 +89,10 @@ class BaseDataset():
         """从原多分类数据集随机提取其中两类得到二分类数据集"""
         label_unique = np.unique(self.labels)
         random_labels = np.random.permutation(label_unique)[:2]  # 提取前2个标签
-        idx = self.labels == random_labels[0] or self.labels == random_labels[1]
+        idx = (self.labels == random_labels[0]) | (self.labels == random_labels[1])  # [False, True,..] or [False, True,..] -> [False, True,..]
         
-        labels_binary = self.labels[idx]
-        feats_binary = self.datas[idx]
+        labels_binary = self.labels[idx]  # 筛选出其中2个类的labels
+        feats_binary = self.datas[idx]   # 筛选出其中2个类的feats
         # 转换数据集        
         self.datas = feats_binary
         self.labels = labels_binary

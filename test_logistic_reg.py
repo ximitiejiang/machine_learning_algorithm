@@ -47,10 +47,10 @@ if __name__ == "__main__":
                      C=1, toler=0.001, max_iter=500, 
                      kernel_option={'type':'linear'})  # 采用线性核
         svm.train()
-        acc = svm.cal_accuracy(train_x, train_y.T)
+        acc = svm.evaluation(train_x, train_y.T)
         print('svm training acc = %f'%(acc))
         
-        acc2 = svm.cal_accuracy(test_x, test_y.T)
+        acc2 = svm.evaluation(test_x, test_y.T)
         print('svm test acc = %f'%(acc2))
         
         svm.vis_boundary(plot_step=0.05)
@@ -85,17 +85,17 @@ if __name__ == "__main__":
                      C=1, toler=0.001, max_iter=500, 
                      kernel_option={'type':'linear'})  # 采用线性核
         svm.train()
-        acc = svm.cal_accuracy(train_x, train_y.T)
+        acc = svm.evaluation(train_x, train_y.T)
         print('svm training acc = %f'%(acc))
         
-        acc2 = svm.cal_accuracy(test_x, test_y.T)
+        acc2 = svm.evaluation(test_x, test_y.T)
         print('svm test acc = %f'%(acc2))
         
         svm.vis_boundary(plot_step=0.05)
         
     if dataset == 'mnist':      
         # acc = 0.98@lr0.001/batch128/w0/norm
-        dataset = MnistDataset(data_type='train_binary')  # 采用mnist数据集
+        dataset = MnistDataset(data_type='train', binary=True)  # 采用mnist数据集
         train_feats, test_feats, train_labels, test_labels = train_test_split(dataset.datas, dataset.labels, test_size=0.3)
         
         # get model
