@@ -26,11 +26,13 @@ class BreastCancerDataset(BaseDataset):
     breask_cancer.keys() = ['data','target','target_names','DESCR','feature_names', 'filename']
     其中data(596,30), target(596,), 其中target中1代表患乳腺癌，0代表正常
     """
-    def __init__(self, norm=None, label_transform_dict=None, one_hot=None, binary=None):
+    def __init__(self, 
+                 norm=None, label_transform_dict=None, one_hot=None, binary=None, shuffle=None):
         super().__init__(norm=norm, 
                          label_transform_dict=label_transform_dict, 
                          one_hot=one_hot,
-                         binary=binary)
+                         binary=binary,
+                         shuffle=shuffle)
     
     def get_dataset(self):
         return load_breast_cancer()

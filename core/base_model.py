@@ -32,17 +32,21 @@ class BaseModel():
         self.n_samples = self.feats.shape[0]
         self.n_feats = self.feats.shape[1]
     
-    def get_batch_data(self, feats, labels, batch_size=16, type='shuffle'):
+    def get_batch_data(self, feats, labels, batch_size=-1, type='shuffle'):
         """从特征数据中提取batch size个特征，并组合成一个特征数据
         """
-        batch_idx = np.random.permutation(np.arange(len(labels)))[:batch_size]  # 随机出batch_size个idx
-        batch_feats_list = []
-        batch_labels_list = []
-        for idx in batch_idx:
-            batch_feats_list.append(feats[idx].reshape(1,-1))
-            batch_labels_list.append(labels[idx].reshape(-1,1))
-        batch_feats = np.concatenate(batch_feats_list, axis=0)
-        batch_labels = np.concatenate(batch_labels_list, axis=0)
+        if batch_size==-1:
+            batch_feats = feats
+            batch_labels = labels
+        else:  
+            batch_idx = np.random.permutation(np.arange(len(labels)))[:batch_size]  # 随机出batch_size个idx
+            batch_feats_list = []
+            batch_labels_list = []
+            for idx in batch_idx:
+                batch_feats_list.append(feats[idx].reshape(1,-1))
+                batch_labels_list.append(labels[idx].reshape(-1,1))
+            batch_feats = np.concatenate(batch_feats_list, axis=0)                     # (n, m)
+            batch_labels = np.concatenate(batch_labels_list, axis=0).reshape(-1)       # (n, )
         return batch_feats, batch_labels
     
     def train(self, feats, labels):
@@ -77,7 +81,7 @@ class BaseModel():
     
     def vis_loss(self, losses):
         """可视化损失"""
-        assert losses is not None, 'can not visualize losses because losses is empty.'
+        assert losses is not None and len(losses) != 0, 'can not visualize losses because losses is empty.'
         x = np.array(losses)[:,0]
         y = np.array(losses)[:,1]
         plt.figure()
@@ -103,7 +107,7 @@ class BaseModel():
         x = np.arange(min_x - 1, max_x + 1, 0.1)
         y = np.zeros((len(x),))
         for i in range(len(x)):
-            y[i] = (-W[0,0] - x[i]*W[1,0]) / W[2,0]
+            y[i] = (-W[0] - x[i]*W[1]) / W[2]
         plt.plot(x, y, c='r')
     
     def vis_boundary(self, plot_step=0.02):
@@ -131,8 +135,8 @@ class BaseModel():
         labels = np.array(self.labels)
         labels = labels.reshape(-1,1) if labels.ndim==1 else labels  # 统一成(10,1), (10,4)
         if labels.shape[1] > 1:  # (10,1), (10,4)
-            labels = onehot_to_label(labels)
-        labels = label_transform(labels.reshape(-1), label_transform_dict={1:1, -1:0, 0:0}).astype(np.int8)
+            labels = onehot_to_label(labels)  # 如果是多列，则转换成独热编码
+        labels = label_transform(labels.reshape(-1), label_transform_dict={1:1, -1:0, 0:0}).astype(np.int8)# 转换成0,1编码
         colors = city_colors(self.n_classes, norm=True)  # 返回array
         colors = colors[labels]       #获取每个label的颜色代码    
 

@@ -24,16 +24,16 @@ class MnistDataset(BaseDataset):
         
         train_path = root_path + 'train.csv'
         test_path = root_path + 'test.csv'
-        train_binary_path = root_path + 'train_binary.csv'
+        #train_binary_path = root_path + 'train_binary.csv'
         
         if data_type == 'train':
             self.path = train_path
-        elif data_type == 'binary':
-            self.path = train_binary_path
+#        elif data_type == 'binary':    # 废除这种转换binary的方式，统一在base model中转换
+#            self.path = train_binary_path
         elif data_type == 'test':
             self.path = test_path
         else:
-            raise ValueError('wrong data type, only support train/binary/test.')
+            raise ValueError('wrong data type, only support train/test.')
             
         super().__init__(norm=norm, 
                          label_transform_dict=label_transform_dict, 

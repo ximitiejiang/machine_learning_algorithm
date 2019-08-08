@@ -52,13 +52,14 @@ class BaseDataset():
             self.labels = self.labels[idx]
             self.imgs = self.imgs[idx] if self.imgs is not None else None
         if norm:
-            self.datas = scale(self.datas)
-        if label_transform_dict:
-            self.label_transform(label_transform_dict)
+            self.datas = scale(self.datas.astype(np.float64))
         if one_hot:
             self.label_to_one_hot()
         if binary:
             self.get_binary_dataset()
+        # 标签变换放在binary之后，从而可以在二分类数据集创建后再改标签
+        if label_transform_dict:  
+            self.label_transform(label_transform_dict)
 
     def label_transform(self, label_transform_dict):
         """默认不改变label的取值范围，但可以通过该函数修改labels的对应范围
@@ -90,13 +91,17 @@ class BaseDataset():
         label_unique = np.unique(self.labels)
         random_labels = np.random.permutation(label_unique)[:2]  # 提取前2个标签
         idx = (self.labels == random_labels[0]) | (self.labels == random_labels[1])  # [False, True,..] or [False, True,..] -> [False, True,..]
-        
         labels_binary = self.labels[idx]  # 筛选出其中2个类的labels
         feats_binary = self.datas[idx]   # 筛选出其中2个类的feats
         # 转换数据集        
         self.datas = feats_binary
         self.labels = labels_binary
-        self.label_names = random_labels        
+        self.label_names = random_labels
+        self.num_classes = 2
+        
+        label_transform_dict={self.label_names[0]:0, self.label_names[1]:1}
+        # 直接修改self.labels为[0,1]
+        self.label_transform(label_transform_dict = label_transform_dict)
     
     def get_dataset(self):
         raise NotImplementedError('the get_dataset function is not implemented.')

@@ -29,7 +29,9 @@ class BaseTree(BaseModel):
                  max_depth=10,
                  min_impurity_reduction = 1e-7):
         """分类和回归树的基类：创建决策树的核心过程在这个基类实现
-                   _______BaseModel________________________
+                          BaseModel
+                              |
+                   _______BaseTree________________________
                   /     \         \       \         \      \
              __CARTClf_  CARTReg   RandF  ada_boost  GBDT  XGBoost
             /     |    \         
