@@ -18,11 +18,11 @@ import matplotlib.pyplot as plt
 
 if __name__ == "__main__":
     
-    source = 'moon'
+    source = 'treedata'
     
     if source == 'treedata':  # 2 classes: from book of zhaozhiyong
         data = []
-        with open('./dataset/simple/treedata.txt') as f:
+        with open('../dataset/simple/treedata.txt') as f:
             for line in f.readlines():
                 sample = []
                 lines = line.strip().split("\t")
@@ -73,7 +73,7 @@ if __name__ == "__main__":
 
     if source == '2class2':  # TODO: loss curve still need optimize
         import pandas as pd       
-        filename = './dataset/simple/2classes_data_2.txt'  # 一个简单的2个特征的2分类数据集
+        filename = '../dataset/simple/2classes_data_2.txt'  # 一个简单的2个特征的2分类数据集
         data = pd.read_csv(filename, sep='\t').values
         x = data[:,0:2]
         y = data[:,-1]

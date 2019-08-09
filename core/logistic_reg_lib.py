@@ -148,7 +148,7 @@ class LogisticReg_autograd:
         pass
     
     def train(self):
-        # 暂时不支持batch size的设置        
+        # 暂时不支持batch size的设置            
         for epoch in range(self.n_epoch):
             # 前向计算
             y_prob = self.forward(self.feats)
@@ -192,5 +192,8 @@ class LogisticReg_pytorch(nn.Module):
         probs = torch.sigmoid(logits)
         return probs
     
-    
-        
+
+import tensorflow as tf    
+class LogisticReg_tensorflow():
+    def __init__():
+        pass

@@ -10,7 +10,7 @@ import pandas as pd
 from dataset.regression_dataset import RegressionDataset
 from sklearn.model_selection import train_test_split
 import matplotlib.pyplot as plt
-from core.linear_regression_lib import LinearRegression
+from core.linear_regression_lib import RidgeRegression
 
 def standardize(X):
     """ Standardize the dataset X """
@@ -29,7 +29,7 @@ if __name__ == "__main__":
     source = 'linear'
     
     if source == 'temp':
-        data = pd.read_csv('./dataset/simple/TempLinkoping2016.txt', sep="\t")
+        data = pd.read_csv('../dataset/simple/TempLinkoping2016.txt', sep="\t")
 
         time = np.atleast_2d(data["time"].values).T
         temp = np.atleast_2d(data["temp"].values).T
@@ -39,7 +39,7 @@ if __name__ == "__main__":
     
         X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.3)
     
-        model = LinearRegression(X_train, y_train).train()
+        model = RidgeRegression(X_train, y_train, degree=3, lr=0.001, n_iters=100).train()
         y_pred = model.evaluation(X_test, y_test, show=True)
         
     if source == 'linear':
@@ -50,6 +50,6 @@ if __name__ == "__main__":
         
         X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.3)
 
-        model = LinearRegression(X_train, y_train, lr=0.001, n_iters=100).train()
+        model = RidgeRegression(X_train, y_train, reg_factor = 1, lr=0.001, n_iters=100).train()
         y_pred = model.evaluation(X_test, y_test, title='test')
            

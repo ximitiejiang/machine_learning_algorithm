@@ -21,7 +21,7 @@ if __name__ == "__main__":
     source = 'circle'
     
     if source == 'diabetes':
-        dataset = PimaIndiansDiabetesDataset(path = './dataset/simple/pima_indians_diabetes.csv')
+        dataset = PimaIndiansDiabetesDataset(path = '../dataset/simple/pima_indians_diabetes.csv')
         x = dataset.datas
         y = dataset.labels
         train_x, test_x, train_y, test_y = train_test_split(x, y, test_size=0.2)

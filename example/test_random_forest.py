@@ -21,7 +21,7 @@ if __name__ == "__main__":
     
     if source == 'treedata':  # 2 classes: from book of zhaozhiyong
         data = []
-        with open('./dataset/simple/treedata.txt') as f:
+        with open('../dataset/simple/treedata.txt') as f:
             for line in f.readlines():
                 sample = []
                 lines = line.strip().split("\t")

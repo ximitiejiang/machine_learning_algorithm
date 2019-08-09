@@ -20,7 +20,7 @@ if __name__ == "__main__":
     
     if dataset == '2class':
         # acc = 0.90@lr0.01/batch1/w0/norm
-        filename = './dataset/simple/2classes_data.txt'  # 一个简单的2个特征的2分类数据集
+        filename = '../dataset/simple/2classes_data.txt'  # 一个简单的2个特征的2分类数据集
         data = pd.read_csv(filename, sep='\t').values
         x = data[:,0:2]
         y = data[:,-1]
@@ -40,7 +40,7 @@ if __name__ == "__main__":
     
     if dataset == '2class2':
         # acc = 0.95@lr0.01/batch1/w0/norm
-        filename = './dataset/simple/2classes_data_2.txt'  # 一个简单的2个特征的2分类数据集
+        filename = '../dataset/simple/2classes_data_2.txt'  # 一个简单的2个特征的2分类数据集
         data = pd.read_csv(filename, sep='\t').values
         x = data[:,0:2]
         y = data[:,-1]

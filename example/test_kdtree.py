@@ -34,7 +34,7 @@ if __name__ == "__main__":
         
         kd = KdTree(x, y, k=3).train()
         kd.save('./demo/')
-        kd.load(path = './demo/KdTree_k3_20190624_155846.pkl')
+        kd.load(path = '../demo/KdTree_k3_20190624_155846.pkl')
         
         point = np.array([10, 2])
         label = kd.predict_single(point)
