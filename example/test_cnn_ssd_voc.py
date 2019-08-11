@@ -8,11 +8,12 @@ Created on Fri Aug  9 22:38:55 2019
 from utils.prepare_training import get_config, get_logger, get_dataset
 from utils.runner import Runner
 from torch.utils.data import DataLoader
-from core.detector import OneStageDetector
+from core.detector_lib import OneStageDetector
 from core.batch_processor import batch_processor
 from functools import partial
 from model.parallel.collate import collate
 
+# %% 模型训练
 def train(cfg_path):
     """训练demo"""
     # 获得配置信息
@@ -39,10 +40,27 @@ def train(cfg_path):
     runner = Runner(model, batch_processor, cfg.optimizer, cfg.work_dir, cfg.log_level)
     runner.register_hooks()
     runner.run(dataloader)
+
+
+# %% 模型测试
+def test(cfg_path, imgs_path):
+    """"测试demo"""
+    pass
     
 
+
+# %% 运行调试
 if __name__ == "__main__":
     
-    cfg_path = "cfg_ssd512_voc.py"
+    op = "train"
     
-    train(cfg=cfg_path)
+    if op=="train": 
+        cfg_path = "cfg_ssd300_vgg16_voc.py"
+        train(cfg=cfg_path)
+    
+    if op=="test":
+        cfg_path = "cfg_ssd300_vgg16_voc.py"
+        imgs_path = ""
+        test(cfg_path, imgs_path)
+        
+        
