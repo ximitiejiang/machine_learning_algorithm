@@ -57,6 +57,18 @@ layers = nn.Sequential(
         nn.ReLU(inplace=True),
         nn.MaxPool2d(3, stride=1))
 
+"""往nn.Sequential()，nn.ModuleList(), nn.ModuleDict()插入层
+    - model.
+"""
+layers = nn.Sequential()
+layers.add_module()
+
+layers = nn.ModuleList()
+layers.append()
+
+layers = nn.ModuleDict()
+
+
         
 """子模型可以从model.modules(), model.named_modules()来获得，从而进行相关操作，比如初始化"""
 

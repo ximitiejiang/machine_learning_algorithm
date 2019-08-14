@@ -112,7 +112,7 @@ class VGG(nn.Module):
                 nn.Dropout(),
                 nn.Linear(4096, 4096),
                 nn.ReLU(True),
-                nn.Dropout(),
+                nn.Dropout(),import torch.nn.functional as F
                 nn.Linear(4096, num_classes),
             )
 

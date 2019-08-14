@@ -23,6 +23,7 @@ class OneStageDetector(nn.Module):
             self.neck = build_module(cfg.model.neck, registry)
         
         # 初始化
+        # TODO: init weight中我没有指定map_location，那么指定cpu/gpu操作需要在之后进行
         self.init_weights(pretrained=cfg.model.pretrained)
     
     def init_weights(self, pretrained):
