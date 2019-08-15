@@ -68,7 +68,7 @@ class SSDHead(nn.Module):
         base_sizes = min_sizes
         # strides: 表示两组anchor中心点的距离
         strides = anchor_strides
-        # ctr
+        # centers: 表示每组anchor的中心点坐标
         centers = []
         for stride in strides:
             centers.append(((stride - 1) / 2., (stride - 1) / 2.))
@@ -100,16 +100,23 @@ class SSDHead(nn.Module):
             bbox_preds.append(self.reg_convs[i](feat))
         return cls_scores, bbox_preds 
     
-    def loss(self, cls_scores, bbox_preds):
+    def get_losses(self, cls_scores, bbox_preds, 
+                   gt_bboxes, gt_labels, 
+                   img_metas, cfg):
+        """在训练时基于前向计算结果，计算损失"""
         
         # 基于base anchors生成
-        for i in range(6):
-            anchors
+        multi_layers_anchors = []
+        for i in range(len(img_metas)):
+            anchors = self.anchor_generators.grid_anchors()
+            multi_layers_anchors.append(anchors)
+            
     
     def loss_single(self):
         pass
     
     def get_bboxes(self):
+        """在测试时基于前向计算结果，计算bbox预测值，此时前向计算后不需要算loss，直接算bbox"""
         pass
 
 
@@ -148,7 +155,7 @@ class AnchorGenerator():
                                  x_ctr + 0.5 * (w_new - 1), 
                                  y_ctr + 0.5 * (h_new - 1)], axis=-1).round()  # (m*n, 4))
         
-        return torch.Tensor(base_anchors)
+        return torch.tensor(base_anchors)
     
     def grid_anchors(self, featmap_size, stride):
         """生成单个特征图的网格anchors"""
@@ -162,8 +169,11 @@ class AnchorGenerator():
         yy = np.tile(y.reshape(-1,1), (1, len(x))).reshape(-1) # (m*n,)
         # 基于网格坐标生成(xmin, ymin, xmax, ymax)的坐标平移矩阵
         shifts = np.stack([xx, yy, xx, yy], axis=-1)  # (m*n, 4)
-        # 平移anchors
-        all_anchors = base_anchors + shifts
+        shifts = torch.tensor(shifts)
+        # 平移anchors: 相当于该组anchors跟每个平移坐标进行相加，
+        # 也就相当于要取每一行坐标跟一组anchor运算，所以用坐标插入空轴而不是用anchor插入空轴
+        all_anchors = base_anchors + shifts[:, None, :]   #(b,4)+(k,1,4)->(k, b, 4)
+        all_anchors = all_anchors.reshape(-1, 4)  # (k*b, 4)
         return all_anchors
     
 
@@ -183,4 +193,17 @@ if __name__ == "__main__":
         sys.path.insert(0, path)
     
     head = SSDHead()
+    
+    """广播机制的应用: 前提是两个变量从右往左，右边的对应轴size要相同，或者其中一个变量size=0或1
+        对其中一个变量插入一个轴，就相当于对他提取每一行，并广播成另一个变量的形状"""
+    a = np.ones((3,4))
+    b = np.ones((10,4))
+    result = a + b[:, None, :]
+    
+    """广播机制的应用2: 有3个角色分别有各自的攻击力和防御力，各自攻击100个目标分别获取攻击防御力加成"""
+    roles = np.array([[1,2],[3,2],[4,1]])           # (3,2)
+    objects = np.random.randint(1,10, size=(100,2)) # (100,2)
+    result = roles + objects[:, None, :]    # (3,2)+(100,1,2)->(100,3,2)
+    
+    
         

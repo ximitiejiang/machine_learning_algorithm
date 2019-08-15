@@ -49,7 +49,7 @@ class OneStageDetector(nn.Module):
         outs = self.bbox_head(x)
         # 计算损失
         bbox_inputs = outs + (gt_bboxes, gt_labels, img_metas, self.cfg.train_cfg)
-        losses = self.bbox_head.loss(*bbox_inputs)
+        losses = self.bbox_head.get_losses(*bbox_inputs)
         return losses
         
     def forward_test(self, img, img_metas, rescale=False, **kwargs):
