@@ -86,8 +86,7 @@ class SSDVGG16(nn.Module):
         # 构建ssd额外卷积层和l2norm层(ssd论文提及)
         self.extra = self.make_extra_block(in_channels=1024)
         self.l2_norm = L2Norm(self.features[out_feature_indices[0] - 1].out_channels, l2_norm_scale)
-        
-        
+
     def make_vgg_block(self, num_convs, in_channels, out_channels, with_bn=False, ceil_mode=True):
         """构造一个conv + bn + relu + Maxpool的子模块，存成list，最后统一解包放入nn.Sequential()
         """
@@ -173,7 +172,6 @@ class L2Norm(nn.Module):
         norm = x.pow(2).sum(1, keepdim=True).sqrt() + self.eps
         return self.weight[None, :, None].expand_as(x) * x / norm
 
+
 if __name__ == "__main__":
     model = SSDVGG16()
-    
-        

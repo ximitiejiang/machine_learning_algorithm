@@ -72,6 +72,7 @@ class OneStageDetector(nn.Module):
 
 # %% two stage
 class TwoStageDetector(nn.Module):
-    def __init__():
+    def __init__(self):
+        super().__init__()
         pass
     
