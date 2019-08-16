@@ -253,10 +253,10 @@ c = c[idx]     # 提取其他列对应idx的数据
 <div align=center><img src="https://github.com/ximitiejiang/machine_learning_algorithm/blob/master/demo/bias_variance_tradeoff2.png"/></div>
 
 2. 什么是高方差模型输出：就是针对同样的测试值，预测输出分散度很高，主要是因为预测模型太复杂想要拟合每个训练样本导致模型过拟合。
-   此时，在训练样本中偏差较低，但在测试样本中偏差较高。
+   此时，在训练样本中偏差较低，但在测试样本中偏差较高。(也就是过拟合)
    
 3. 什么是高偏差模型输出：就是针对同样的测试值，预测的偏差很高，主要是因为预测模型太简单没有很好的拟合训练样本导致模型欠拟合。
-   此时，在训练样本中偏差较大，在测试样本中偏差也大。
+   此时，在训练样本中偏差较大，在测试样本中偏差也大。(也就是欠拟合)
    
 4. 具体到各种模型，如何比较方差与偏差：
 - 一般具有很大灵活性的非参数学习方法都具有很高方差也容易过拟合，比如knn，svm
@@ -268,7 +268,7 @@ c = c[idx]     # 提取其他列对应idx的数据
 所以需要在泛化误差出现拐点的位置找到方差与偏差的平衡点。如下图
 <div align=center><img src="https://github.com/ximitiejiang/machine_learning_algorithm/blob/master/demo/bias_variance_tradeoff3.png"/></div>
 
-- 通常采用正则化的方式来进行方差-偏差的平衡，也就是在损失函数表达式中增加lambda*L2或lamba*L1，即采用L2范数 ||x||2 = sqrt(sum(xi^2))，或者L1范数||x||1 = sum(|xi|)
+- 通常采用正则化的方式来进行方差-偏差的平衡，也就是在损失函数表达式中增加lambda*L2或lambda*L1，即采用L2范数 ||x||2 = sqrt(sum(xi^2))，或者L1范数||x||1 = sum(|xi|)
   其中lamba叫做惩罚因子，lamba越大说明惩罚越大，说明模型越不愿意放弃离群点，所以模型也越复杂。
 - 正则化之所以能够简化模型防止过拟合，是因为他在loss中增加了一项控制参数w的惩罚项(一般用L2正则)，减小惩罚因子就相当于减小loss的总和，也就相当于简化模型。
   

@@ -8,6 +8,7 @@ Created on Sat Aug 10 21:15:42 2019
 import numpy as np
 import torch
 import torch.nn as nn
+import torch.nn.functional as F
 from utils.module_factory import registry
 from utils.weight_init import xavier_init
 
@@ -43,13 +44,15 @@ class SSDHead(nn.Module):
                  anchor_strides=(8, 16, 32, 64, 100, 300),
 
                  target_means=(.0, .0, .0, .0),
-                 target_stds=(1.0, 1.0, 1.0, 1.0),
+                 target_stds=(0.1, 0.1, 0.2, 0.2),
                  **kwargs): # 增加一个多余变量，避免修改cfg, 里边有一个type变量没有用
         super().__init__()
         self.input_size = input_size
         self.num_classes = num_classes
         self.cls_out_channels = num_classes
-
+        self.anchor_strides = anchor_strides
+        self.target_means = target_mean
+        self.target_stds = target_stds 
         # 创建分类分支，回归分支
         cls_convs = []
         reg_convs = []
@@ -104,22 +107,112 @@ class SSDHead(nn.Module):
                    gt_bboxes, gt_labels, 
                    img_metas, cfg):
         """在训练时基于前向计算结果，计算损失"""
+        # 获得各个特征图尺寸: (6,)-(38,38)(19,19)(10,10)(5,5)(3,3)(1,1)
+        featmap_sizes = [featmap.size() for featmap in cls_scores]
         
-        # 基于base anchors生成
+        # 生成grid anchors并把多张图的grid anchors放一起
         multi_layers_anchors = []
         for i in range(len(img_metas)):
-            anchors = self.anchor_generators.grid_anchors()
-            multi_layers_anchors.append(anchors)
+            anchors = self.anchor_generators.grid_anchors(featmap_sizes[i], self.anchor_strides[i])
+            multi_layers_anchors.append(anchors)  # (6,)(k, 4)
+        multi_layers_anchors = torch.cat(multi_layers_anchors)  # (s, 4)    
+        anchor_list = [multi_layers_anchors for _ in range(len(img_metas))]  # (n_imgs,) (s,4)
+        
+        # TODO: 没有采用valid_flag_list
+        cls_reg_target = self.get_anchor_target(anchor_list, gt_bboxes, img_metas, cfg.assigner)
+        
+        # 计算损失:
+        # 先组合一个batch所有图片的数据
+        all_cls_scores    # (4, 8732, 21)
+        all_labels        # (4, 8732)
+        all_label_weights # (4, 8732)
+        all_bbox_preds    # (4, 8732, 4)
+        all_bbox_targets  # (4, 8732, 4)
+        all_bbox_weights  # (4, 8732, 4)
+        
+        num_imgs = len(img_metas)
+        all_loss_cls = []
+        all_loss_reg = []
+        for _ in range(num_imgs):  # 分别计算每张图的损失
+            # 计算分类损失
+            loss_cls = F.cross_entropy(all_cls_score[i], all_labels[i], reduction="none") * all_label_weights[i] # (8732,)
             
+            # OHEM在线负样本挖掘：提取损失中数值最大的前k个，并保证正负样本比例1:3 
+            # (这样既保证正负样本平衡，也保证对损失贡献大的负样本被使用)
+            pos_inds = np.where(all_labels[i] > 0)
+            neg_inds = np.where(all_labels[i] == 0)
+            num_pos_samples = pos_inds.shape[0]
+            num_neg_samples = cfg.neg_pos_ratio * num_pos_samples
+            topk_loss_cls = loss_cls[neg_inds].sort()[0][num_neg_samples]
+            
+            # 计算平均损失
+            num_total_samples = 
+            loss_cls_pos_sum = 
+            loss_cls_neg_sum = 
+            loss_cls = (loss_cls_pos_sum + loss_cls_neg_sum) / num_total_samples
+            
+            # 计算回归损失
+            loss_reg = weighted_smoothl1(all_bbox_preds[i],
+                                         all_bbox_targets[i],
+                                         all_bbox_weights[i],
+                                         beta=,
+                                         avg_factor=num_total_samples)
+        
+        return dict(loss_cls=all_loss_cls, loss_reg = all_loss_reg)
     
-    def loss_single(self):
-        pass
-    
-    def get_bboxes(self):
+    def get_anchor_target(self, anchor_list, gt_bboxes, img_metas, assign_cfg, gt_labels):
+        """计算一个batch的多张图片的anchor target"""
+        # TODO: 放在哪个模块里边比较合适
+        all_labels = []
+        all_label_weights = []
+        all_bbox_targets = []
+        all_bbox_weights = []
+        
+        all_pos_inds_list = []
+        all_neg_inds_list = []
+        for i in range(len(img_metas)): # 对每张图分别计算
+            # 指定每个anchor是正样本还是负样本(基于跟gt进行iou计算)
+            bbox_assigner = MaxIouAssigner(**assign_cfg)
+            assign_result = bbox_assigner.assign(anchor_list[i], gt_bboxes, gt_labels)
+            # 采样一定数量的正负样本:通常用于预防正负样本不平衡
+            #　但在SSD中没有采样只是区分了一下正负样本，所以这里只是一个假采样。(正负样本不平衡是通过最后loss的OHEM完成)
+            bbox_sampler = PseudoSampler()
+            sampling_result = bbox_sampler.sample(assign_result, anchor_list[i], gt_bboxes)
+            
+            # 基于找到的正样本，得到bbox targets, bbox_weights
+            pos_inds = sampling_result[0]
+            pos_bboxes
+            pos_gt_bboxes
+            pos_bbox_target = bbox2delta(pos_bboxes, pos_gt_bboxes)
+            bbox_targets = 
+            bbox_weights = 1
+            # 得到labels, label_weights
+            labels = 
+            label_weights = 1
+            
+            
+            # 单张图片targets汇总
+            all_labels.append()         # (n_img, ) (n_anchor, )
+            all_label_weights.append()  # (n_img, ) (n_anchor, )
+            all_bbox_targets.append()   # (n_img, ) (n_anchor, 4)
+            all_bbox_weights.append()   # (n_img, ) (n_anchor, 4)
+        
+        # 对targets数据进行变换，按照特征图尺寸把每个数据分成6份，把多张图片的同尺寸特征图的数据放一起，统一做loss
+        num_anchors_per_level = 
+        for n in num_anchors_per_level:  # 6个level, 4张图 (6, ) (4, k)
+            
+            labels_list             # (6,) (4, 5776)
+            label_weights_list      # (6,) (4, 5775)
+            bbox_targets_list       # (6,) (4, 5776, 4)
+            bbox_weights_list       # (6,) (4, 5776, 4)
+        return (labels_list, label_weights_list, bbox_targets_list, bbox_weights_list)
+            
+                
+    def get_bboxes(self, cls_scores, bbox_preds):
         """在测试时基于前向计算结果，计算bbox预测值，此时前向计算后不需要算loss，直接算bbox"""
         pass
 
-
+# %%
 class AnchorGenerator():
     """生成base anchors和grid anchors"""
     def __init__(self, base_size, scales, ratios, scale_major=False, ctr=None):
@@ -176,7 +269,118 @@ class AnchorGenerator():
         all_anchors = all_anchors.reshape(-1, 4)  # (k*b, 4)
         return all_anchors
     
+# %%    
+class MaxIouAssigner():
+    """用于指定每个anchor的身份是正样本还是负样本：基于anchor跟gt_bboxes的iou计算结果进行指定"""
+    def __init__(self, pos_iou_thr, neg_iou_thr, min_pos_iou=0):
+        self.pos_iou_thr = pos_iou_thr     #正样本阈值：大于该值则为正样本
+        self.neg_iou_thr = neg_iou_thr     #负样本阈值：小于该值则为负样本
+        self.min_pos_iou = min_pos_iou     #最小正样本阈值： 
+        
+    def assign(self, anchors, gt_bboxes, gt_labels):
+        # 计算ious
+        ious = get_ious(gt_bboxes, anchors)  # (m,4)(n,4)->(m,n)
+        anchor_maxiou_for_all_gt = ious.max(axis=0)          # (n,)
+        anchor_maxiou_idx_for_all_gt = ious.argmax(axis=0)   # (n,) 0~n_gt
+        
+        #gt_maxiou_for_all_anchor = ious.max(axis=1)          # (m,)
+        gt_maxiou_idx_for_all_anchor = ious.argmax(axis=1)   # (m,)
+        
+        # 基于规则指定每个anchor的身份, 创建anchor标识变量，先指定所有anchor为-1
+        # 然后设置负样本=0，正样本=idx+1>0
+        num_anchors = ious.shape[1]
+        assigned_gt_inds = np.full((num_anchors, ), -1)      # (n, )
+        # 小于负样本阈值，则设为0
+        neg_idx = (anchor_maxiou_for_all_gt < self.neg_iou_thr) & (anchor_maxiou_for_all_gt >=0)
+        assigned_gt_inds[neg_idx] = 0
+        # 大于正样本阈值，则设为对应gt的index + 1 (>0)也代表gt的编号
+        pos_idx = (anchor_maxiou_for_all_gt > self.pos_iou_thr) & (anchor_maxiou_for_all_gt <1)
+        assigned_gt_inds[pos_idx] = anchor_maxiou_idx_for_all_gt[pos_idx] + 1 # 从0~k-1变到1～k,该值就代表了第几个gt   
+        # 每个gt所对应的最大iou的anchor也设置为index + 1(>0)也代表gt的编号
+        # 这样确保每个gt至少有一个anchor对应
+        for i, anchor_idx in enumerate(gt_maxiou_idx_for_all_anchor):
+            assigned_gt_inds[anchor_idx] = i + 1   # 从0~k-1变到1～k,该值就代表了第几个gt 
+        
+        # 转换正样本的标识从1~indx+1为真实gt_label
+        assigned_gt_labels = np.zeros((num_anchors, ))     # (n, )
+        for i, assign in enumerate(assigned_gt_inds):
+            if assign > 0:
+                label = gt_labels[assign-1]
+                assigned_gt_labels[i] = label
+        
+        return [assigned_gt_inds, assigned_gt_labels, ious] # [(n,), (n,), (m,n)] 
+            
+    
+class PseudoSampler():
+    def __init__(self):
+        pass
+    
+    def sample(self, assign_result, anchor_list, gt_bboxes):
+        # 提取正负样本的位置号
+        pos_inds = np.where(assign_result[0] > 0)[0]  #
+        neg_inds = np.where(assign_result[0] == 0)[0]
+        
+        pos_bboxes = 
+        
+        return [pos_inds, neg_inds]
+        
 
+def bbox_ious(bboxes1, bboxes2):
+    """用于计算两组bboxes中每2个bbox之间的iou(包括所有组合，而不只是位置对应的bbox)
+    bb1(m, 4), bb2(n, 4), 假定bb1是gt_bbox，则每个gt_bbox需要跟所有anchor计算iou，
+    也就是提取每一个gt，因此先从bb1也就是bb1插入轴，(m,1,4),(n,4)->(m,n,4)，也可以先从bb2插入空轴则得到(n,m,4)"""
+    # 在numpy环境操作(也可以用pytorch)
+    bb1 = bboxes1.numpy()
+    bb2 = bboxes2.numpy()
+    # 计算重叠区域的左上角，右下角坐标
+    xymin = np.max(bb1[:, None, :2] , bb2[:, :2])  # (m,2)(n,2) -> (m,1, 2)(n,2) -> (m,n,2)
+    xymax = np.min(bb1[:, 2:] , bb2[:, None, 2:])  # (m,2)(n,2) -> (m,1, 2)(n,2) -> (m,n,2)
+    # 计算重叠区域w,h
+    wh = xymax - xymin # (m,n,2)-(m,n,2) = (m,n,2)
+    # 计算重叠面积和两组bbox面积
+    area = wh[:, :, 0] * wh[:, :, 1] # (m,n)
+    area1 = (bb1[:, 2] - bb1[:, 0]) * (bb1[:, 3] - bb1[:, 1]) # (m,)*(m,)->(m,)
+    area2 = (bb2[:, 2] - bb2[:, 0]) * (bb2[:, 3] - bb2[:, 1]) # (n,)*(n,)->(n,)
+    # 计算iou
+    ious = area / (area1 + area2[:,None,:] - area)     #(m,n) /[(m,)+(1,n)-(m,n)] -> (m,n) / (m,n)
+    
+    return ious  # (m,n)
+
+
+def bbox2delta(prop, gt):
+    """把proposal的anchor(k, 4)转化为相对于gt(k,4)的变化dx,dy,dw,dh
+    基本逻辑：由前面的卷积网络可以得到预测xmin,ymin,xmax,ymax，并转化成px,py,pw,ph.
+    此时存在一种变换dx,dy,dw,dh，可以让预测值变成gx',gy',gw',gh'且该值更接近gx,gy,gw,gh
+    所以目标就变成找到dx,dy,dw,dh，寻找的方式就是dx=(gx-px)/pw, dy=(gy-py)/ph, dw=log(gw/pw), dh=log(gh/ph)
+    因此卷积网络前向计算每次都得到xmin/ymin/xmax/ymax经过head转换成dx,dy,dw,dh，力图让loss最小使这个变换
+    最后测试时head计算得到dx,dy,dw,dh，就可以通过delta2bbox()反过来得到xmin,ymin,xmax,ymax
+    """
+    # 把xmin,ymin,xmax,ymax转换成x_ctr,y_ctr,w,h
+    px = (prop[...,0] + prop[...,2]) * 0.5
+    py = (prop[...,1] + prop[...,3]) * 0.5
+    pw = (prop[...,2] - prop[...,0]) + 1.0  
+    ph = (prop[...,3] - prop[...,1]) + 1.0
+    
+    gx = (gt[...,0] + gt[...,2]) * 0.5
+    gy = (gt[...,1] + gt[...,3]) * 0.5
+    gw = (gt[...,2] - gt[...,0]) + 1.0  
+    gh = (gt[...,3] - gt[...,1]) + 1.0
+    # 计算dx,dy,dw,dh
+    dx = (gx - px) / pw
+    dy = (gy - py) / ph
+    dw = torch.log(gw / pw)
+    dh = torch.log(gh / ph)
+    deltas = torch.stack([dx, dy, dw, dh], dim=-1) # (n, 4)
+    # 归一化
+    means = [0,0,0,0]    # (4,)
+    std = [0.1,0.1,0.2,0.2]      # (4,)
+    deltas = (deltas - means[None, :]) / std[None, :]    # (n,4)-(1,4) / (1,4) -> (n,4) / (1,4) -> (n,4) 
+    
+
+def delta2bbox():
+    pass    
+
+# %%
 if __name__ == "__main__":
     """base_anchor的标准数据
     [[-11., -11.,  18.,  18.],[-17., -17.,  24.,  24.],[-17.,  -7.,  24.,  14.],[ -7., -17.,  14.,  24.]]
