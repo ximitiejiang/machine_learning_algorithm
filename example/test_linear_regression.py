@@ -26,7 +26,7 @@ def standardize(X):
 
 if __name__ == "__main__":
     
-    source = 'linear'
+    source = 'temp'
     
     if source == 'temp':
         data = pd.read_csv('../dataset/simple/TempLinkoping2016.txt', sep="\t")
@@ -40,7 +40,7 @@ if __name__ == "__main__":
         X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.3)
     
         model = LinearRegression(X_train, y_train).train()
-        y_pred = model.evaluation(X_test, y_test, show=True)
+        y_pred = model.evaluation(X_test, y_test, title="test")
         
     if source == 'linear':
         dataset = RegressionDataset(n_samples=500, n_features=1, n_targets=1, noise=4)

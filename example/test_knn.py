@@ -18,7 +18,7 @@ from core.kd_tree_lib import KdTree
 
 if __name__ == "__main__":
     
-    source = 'digits'
+    source = 'moon'
     
     if source == 'digits':
         # get dataset
@@ -53,8 +53,6 @@ if __name__ == "__main__":
         x = dataset.datas
         y = dataset.labels
         train_x, test_x, train_y, test_y = train_test_split(x, y, test_size=0.3) # (n, 13) (n,)
-        # array to mat
-        train_x, test_x, train_y, test_y = np.mat(train_x), np.mat(test_x), np.mat(train_y), np.mat(test_y)
         
         knn = KNN(dataset.datas, dataset.labels, k=5)
         acc = knn.evaluation(train_x, train_y.T)        
@@ -66,8 +64,6 @@ if __name__ == "__main__":
         x = dataset.datas
         y = dataset.labels
         train_x, test_x, train_y, test_y = train_test_split(x, y, test_size=0.3) # (n, 13) (n,)
-        # array to mat
-        train_x, test_x, train_y, test_y = np.mat(train_x), np.mat(test_x), np.mat(train_y), np.mat(test_y)
         
         knn = KNN(dataset.datas, dataset.labels, k=5)
         acc = knn.evaluation(train_x, train_y.T)        

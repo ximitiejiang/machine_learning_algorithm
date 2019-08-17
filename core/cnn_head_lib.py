@@ -110,12 +110,12 @@ class SSDHead(nn.Module):
         # 获得各个特征图尺寸: (6,)-(38,38)(19,19)(10,10)(5,5)(3,3)(1,1)
         featmap_sizes = [featmap.size() for featmap in cls_scores]
         
-        # 生成grid anchors并把多张图的grid anchors放一起
+        # 生成每个特征图的grid anchors
         multi_layers_anchors = []
-        for i in range(len(img_metas)):
+        for i in range(len(featmap_sizes)):
             anchors = self.anchor_generators.grid_anchors(featmap_sizes[i], self.anchor_strides[i])
             multi_layers_anchors.append(anchors)  # (6,)(k, 4)
-        multi_layers_anchors = torch.cat(multi_layers_anchors)  # (s, 4)    
+        multi_layers_anchors = torch.cat(multi_layers_anchors, dim=0)  # (8732, 4)    
         anchor_list = [multi_layers_anchors for _ in range(len(img_metas))]  # (n_imgs,) (s,4)
         
         # TODO: 没有采用valid_flag_list
@@ -161,7 +161,13 @@ class SSDHead(nn.Module):
         return dict(loss_cls=all_loss_cls, loss_reg = all_loss_reg)
     
     def get_anchor_target(self, anchor_list, gt_bboxes, img_metas, assign_cfg, gt_labels):
-        """计算一个batch的多张图片的anchor target"""
+        """计算一个batch的多张图片的anchor target
+        Input:
+            anchor_list: (n_imgs, )(s, 4)
+            gt_bboxes: (k, 4)
+            img_metas
+            gt_labels
+        """
         # TODO: 放在哪个模块里边比较合适
         all_labels = []
         all_label_weights = []
@@ -181,8 +187,8 @@ class SSDHead(nn.Module):
             
             # 基于找到的正样本，得到bbox targets, bbox_weights
             pos_inds = sampling_result[0]
-            pos_bboxes
-            pos_gt_bboxes
+            pos_bboxes = anchor_list[i][pos_inds]
+            pos_gt_bboxes = gt_bboxes[]
             pos_bbox_target = bbox2delta(pos_bboxes, pos_gt_bboxes)
             bbox_targets = 
             bbox_weights = 1

@@ -70,7 +70,7 @@ if __name__ == "__main__":
         gb.vis_boundary(plot_step=0.1)
         
     if source == 'moon':
-        dataset = NonlinearDataset(type= 'circle', n_samples=500, noise=0.05, 
+        dataset = NonlinearDataset(type= 'moon', n_samples=500, noise=0.05, 
                                    one_hot=True)
         x = dataset.datas
         y = dataset.labels

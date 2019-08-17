@@ -43,7 +43,7 @@ class KNN(BaseModel):
         assert (self._k % 2 == 1), 'k should be odd number.'
         # calculate distance
         tiled_data = np.tile(sample_single, (self.feats.shape[0], 1))           # (n, m)把输入数据堆叠成特征的高度
-        dist = np.sqrt(np.sum((tiled_data - self.feats)**2, axis=1))  # (n,) distances = np.sqrt((xi - x)^2) 
+        dist = np.sqrt(np.sum(np.power((tiled_data - self.feats), 2), axis=1)).reshape(-1)   # (n,) distances = np.sqrt((xi - x)^2) 
         
         # sort distance and vote
         dist_sort_index = np.argsort(dist)   #(n,)
