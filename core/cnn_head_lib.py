@@ -164,9 +164,9 @@ class SSDHead(nn.Module):
         """计算一个batch的多张图片的anchor target
         Input:
             anchor_list: (n_imgs, )(s, 4)
-            gt_bboxes: (k, 4)
-            img_metas
-            gt_labels
+            gt_bboxes: (n_imgs, )(k, 4)
+            img_metas： (n_imgs, )()
+            gt_labels: (n_imgs, )
         """
         # TODO: 放在哪个模块里边比较合适
         all_labels = []
@@ -186,9 +186,11 @@ class SSDHead(nn.Module):
             sampling_result = bbox_sampler.sample(assign_result, anchor_list[i], gt_bboxes)
             
             # 基于找到的正样本，得到bbox targets, bbox_weights
-            pos_inds = sampling_result[0]
-            pos_bboxes = anchor_list[i][pos_inds]
-            pos_gt_bboxes = gt_bboxes[]
+            assigned_gt_inds, assigned_gt_labels, ious = assign_result
+            pos_inds, neg_inds = sampling_result
+            
+            pos_bboxes = anchor_list[i][pos_inds]        # 获得正样本bbox
+            pos_gt_bboxes = gt_bboxes[assigned_gt_inds]  # 获得正样本bbox对应的gt bbox坐标
             pos_bbox_target = bbox2delta(pos_bboxes, pos_gt_bboxes)
             bbox_targets = 
             bbox_weights = 1
