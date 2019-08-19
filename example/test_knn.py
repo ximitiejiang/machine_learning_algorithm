@@ -18,7 +18,7 @@ from core.kd_tree_lib import KdTree
 
 if __name__ == "__main__":
     
-    source = 'moon'
+    source = 'multi'
     
     if source == 'digits':
         # get dataset

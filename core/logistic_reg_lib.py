@@ -13,6 +13,18 @@ import torch
 import torch.nn as nn
 from .base_model import BaseModel
 
+def cross_entropy(y_preds, y_labels):
+    """二值交叉熵: loss = -(y*log(y') + (1-y)log(1-y'))，其中y为概率标签(0或1)，y'为预测概率(0~1)
+    Args:
+        y_preds: (m,)
+        y_labels: (m,)
+    Return:
+        loss: (m,)
+    """
+    loss = - (y_labels * np.log(y_preds) + (1 - y_labels)*np.log(1 - y_preds)) # 
+    return loss
+
+
 class LogisticReg(BaseModel):
     def __init__(self, feats, labels, lr=0.001, n_epoch=500, batch_size=-1):
         """ logistic reg algorithm lib, 当前只支持2分类
@@ -24,8 +36,7 @@ class LogisticReg(BaseModel):
             feats(numpy): (n_samples, m_feats)
             labels(numpy): (n_samples,)
         """
-        super().__init__(feats, labels)
-        
+        super().__init__(feats, labels)       
         self.lr = lr
         self.n_epoch = n_epoch
         self.batch_size = batch_size
@@ -61,13 +72,14 @@ class LogisticReg(BaseModel):
             
             # 求损失loss=-(ylogy' + (1-y)log(1-y'))：(79,)*(79,) + （79,)*(79,) -> (79,)
             # 注意：预测值y_probs如果接近0，则log(y_probs)趋近负无穷
-            iter_losses = - (batch_labels * np.log(y_probs) + (1 - batch_labels)*np.log(1 - y_probs))
+            iter_losses = cross_entropy(y_probs, batch_labels)
             loss = np.mean(iter_losses)
             self.losses.append([i,loss])
             if i % 20 == 0 and i != 0:  # 每20个iter显示一次
                 print('iter: %d / %d, loss: %f'%(i, n_iter, loss))
-                
-            gradient = - np.dot((batch_labels - y_probs), batch_feats)  # grad = -(y-y')*x, (3,)dot((n,1)-(n,1))->(3,n)dot(n,1)->(3,)
+            
+            # 求梯度：grad = -(y-y')*x
+            gradient = - np.dot((batch_labels - y_probs), batch_feats)  # (3,)dot((n,1)-(n,1))->(3,n)dot(n,1)->(3,)
             self.W -= self.lr * gradient   # W(m,1), gradient(m,1)
         
         self.vis_loss(self.losses)

@@ -109,33 +109,42 @@ class SSDHead(nn.Module):
         """在训练时基于前向计算结果，计算损失"""
         # 获得各个特征图尺寸: (6,)-(38,38)(19,19)(10,10)(5,5)(3,3)(1,1)
         featmap_sizes = [featmap.size() for featmap in cls_scores]
-        
+        num_imgs = len(img_metas)
         # 生成每个特征图的grid anchors
         multi_layers_anchors = []
         for i in range(len(featmap_sizes)):
             anchors = self.anchor_generators.grid_anchors(featmap_sizes[i], self.anchor_strides[i])
             multi_layers_anchors.append(anchors)  # (6,)(k, 4)
+        
+        num_level_anchors = [an.numel() for an in multi_layers_anchors]
         multi_layers_anchors = torch.cat(multi_layers_anchors, dim=0)  # (8732, 4)    
         anchor_list = [multi_layers_anchors for _ in range(len(img_metas))]  # (n_imgs,) (s,4)
         
         # TODO: 没有采用valid_flag_list
-        cls_reg_target = self.get_anchor_target(anchor_list, gt_bboxes, img_metas, cfg.assigner)
+        (all_bbox_targets,     # (6,) (4, 5776, 4)
+         all_bbox_weights,     # (6,) (4, 5776, 4)
+         all_labels,           # (6,) (4, 5776)  
+         all_label_weights,    # (6,) (4, 5776)  
+         num_total_pos, 
+         num_total_neg) = self.get_anchor_target(anchor_list, gt_bboxes, img_metas, cfg.assigner, num_level_anchors)
         
         # 计算损失:
         # 先组合一个batch所有图片的数据
-        all_cls_scores    # (4, 8732, 21)
-        all_labels        # (4, 8732)
-        all_label_weights # (4, 8732)
-        all_bbox_preds    # (4, 8732, 4)
-        all_bbox_targets  # (4, 8732, 4)
-        all_bbox_weights  # (4, 8732, 4)
+        all_cls_scores = [s.permute(0,2,3,1).reshape(num_imgs, -1, self.cls_out_channels) for s in cls_scores]    
+        all_cls_scores = torch.cat(all_cls_scores, dim=1)        # 从(6,)(4,84,38,38)...到(4, 8732, 21)
+#        all_labels = torch.cat(all_labels, dim=-1)               # 从(6,)(4,5776)到(4, 8732)
+#        all_label_weights = torch.cat(all_label_weights, dim=-1) # 从(6,)(4,5776)到(4, 8732)
         
-        num_imgs = len(img_metas)
+        all_bbox_preds = [p.permute(0,2,3,1).reshape(num_imgs, -1, 4) for p in bbox_preds]
+        all_bbox_preds = torch.cat(all_bbox_preds, dim=1)        # 从(6,)(4,16,38,38)...到(4, 8732, 4)
+#        all_bbox_targets = torch.cat(all_bbox_targets, dim=1)    # 从(6,) (4, 5776, 4)到(4, 8732, 4)
+#        all_bbox_weights = torch.cat(all_bbox_weihts, dim=1)     # 从(6,) (4, 5776, 4)到(4, 8732, 4)
+        
         all_loss_cls = []
         all_loss_reg = []
         for _ in range(num_imgs):  # 分别计算每张图的损失
             # 计算分类损失
-            loss_cls = F.cross_entropy(all_cls_score[i], all_labels[i], reduction="none") * all_label_weights[i] # (8732,)
+            loss_cls = F.cross_entropy(all_cls_score[i], all_labels[i], reduction="none") * all_label_weights[i] # {(8732,21),(8732,)} *(8732,4)
             
             # OHEM在线负样本挖掘：提取损失中数值最大的前k个，并保证正负样本比例1:3 
             # (这样既保证正负样本平衡，也保证对损失贡献大的负样本被使用)
@@ -160,13 +169,13 @@ class SSDHead(nn.Module):
         
         return dict(loss_cls=all_loss_cls, loss_reg = all_loss_reg)
     
-    def get_anchor_target(self, anchor_list, gt_bboxes, img_metas, assign_cfg, gt_labels):
+    def get_anchor_target(self, anchor_list, gt_bboxes_list, img_metas_list, assign_cfg, gt_labels_list, num_level_anchors):
         """计算一个batch的多张图片的anchor target
         Input:
             anchor_list: (n_imgs, )(s, 4)
-            gt_bboxes: (n_imgs, )(k, 4)
-            img_metas： (n_imgs, )()
-            gt_labels: (n_imgs, )
+            gt_bboxes_list: (n_imgs, )(k, 4)
+            img_metas_list： (n_imgs, )(dict)
+            gt_labels_list: (n_imgs, )(m, )
         """
         # TODO: 放在哪个模块里边比较合适
         all_labels = []
@@ -176,44 +185,70 @@ class SSDHead(nn.Module):
         
         all_pos_inds_list = []
         all_neg_inds_list = []
-        for i in range(len(img_metas)): # 对每张图分别计算
-            # 指定每个anchor是正样本还是负样本(基于跟gt进行iou计算)
+        for i in range(len(img_metas_list)): # 对每张图分别计算
+            # 1.指定: 指定每个anchor是正样本还是负样本(基于跟gt进行iou计算)
             bbox_assigner = MaxIouAssigner(**assign_cfg)
-            assign_result = bbox_assigner.assign(anchor_list[i], gt_bboxes, gt_labels)
-            # 采样一定数量的正负样本:通常用于预防正负样本不平衡
+            assign_result = bbox_assigner.assign(anchor_list[i], gt_bboxes_list[i], gt_labels_list[i])
+            # 2.采样： 采样一定数量的正负样本:通常用于预防正负样本不平衡
             #　但在SSD中没有采样只是区分了一下正负样本，所以这里只是一个假采样。(正负样本不平衡是通过最后loss的OHEM完成)
             bbox_sampler = PseudoSampler()
-            sampling_result = bbox_sampler.sample(assign_result, anchor_list[i], gt_bboxes)
+            sampling_result = bbox_sampler.sample(assign_result, anchor_list[i], gt_bboxes_list[i])
+            assigned_gt_inds, assigned_gt_labels, ious = assign_result  # (m,), (m,) 表示anchor的身份, anchor对应的标签，[0,1,0,..2], [0,15,...18]
+            pos_assigned_gt_inds = assigned_gt_inds[assigned_gt_inds > 0] - 1 #从1～k变换到0~k-1
+            pos_inds, neg_inds = sampling_result  # (k,), (j,) 表示正/负样本的位置号，比如[7236, 7249, 8103], [0,1,2...8104..]
             
-            # 基于找到的正样本，得到bbox targets, bbox_weights
-            assigned_gt_inds, assigned_gt_labels, ious = assign_result
-            pos_inds, neg_inds = sampling_result
+            # 3. 计算每个anchor的target：基于找到的正样本，得到bbox targets, bbox_weights     
+            bbox_targets = torch.zeros_like(anchor_list[i])
+            bbox_weights = torch.zeros_like(anchor_list[i])
+            labels = torch.zeros(len(anchor_list[i]), dtype=torch.long)
+            label_weights = torch.zeros(len(anchor_list[i]), dtype=torch.long)
             
-            pos_bboxes = anchor_list[i][pos_inds]        # 获得正样本bbox
-            pos_gt_bboxes = gt_bboxes[assigned_gt_inds]  # 获得正样本bbox对应的gt bbox坐标
-            pos_bbox_target = bbox2delta(pos_bboxes, pos_gt_bboxes)
-            bbox_targets = 
-            bbox_weights = 1
+            pos_bboxes = anchor_list[i][pos_inds]                # (k,4)获得正样本bbox
+            pos_gt_bboxes = gt_bboxes_list[i][pos_assigned_gt_inds]  # (k,4)获得正样本bbox对应的gt bbox坐标
+            pos_bbox_target = bbox2delta(pos_bboxes, pos_gt_bboxes)  
+            
+            bbox_targets[pos_inds] = pos_bbox_targets
+            bbox_weights[pos_inds] = 1
             # 得到labels, label_weights
-            labels = 
-            label_weights = 1
+            labels[pos_inds] = gt_labels_list[i][pos_assigned_gt_inds]
+            label_weights[pos_inds] = 1  # 这里设置正负样本权重=1， 如果有需要可以提高正样本权重
+            label_weights[neg_inds] = 1
             
+            # batch图片targets汇总
+            all_bbox_targets.append(bbox_targets)   # (n_img, ) (n_anchor, 4)
+            all_bbox_weights.append(bbox_weights)   # (n_img, ) (n_anchor, 4)
+            all_labels.append(labels)                # (n_img, ) (n_anchor, )
+            all_label_weights.append(label_weights)  # (n_img, ) (n_anchor, )
+            all_pos_inds_list.append(pos_inds)       # (n_img, ) (k, )
+            all_neg_inds_list.append(neg_inds)       # (n_img, ) (j, )
             
-            # 单张图片targets汇总
-            all_labels.append()         # (n_img, ) (n_anchor, )
-            all_label_weights.append()  # (n_img, ) (n_anchor, )
-            all_bbox_targets.append()   # (n_img, ) (n_anchor, 4)
-            all_bbox_weights.append()   # (n_img, ) (n_anchor, 4)
+        # 4. 对targets数据进行变换，按照特征图个数把每个数据分成6份，把多张图片的同尺寸特征图的数据放一起，统一做loss
+        all_bbox_targets = torch.stack(all_bbox_targets, dim=0)   # (n_img, n_anchor, 4)
+        all_bbox_weights = torch.stack(all_bbox_weights, dim=0)   # (n_img, n_anchor, 4)
+        all_labels = torch.stack(all_labels, dim=0)               # (n_img, n_anchor)
+        all_label_weights = torch.stack(all_label_weights, dim=0) # (n_img, n_anchor)
         
-        # 对targets数据进行变换，按照特征图尺寸把每个数据分成6份，把多张图片的同尺寸特征图的数据放一起，统一做loss
-        num_anchors_per_level = 
-        for n in num_anchors_per_level:  # 6个level, 4张图 (6, ) (4, k)
-            
-            labels_list             # (6,) (4, 5776)
-            label_weights_list      # (6,) (4, 5775)
-            bbox_targets_list       # (6,) (4, 5776, 4)
-            bbox_weights_list       # (6,) (4, 5776, 4)
-        return (labels_list, label_weights_list, bbox_targets_list, bbox_weights_list)
+        num_total_pos = sum([inds.numel() for inds in all_pos_inds_list])
+        num_total_neg = sum([inds.numel() for inds in all_neg_inds_list])
+        
+#        def distribute_to_level(target, num_level_anchors):
+#            """把(n_img, n_anchor, 4)或(n_img, n_anchor, )的数据分配到每个level去，
+#             变成(n_level,) (n_imgs, n_anchor)或(n_level,) (n_imgs, n_anchor)"""
+#            distributed = []
+#            start=0
+#            for n in num_level_anchors:
+#                end = start + n
+#                distributed.append(target[:, start:end])
+#                start = end
+#        
+#        distribute = False
+#        if distribute:
+#            all_bbox_targets = distribute_to_level(all_bbox_targets, num_level_anchors)  # (6,) (4, 5776, 4)
+#            all_bbox_weights = distribute_to_level(all_bbox_weights, num_level_anchors)  # (6,) (4, 5776, 4)
+#            all_labels = distribute_to_level(all_labels, num_level_anchors)              # (6,) (4, 5776)  
+#            all_label_weights = distribute_to_level(all_label_weights, num_level_anchors)# (6,) (4, 5776)
+
+        return (all_bbox_targets, all_bbox_weights, all_labels, all_label_weights, num_total_pos, num_total_neg)
             
                 
     def get_bboxes(self, cls_scores, bbox_preds):
