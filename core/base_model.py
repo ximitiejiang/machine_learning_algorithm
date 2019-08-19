@@ -95,6 +95,15 @@ class BaseModel():
         assert feats.shape[1] == 2, 'feats should be 2 dimention data with 1st. column of 1.'
         assert len(W) == 3, 'W should be 3 values list.'
         
+        # 如果是多分类的独热编码，需要逆变换为普通编码0-k
+        if labels.ndim > 1:
+            ori_labels = np.zeros((len(labels), ))
+            for i in range(len(labels)):
+                label = labels[i]
+                idx = np.where(label==1)[0].item()
+                ori_labels[i] = idx
+            labels = np.array(ori_labels)
+            
         feats_with_one = np.concatenate([np.ones((len(feats),1)), feats], axis=1)
         
         plt.subplot(1,2,2)

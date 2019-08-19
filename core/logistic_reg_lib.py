@@ -15,13 +15,14 @@ from .base_model import BaseModel
 
 def cross_entropy(y_preds, y_labels):
     """二值交叉熵: loss = -(y*log(y') + (1-y)log(1-y'))，其中y为概率标签(0或1)，y'为预测概率(0~1)
+    其中当输入是一维的数据，则为二分类交叉熵；输入是二维的数据，则为多分类交叉熵(等效于每个位做二分类计算)
     Args:
-        y_preds: (m,)
-        y_labels: (m,)
+        y_preds: (m,)or(m,k)
+        y_labels: (m,)or(m,k)
     Return:
-        loss: (m,)
+        loss: (m,)or(m,k)
     """
-    loss = - (y_labels * np.log(y_preds) + (1 - y_labels)*np.log(1 - y_preds)) # 
+    loss = - (y_labels * np.log(y_preds) + (1 - y_labels)*np.log(1 - y_preds)) # (m,)
     return loss
 
 

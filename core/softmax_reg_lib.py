@@ -11,11 +11,12 @@ from .base_model import BaseModel
 
 def cross_entropy(y_preds, y_labels):
     """二值交叉熵: loss = -(y*log(y') + (1-y)log(1-y'))，其中y为概率标签(0或1)，y'为预测概率(0~1)
+    其中当输入是一维的数据，则为二分类交叉熵；输入是二维的数据，则为多分类交叉熵(等效于每个位做二分类计算)
     Args:
         y_preds: (m,)or(m,k)
         y_labels: (m,)or(m,k)
     Return:
-        loss: (m,)
+        loss: (m,)or(m,k)
     """
     loss = - (y_labels * np.log(y_preds) + (1 - y_labels)*np.log(1 - y_preds)) # (m,)
     return loss
@@ -62,7 +63,7 @@ class SoftmaxReg(BaseModel):
         feats_with_one = np.concatenate([np.ones((n_samples,1)), self.feats], axis=1)  # (n_sample, 1+ n_feats) (1,x1,x2,..xn)
 #        labels = self.labels.reshape(-1, 1)   # (n_sample, 1)
         labels = self.labels
-        self.W = np.zeros((feats_with_one.shape[1], n_classes)) # (f_feat, c_classes)
+        self.W = np.ones((feats_with_one.shape[1], n_classes)) # (f_feat, c_classes)
         self.losses = []
         
         n_iter = n_epoch if batch_size==-1 else n_epoch * (n_samples // batch_size)
@@ -75,7 +76,7 @@ class SoftmaxReg(BaseModel):
             y_probs = self.softmax(w_x)             # (n_sample, n_feats)列变为n_feats相当于对独热编码标签的每一个类别进行二分类预测。
             
             # 求损失loss: 传入预测概率和标签概率，采用交叉熵按位
-            iter_losses = cross_entropy(y_probs, batch_labels)  # (m,4) (m,4)
+            iter_losses = cross_entropy(y_probs, batch_labels)  # (m,4) (m,4) ->(m,4)
             loss = np.mean(iter_losses)
             
 #            sum_loss = 0

@@ -44,7 +44,7 @@ if __name__ == "__main__":
                                     one_hot=True)
         train_feats, test_feats, train_labels, test_labels = train_test_split(dataset.datas, dataset.labels, test_size=0.3)
         soft = SoftmaxReg(train_feats, train_labels)
-        soft.train(lr=0.0001, n_epoch=10, batch_size=-1)
+        soft.train(lr=0.01, n_epoch=100, batch_size=-1)
         # evaluation
         acc = soft.evaluation(test_feats, test_labels)
         print('acc = %f'%acc)
