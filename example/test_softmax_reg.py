@@ -13,11 +13,11 @@ from dataset.multi_class_dataset import MultiClassDataset
 from core.softmax_reg_lib import SoftmaxReg
 from sklearn.model_selection import train_test_split
 import numpy as np
-
+from utils.transformer import label_to_onehot
 
 if __name__ == "__main__":
     
-    dataset = 'multi'
+    dataset = '4class'
     
     if dataset == '4class':
         import pandas as pd
@@ -26,8 +26,10 @@ if __name__ == "__main__":
         x = data[:,0:2]
         y = data[:,-1]
         train_x, test_x, train_y, test_y = train_test_split(x, y, test_size=0.2)
+        train_y = label_to_onehot(train_y)
+        test_y = label_to_onehot(test_y)
         
-        soft = SoftmaxReg(train_x, train_y, lr=0.5, n_epoch=1000, batch_size=64)
+        soft = SoftmaxReg(train_x, train_y, lr=0.01, n_epoch=1000, batch_size=-1)
         soft.train()  # 在学习率0.5下精度在0.8-0.9之间，太小学习率导致精度下降
         print('W = ', soft.W)
         acc = soft.evaluation(test_x, test_y)
@@ -35,9 +37,6 @@ if __name__ == "__main__":
         
         soft.vis_boundary()
         
-        sample = np.array([2,8])
-        label = soft.predict_single(sample)
-        print('one sample predict label = %d'% (label))
     
     if dataset == 'multi':
         dataset = MultiClassDataset(n_samples=100, centers=4, n_features=2,
@@ -48,7 +47,7 @@ if __name__ == "__main__":
         soft.train()
         # evaluation
         acc = soft.evaluation(test_feats, test_labels)
-        print('acc = %f'%acc)
+        print('test acc = %f'%acc)
         
     if dataset == 'mnist':        # 必须特征归一化，同时w必须初始化为0，否则会导致inf问题
         # acc = 0.843@lr0.0001/batch32/w0/norm

@@ -89,7 +89,8 @@ class SoftmaxReg(BaseModel):
                 print('iter: %d / %d, loss: %f, '%(i, n_iter, loss))
             
             # 求梯度：gradient: grad = -X*(I{y=j} - y')，其中I为独热标签y，y'为预测概率
-            gradient = - np.dot(batch_feats.transpose(), (1-y_probs))  # (70,3).T * (70,4) -> (3,4), grad = -x*(I-y')   
+            #gradient = - np.dot(batch_feats.transpose(), (1-y_probs))  # (70,3).T * (70,4) -> (3,4), grad = -x*(I-y')   
+            gradient = - np.dot(batch_feats.T, (batch_labels - y_probs))
             # update Weights
             self.W -= self.lr * (1/n_samples) * gradient  # (3,4)
         
