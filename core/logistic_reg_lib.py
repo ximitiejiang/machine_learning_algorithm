@@ -80,7 +80,7 @@ class LogisticReg(BaseModel):
                 print('iter: %d / %d, loss: %f'%(i, n_iter, loss))
             
             # 求梯度：grad = -(y-y')*x
-            gradient = - np.dot((batch_labels - y_probs), batch_feats)  # (3,)dot((n,1)-(n,1))->(3,n)dot(n,1)->(3,)
+            gradient = - np.dot((batch_labels - y_probs), batch_feats)  # (79,)dot(79,3)->(1,79)dot(79,3)->(1,3)->(3,)
             self.W -= self.lr * gradient   # W(m,1), gradient(m,1)
         
         self.vis_loss(self.losses)

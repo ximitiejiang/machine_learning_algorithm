@@ -22,7 +22,7 @@ def cross_entropy(y_preds, y_labels):
     return loss
 
 class SoftmaxReg(BaseModel):
-    def __init__(self, feats, labels):
+    def __init__(self, feats, labels, lr=0.001, n_epoch=500, batch_size=-1):
         """ softmax reg algorithm lib, 可用于多分类的算法: 参考<机器学习算法-赵志勇, softmax regression>
         特点：支持二分类和多分类，模型参数可保存(n_feat+1, n_class)，支持线性可分数据
         
@@ -32,6 +32,9 @@ class SoftmaxReg(BaseModel):
             labels(numpy): (n_samples,)  注意，多分类样本标签必须是0-n，从0开头因为算法中需要用label从0开始定位取对应概率值
         """
         super().__init__(feats, labels)
+        self.lr = lr
+        self.n_epoch = n_epoch
+        self.batch_size = batch_size
     
     def softmax(self, x):
         """exp(wx)/sum(exp(wx))
@@ -40,36 +43,39 @@ class SoftmaxReg(BaseModel):
         Return:
             x_prob(array): (n_sample, k_class)
         """
-        x_exp = np.exp(x)                    # (135,4), 这里要防止无穷大的产生
+        x_exp = np.exp(x)                    # (135,4), 这里要防止无穷大的产生, 所以x最好standardlize
         x_sum = np.sum(x_exp, axis=1)        # (135,)
         x_sum_repeat = np.tile(x_sum.reshape(-1,1), (1, x.shape[1]))
         x_prob = x_exp / x_sum_repeat
         return x_prob
         
-    def train(self, lr=0.001, n_epoch=500, batch_size=-1):
+    def train(self):
         """feats(x1,x2,..xn) -> feats(1,x1,x2,..xn)
         Args:
             lr(float): 梯度下降步长
             n_epoch(inf): 循环训练轮数
         """
-        assert batch_size <= len(self.labels), 'too big batch size, should be smaller than dataset size.'
+        assert self.batch_size <= len(self.labels), 'too big batch size, should be smaller than dataset size.'
         
         start = time.time()
+        # 计算类别数：普通标签和独热标签区别对待
         if self.labels.ndim > 1:
             n_classes = self.labels.shape[1]
+            labels = self.labels
         else:
             n_classes = len(set(self.labels))
+            labels = self.labels.reshape(-1, 1)   # (n_sample, 1)
+        
         n_samples = len(self.feats)
         feats_with_one = np.concatenate([np.ones((n_samples,1)), self.feats], axis=1)  # (n_sample, 1+ n_feats) (1,x1,x2,..xn)
-#        labels = self.labels.reshape(-1, 1)   # (n_sample, 1)
-        labels = self.labels
+        
         self.W = np.ones((feats_with_one.shape[1], n_classes)) # (f_feat, c_classes)
         self.losses = []
         
-        n_iter = n_epoch if batch_size==-1 else n_epoch * (n_samples // batch_size)
+        n_iter = self.n_epoch if self.batch_size==-1 else self.n_epoch * (n_samples // self.batch_size)
         for i in range(n_iter):
             batch_feats, batch_labels = self.get_batch_data(
-                feats_with_one, labels, batch_size=batch_size, type='shuffle')
+                feats_with_one, labels, batch_size=self.batch_size, type='shuffle')
             # w0*x0 + w1*x1 +...wn*xn = w0 + w1*x1 +...wn*xn, 然后通过softmax函数转换为概率(0-1)
             # (n_sample, 1) 每个样本一个prob(0~1)，也就是作为2分类问题的预测概率
             w_x = np.dot(batch_feats, self.W)       # w*x (b, c)
@@ -77,25 +83,15 @@ class SoftmaxReg(BaseModel):
             
             # 求损失loss: 传入预测概率和标签概率，采用交叉熵按位
             iter_losses = cross_entropy(y_probs, batch_labels)  # (m,4) (m,4) ->(m,4)
-            loss = np.mean(iter_losses)
-            
-#            sum_loss = 0
-#            for sample in range(len(batch_labels)):
-#                sum_loss += -np.log(probs[sample, batch_labels[sample, 0]] / np.sum(probs[sample, :]))
-#            loss = sum_loss / len(batch_labels)  # average loss
+            loss = np.mean(iter_losses)  
             self.losses.append([i,loss])
             if i % 20 == 0 and i != 0:  # 每20个iter显示一次
                 print('iter: %d / %d, loss: %f, '%(i, n_iter, loss))
             
-#            _probs = - probs              # 取负号 -p
-#            for j in range(batch_size):
-#                label = batch_labels[j, 0]   # 提取每个样本的标签
-#                _probs[j, label] += 1   # 正样本则为1-p, 负样本不变依然是-p    
-            
-            # 求梯度：gradient: grad = -feats*(I{y=j} - y_probs)，其中yj'为预测概率
-            gradient = - np.dot(batch_feats.transpose(), (1-y_probs))  # (70,3).T * (135,4) -> (3,4), grad = -x*(I-y')   
+            # 求梯度：gradient: grad = -X*(I{y=j} - y')，其中I为独热标签y，y'为预测概率
+            gradient = - np.dot(batch_feats.transpose(), (1-y_probs))  # (70,3).T * (70,4) -> (3,4), grad = -x*(I-y')   
             # update Weights
-            self.W -= lr * (1/n_samples) * gradient  # (3,4)
+            self.W -= self.lr * (1/n_samples) * gradient  # (3,4)
         
         self.vis_loss(self.losses)
         if self.feats.shape[1] == 2:

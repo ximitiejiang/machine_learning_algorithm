@@ -27,8 +27,8 @@ if __name__ == "__main__":
         y = data[:,-1]
         train_x, test_x, train_y, test_y = train_test_split(x, y, test_size=0.2)
         
-        soft = SoftmaxReg(train_x, train_y)
-        soft.train(lr=0.5, n_epoch=1000, batch_size=64)  # 在学习率0.5下精度在0.8-0.9之间，太小学习率导致精度下降
+        soft = SoftmaxReg(train_x, train_y, lr=0.5, n_epoch=1000, batch_size=64)
+        soft.train()  # 在学习率0.5下精度在0.8-0.9之间，太小学习率导致精度下降
         print('W = ', soft.W)
         acc = soft.evaluation(test_x, test_y)
         print('acc on test data is: %f'% acc)
@@ -43,8 +43,9 @@ if __name__ == "__main__":
         dataset = MultiClassDataset(n_samples=100, centers=4, n_features=2,
                                     one_hot=True)
         train_feats, test_feats, train_labels, test_labels = train_test_split(dataset.datas, dataset.labels, test_size=0.3)
-        soft = SoftmaxReg(train_feats, train_labels)
-        soft.train(lr=0.01, n_epoch=100, batch_size=-1)
+        
+        soft = SoftmaxReg(train_feats, train_labels, lr=0.01, n_epoch=300, batch_size=-1)
+        soft.train()
         # evaluation
         acc = soft.evaluation(test_feats, test_labels)
         print('acc = %f'%acc)

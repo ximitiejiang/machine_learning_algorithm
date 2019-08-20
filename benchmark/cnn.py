@@ -9,6 +9,8 @@ from layers import Dense, Dropout, Conv2D, Flatten, Activation, MaxPooling2D
 from layers import AveragePooling2D, ZeroPadding2D, BatchNormalization, RNN
 from plot import Plot
 
+from dataset.multi_class_dataset import MultiClassDataset
+
 # Import helper functions
 #from mlfromscratch.deep_learning import NeuralNetwork
 #from mlfromscratch.utils import train_test_split, to_categorical, normalize
@@ -130,7 +132,7 @@ class SquareLoss(Loss):
 class CrossEntropy(Loss):
     def __init__(self): pass
 
-    def loss(self, y, p):
+    def loss(self, y, p):  # y(256,10), p(256,10)
         # Avoid division by zero
         p = np.clip(p, 1e-15, 1 - 1e-15)
         return - y * np.log(p) - (1 - y) * np.log(1 - p)
@@ -207,11 +209,12 @@ class NeuralNetwork():
 
     def train_on_batch(self, X, y):
         """ Single gradient update over one batch of samples """
-        y_pred = self._forward_pass(X)
-        loss = np.mean(self.loss_function.loss(y, y_pred))
+        y_pred = self._forward_pass(X)  # (256,10)
+        losses = self.loss_function.loss(y, y_pred)  # y(256,10)独热编码, y_pred(256,10)概率 -> losses(256,10)
+        loss = np.mean(losses) #
         acc = self.loss_function.acc(y, y_pred)
         # Calculate the gradient of the loss function wrt y_pred
-        loss_grad = self.loss_function.gradient(y, y_pred)
+        loss_grad = self.loss_function.gradient(y, y_pred)  # (256,10)
         # Backpropagate. Update weights
         self._backward_pass(loss_grad=loss_grad)
 
@@ -271,69 +274,87 @@ class NeuralNetwork():
 
 
 def main():
-
-    #----------
-    # Conv Net
-    #----------
-
-    optimizer = Adam()
-
-    data = datasets.load_digits()
-    X = data.data
-    y = data.target
-
-    # Convert to one-hot encoding
-    y = to_categorical(y.astype("int"))
-
-    X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.4, seed=1)
-
-    # Reshape X to (n_samples, channels, height, width)
-    X_train = X_train.reshape((-1,1,8,8))
-    X_test = X_test.reshape((-1,1,8,8))
-
-    clf = NeuralNetwork(optimizer=optimizer,
-                        loss=CrossEntropy,
-                        validation_data=(X_test, y_test))
-
-    clf.add(Conv2D(n_filters=16, filter_shape=(3,3), stride=1, input_shape=(1,8,8), padding='same'))
-    clf.add(Activation('relu'))
-    clf.add(Dropout(0.25))
-    clf.add(BatchNormalization())
-    clf.add(Conv2D(n_filters=32, filter_shape=(3,3), stride=1, padding='same'))
-    clf.add(Activation('relu'))
-    clf.add(Dropout(0.25))
-    clf.add(BatchNormalization())
-    clf.add(Flatten())      # 展平层
-    clf.add(Dense(256))     # 全连接层
-    clf.add(Activation('relu'))
-    clf.add(Dropout(0.4))
-    clf.add(BatchNormalization())
-    clf.add(Dense(10))
-    clf.add(Activation('softmax'))
-
-    print ()
-    clf.summary(name="ConvNet")
-
-    train_err, val_err = clf.fit(X_train, y_train, n_epochs=50, batch_size=256)
-
-    # Training and validation error plot
-    n = len(train_err)
-    training, = plt.plot(range(n), train_err, label="Training Error")
-    validation, = plt.plot(range(n), val_err, label="Validation Error")
-    plt.legend(handles=[training, validation])
-    plt.title("Error Plot")
-    plt.ylabel('Error')
-    plt.xlabel('Iterations')
-    plt.show()
-
-    _, accuracy = clf.test_on_batch(X_test, y_test)
-    print ("Accuracy:", accuracy)
-
-
-    y_pred = np.argmax(clf.predict(X_test), axis=1)
-    X_test = X_test.reshape(-1, 8*8)
-    # Reduce dimension to 2D using PCA and plot the results
-    Plot().plot_in_2d(X_test, y_pred, title="Convolutional Neural Network", accuracy=accuracy, legend_labels=range(10))
-
+    test_id = 1
+    if test_id == 1:
+        #----------
+        # Conv Net
+        #----------
+        
+        optimizer = Adam()
+    
+        data = datasets.load_digits()
+        X = data.data                      # （1797, 64)
+        y = data.target
+    
+        # Convert to one-hot encoding
+        y = to_categorical(y.astype("int"))  # (n_sample, n_class)
+    
+        X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.4, seed=1)
+    
+        # Reshape X to (n_samples, channels, height, width)
+        X_train = X_train.reshape((-1,1,8,8))
+        X_test = X_test.reshape((-1,1,8,8))
+    
+        clf = NeuralNetwork(optimizer=optimizer,
+                            loss=CrossEntropy,
+                            validation_data=(X_test, y_test))
+    
+        clf.add(Conv2D(n_filters=16, filter_shape=(3,3), stride=1, input_shape=(1,8,8), padding='same'))
+        clf.add(Activation('relu'))
+        clf.add(Dropout(0.25))
+        clf.add(BatchNormalization())
+        clf.add(Conv2D(n_filters=32, filter_shape=(3,3), stride=1, padding='same'))
+        clf.add(Activation('relu'))
+        clf.add(Dropout(0.25))
+        clf.add(BatchNormalization())
+        clf.add(Flatten())      # 展平层
+        clf.add(Dense(256))     # 全连接层
+        clf.add(Activation('relu'))
+        clf.add(Dropout(0.4))
+        clf.add(BatchNormalization())
+        clf.add(Dense(10))
+        clf.add(Activation('softmax'))
+    
+        print ()
+        clf.summary(name="ConvNet")
+    
+        train_err, val_err = clf.fit(X_train, y_train, n_epochs=50, batch_size=256)
+    
+        # Training and validation error plot
+        n = len(train_err)
+        training, = plt.plot(range(n), train_err, label="Training Error")
+        validation, = plt.plot(range(n), val_err, label="Validation Error")
+        plt.legend(handles=[training, validation])
+        plt.title("Error Plot")
+        plt.ylabel('Error')
+        plt.xlabel('Iterations')
+        plt.show()
+    
+        _, accuracy = clf.test_on_batch(X_test, y_test)
+        print ("Accuracy:", accuracy)
+    
+    
+        y_pred = np.argmax(clf.predict(X_test), axis=1)
+        X_test = X_test.reshape(-1, 8*8)
+        # Reduce dimension to 2D using PCA and plot the results
+        Plot().plot_in_2d(X_test, y_pred, title="Convolutional Neural Network", accuracy=accuracy, legend_labels=range(10))
+        
+    if test_id == 2:
+        dataset = MultiClassDataset(n_samples=300, centers=3, n_features=2, 
+                 center_box=(-10.0, 10.0),
+                 cluster_std=1.0,
+                 norm=True, 
+                 one_hot=True)
+        X = dataset.datas
+        y = dataset.labels
+        X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, seed=1)
+        clf = NeuralNetwork(optimizer=optimizer,
+                            loss=CrossEntropy,
+                            validation_data=(X_test, y_test))
+        clf.add(Dense(3))
+        clf.add(Activation('softmax'))
+        clf.summary(name="SoftmaxReg")
+        train_err, val_err = clf.fit(X_train, y_train, n_epochs=50, batch_size=256)
+    
 if __name__ == "__main__":
     main()

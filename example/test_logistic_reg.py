@@ -40,7 +40,7 @@ if __name__ == "__main__":
         x = data[:,0:2]
         y = data[:,-1]
         
-        # 由于标签类型为-1,1,需要转换为0,1
+        # 由于标签类型为-1,1, 且没有数据集类，所以需要手动需要转换为0,1
         y = label_transform(y, label_transform_dict={1:1, -1:0, 0:0})
         
         train_x, test_x, train_y, test_y = train_test_split(x, y, test_size=0.2)
