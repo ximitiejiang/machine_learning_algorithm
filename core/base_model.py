@@ -40,7 +40,7 @@ class BaseModel():
         """单样本分类函数，需要实现"""
         raise NotImplementedError('the classify func is not implemented.')
     
-    def evaluation(self, test_feats, test_labels):
+    def evaluation(self, test_feats, test_labels, show=False):
         """评价整个验证数据集
         Args:
             test_feats: (n_sample, n_feat)
@@ -57,18 +57,19 @@ class BaseModel():
             if int(pred_label) == int(label):
                 correct += 1
         acc = correct / total_sample
-        print('======%s======'%self.model_dict['model_name'])
-        print('Finished evaluation in %f seconds with accuracy = %f.'%((time.time() - start), acc))
+        if show:
+            print('======%s======'%self.model_dict['model_name'])
+            print('Finished evaluation in %f seconds with accuracy = %f.'%((time.time() - start), acc))
         
         return acc
     
     def vis_loss(self, losses):
         """可视化损失"""
         assert losses is not None and len(losses) != 0, 'can not visualize losses because losses is empty.'
-        if losses.ndim == 2:
+        if isinstance(losses[0], list) or isinstance(losses[0], tuple):  # 如果losses列表里边包含idx
             x = np.array(losses)[:,0]
             y = np.array(losses)[:,1]
-        else:
+        else:  # 如果losses列表里边不包含idx只是单纯loss数值
             x = np.arange(len(losses))
             y = np.array(losses)
         plt.figure()

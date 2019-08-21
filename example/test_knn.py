@@ -45,7 +45,7 @@ if __name__ == "__main__":
 #        train_x, test_x, train_y, test_y = train_test_split(x, y, test_size=0.3)
         
         knn = KNN(dataset.datas, dataset.labels, k=5)
-        knn.vis_boundary()
+        knn.vis_boundary(plot_step=0.5)
     
     if source == 'circle':
         dataset = NonlinearDataset(type= 'circle', n_samples=300, noise=0.05, 

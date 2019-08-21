@@ -3,11 +3,11 @@
 """
 Created on Tue Jul 16 15:22:32 2019
 
-mainly refer to 
+mainly refer to https://github.com/eriklindernoren/ML-From-Scratch
 
 @author: ubuntu
 """
-import sys
+
 import numpy as np
 import math
 import copy
@@ -17,7 +17,7 @@ from dataset.digits_dataset import DigitsDataset
 
 # %%  模型总成
 class NeuralNetwork(BaseModel):
-    """神经网络模型：
+    """神经网络模型：这个NN是一个空壳类，并不包含任何层，用于模型创建的基类。
     Args:
         feats: (n_sample, n_feats) 
         labels: (n_sample, n_classes) 独热编码形式
@@ -37,7 +37,7 @@ class NeuralNetwork(BaseModel):
     def add(self, layer):
         """用于模型添加层: 设置输入输出层数，初始化"""
         if self.layers:  # 如果不为空，说明不是第一层，则取前一层为该层输入
-            layer.set_input_shape(shape=self.layers[-1].output_shape())
+            layer.set_input_shape(shape=self.layers[-1].get_output_shape())
         
         if hasattr(layer, "initialize"):
             layer.initialize(optimizer = self.optimizer)
@@ -52,7 +52,7 @@ class NeuralNetwork(BaseModel):
         return layer_output
     
     def backward_pass(self, grad):
-        """基于梯度反向更新每一层的参数"""
+        """基于梯度反向更新每一层的累积梯度同时更新每一层的梯度"""
         for layer in self.layers[::-1]:
             grad = layer.backward_pass(grad)  # 梯度的反向传播，且传播的是每一层的累积梯度
             
@@ -76,7 +76,8 @@ class NeuralNetwork(BaseModel):
                 
                 loss = self.train_batch_op(x_batch, y_batch)
                 # 显示loss
-                print("iter %d / epoch %d: loss=%f"%(it, i, loss))
+                if it % 20 == 0:
+                    print("iter %d / epoch %d: loss=%f"%(it, i, loss))
                 all_losses.append(loss)
                 it += 1
                 
@@ -88,6 +89,14 @@ class NeuralNetwork(BaseModel):
     
     def summary(self):
         pass
+    
+    def evaluation(self):
+        """对整个数据集进行评估"""
+    
+    def predict(self, X):
+        """对一组数据进行预测"""
+        pass
+    
         
     
 class CNN(NeuralNetwork):
@@ -112,9 +121,11 @@ class MLP(NeuralNetwork):
                          optimizer=optimizer, 
                          n_epochs=n_epochs, 
                          batch_size=batch_size)
-        self.add(Linear(input_shape=(256, 64), output_channels=16))
+        n_feats = feats.shape[1]
+        n_classes = labels.shape[1]
+        self.add(Linear(input_shape=(n_feats,), output_shape=(16,)))
         self.add(Activation('relu'))
-        self.add(Linear(output_channels=10))
+        self.add(Linear(output_shape=(n_classes,)))
         self.add(Activation('softmax'))
 
 
@@ -128,7 +139,8 @@ class SoftmaxReg(NeuralNetwork):
                          n_epochs=n_epochs, 
                          batch_size=batch_size)
         n_feats = feats.shape[1]
-        self.add(Linear(input_channels=n_feats, output_channels=10))
+        n_classes = labels.shape[1]
+        self.add(Linear(input_shape=(n_feats,), output_shape=(n_classes,)))
         self.add(Activation('softmax'))
         
 
@@ -165,11 +177,11 @@ class Relu():
 
 # %% 单层模型
 class Layer():
-    """层的基类: 该基类不需要初始化，进行强制定义需要实施的方法，并把所有共有函数放在一起"""
-    def set_input_shape(self, shape): # 该部分在大模型的add()中执行
+    """层的基类: 该基类不需要初始化，用于强制定义需要实施的方法，并把所有共有函数放在一起"""
+    def set_input_shape(self, shape):  # 表示单样本形状：如果是卷积层输入(h, w), 如果是全连接层输入(n_feats,) 
         self.input_shape = shape
     
-    def output_shape(self):
+    def get_output_shape(self):
         raise NotImplementedError()
     
     def forward_pass(self, x):
@@ -181,38 +193,38 @@ class Layer():
     
 class Linear(Layer):
     """全连接层: 要求输入必须是经过flatten的二维数据(n_samples, n_feats)"""
-    def __init__(self, output_channels, input_channels=None):  # 作为中间层，只需要输入output_channels(value)，而作为首层，则需同时输入output_channel和input_shape(b,c), 
-        self.output_channels = output_channels
-        self.input_channels = input_channels
+    def __init__(self, output_shape, input_shape=None):  # 作为中间层，只需要输入output_channels(value)，而作为首层，则需同时输入output_channel和input_shape(b,c), 
+        self.output_shape = output_shape  # (m,)
+        self.input_shape = input_shape    # (n,)
         self.trainable = True
         self.W = None
         self.W0 = None
     
     def initialize(self, optimizer):
-        limit = 1 / math.sqrt(self.input_channels)
-        self.W = np.random.uniform(-limit, limit, (self.input_channels, self.output_channels)) # w()
-        self.W0 = np.zeros((1, self.output_channels))  # TODO  w0(1,10)
+        limit = 1 / math.sqrt(self.input_shape[0])
+        self.W = np.random.uniform(-limit, limit, (self.input_shape[0], self.output_shape[0])) # w()
+        self.W0 = np.zeros((1, self.output_shape[0]))  # TODO  w0(1,10)
         self.W_optimizer = copy.copy(optimizer)
         self.W0_optimizer = copy.copy(optimizer)
     
     def forward_pass(self, x):
         self.input_feats = x
-        return np.dot(x, self.W) + self.W0  # ()()+(1,)
+        return np.dot(x, self.W) + self.W0  # (8,64)(64,10)+(1,10) ->(8,10)+(1,10)
     
     def backward_pass(self, accum_grad): 
         tmp_W = self.W
         # 更新参数
         if self.trainable:
-            grad_w = np.dot(self.input_feats, accum_grad)
-            grad_w0 = np.sum(accum_grad, axis=0, keepdims=True)   # TODO: 偏置参数的更新逻辑
+            grad_w = np.dot(self.input_feats.T, accum_grad)  # (8,64).T (8,10) -> (64,10)
+            grad_w0 = np.sum(accum_grad, axis=0, keepdims=True)   # (64,10)->(1,10)  TODO: 偏置参数的更新逻辑
             
             self.W = self.W_optimizer.update(self.W, grad_w)
-            self.W0 = self.W0_optimizer.update(self.W, grad_w0)
+            self.W0 = self.W0_optimizer.update(self.W0, grad_w0)
         # 累积梯度
         accum_grad = np.dot(accum_grad, tmp_W.T)  # TODO： 梯度反传时，全连接层的梯度不是x吗？怎么是乘以w了？
         return accum_grad
     
-    def output_shape(self):
+    def get_output_shape(self):
         return self.output_shape
         
         
@@ -354,9 +366,14 @@ if __name__ == "__main__":
         clf = SoftmaxReg(train_x, train_y, 
                          loss=loss_func, 
                          optimizer= optimizer, 
-                         batch_size = 8, 
-                         n_epochs=100)
+                         batch_size = 64, 
+                         n_epochs=500)
         clf.train()
+#        acc1 = clf.evaluation(train_x, train_y)
+#        print("training acc: %f"%acc1)
+#        
+#        acc2 = clf.evaluation(test_x, test_y)
+#        print("test acc: %f"%acc2)
         
     
     
