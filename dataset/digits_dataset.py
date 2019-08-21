@@ -25,22 +25,6 @@ class DigitsDataset(BaseDataset):
                          one_hot=one_hot,
                          binary=binary,
                          shuffle=shuffle)
-        
-#        if data_type == 'binary':
-#            pass
-            # 修改binary逻辑，下面的方法会造成类别不平衡，改为通过base dataset提取其中2个类别作为二分类问题。
-#            # 如果是二分类问题，则把标签数据修改：0依旧是0, 1-9改为1
-#            self.labels_raw = self.labels
-#            labels_binary = np.zeros((len(self.datas),))
-#            for idx, label in enumerate(self.labels):
-#                if label > 0:
-#                    labels_binary[idx] = 1
-#                else:
-#                    labels_binary[idx] = 0
-#            self.labels = labels_binary.astype(np.int8)
-            
-#        else:
-#            self.labels_raw = self.labels                           
     
     def get_dataset(self):
         return load_digits()

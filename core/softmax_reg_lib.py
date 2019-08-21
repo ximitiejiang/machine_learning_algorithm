@@ -8,6 +8,7 @@ Created on Tue Jun 11 10:34:02 2019
 import time
 import numpy as np
 from .base_model import BaseModel
+from utils.dataloader import batch_iterator
 
 def cross_entropy(y_preds, y_labels):
     """二值交叉熵: loss = -(y*log(y') + (1-y)log(1-y'))，其中y为概率标签(0或1)，y'为预测概率(0~1)
@@ -72,27 +73,27 @@ class SoftmaxReg(BaseModel):
         self.W = np.ones((feats_with_one.shape[1], n_classes)) # (f_feat, c_classes)
         self.losses = []
         
-        n_iter = self.n_epoch if self.batch_size==-1 else self.n_epoch * (n_samples // self.batch_size)
-        for i in range(n_iter):
-            batch_feats, batch_labels = self.get_batch_data(
-                feats_with_one, labels, batch_size=self.batch_size, type='shuffle')
-            # w0*x0 + w1*x1 +...wn*xn = w0 + w1*x1 +...wn*xn, 然后通过softmax函数转换为概率(0-1)
-            # (n_sample, 1) 每个样本一个prob(0~1)，也就是作为2分类问题的预测概率
-            w_x = np.dot(batch_feats, self.W)       # w*x (b, c)
-            y_probs = self.softmax(w_x)             # (n_sample, n_feats)列变为n_feats相当于对独热编码标签的每一个类别进行二分类预测。
-            
-            # 求损失loss: 传入预测概率和标签概率，采用交叉熵按位
-            iter_losses = cross_entropy(y_probs, batch_labels)  # (m,4) (m,4) ->(m,4)
-            loss = np.mean(iter_losses)  
-            self.losses.append([i,loss])
-            if i % 20 == 0 and i != 0:  # 每20个iter显示一次
-                print('iter: %d / %d, loss: %f, '%(i, n_iter, loss))
-            
-            # 求梯度：gradient: grad = -X*(I{y=j} - y')，其中I为独热标签y，y'为预测概率
-            #gradient = - np.dot(batch_feats.transpose(), (1-y_probs))  # (70,3).T * (70,4) -> (3,4), grad = -x*(I-y')   
-            gradient = - np.dot(batch_feats.T, (batch_labels - y_probs))
-            # update Weights
-            self.W -= self.lr * (1/n_samples) * gradient  # (3,4)
+        for i in range(self.n_epoch):
+            it = 1
+            for batch_feats, batch_labels in batch_iterator(feats_with_one, 
+                                                            labels,
+                                                            batch_size=self.batch_size):
+                # w0*x0 + w1*x1 +...wn*xn = w0 + w1*x1 +...wn*xn, 然后通过softmax函数转换为概率(0-1)
+                # (n_sample, 1) 每个样本一个prob(0~1)，也就是作为2分类问题的预测概率
+                w_x = np.dot(batch_feats, self.W)       # w*x (b, c)
+                y_probs = self.softmax(w_x)             # (n_sample, n_feats)列变为n_feats相当于对独热编码标签的每一个类别进行二分类预测。
+                
+                # 求损失loss: 传入预测概率和标签概率，采用交叉熵按位
+                iter_losses = cross_entropy(y_probs, batch_labels)  # (m,4) (m,4) ->(m,4)
+                loss = np.mean(iter_losses)  
+                self.losses.append([i,loss])
+                if it % 20 == 0 and it != 0:  # 每20个iter显示一次
+                    print('iter %d / epoch %d, loss: %f, '%(it, i, loss))
+                it += 1
+                # 求梯度：grad = -x*(y-y')
+                gradient = - np.dot(batch_feats.T, (batch_labels - y_probs))
+                # update Weights
+                self.W -= self.lr * (1/n_samples) * gradient  # (3,4)
         
         self.vis_loss(self.losses)
         if self.feats.shape[1] == 2:

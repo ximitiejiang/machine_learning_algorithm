@@ -7,13 +7,32 @@ Created on Tue Jul 16 17:26:05 2019
 """
 import numpy as np
 
-def batch_iterator(x, y, batch_size=64):
-    """创建数据生成器，提供batch data"""
-    n_samples = x.shape[0]
-    
-    for i in range(0, n_samples, batch_size):
-        begin, end = i, min(i + batch_size, n_samples)
-        yield x[begin:end], y[begin:end]
+def train_test_split(X, y, test_size=0.3, shuffle=True, seed=None):
+    """ 分割数据集 """
+    if shuffle:
+        if seed:
+            np.random.seed(seed)
+        idx = np.arange(X.shape[0])
+        idx = np.random.permutation(idx)
+        X, y = X[idx], y[idx]
+    # Split the training data from test data in the ratio specified in
+    # test_size
+    split_i = len(y) - int(len(y) // (1 / test_size))
+    X_train, X_test = X[:split_i], X[split_i:]
+    y_train, y_test = y[:split_i], y[split_i:]
+
+    return X_train, X_test, y_train, y_test
+
+
+def batch_iterator(X, y, batch_size=-1):
+    """最简版函数形式的dataloader"""
+    if batch_size == -1:
+        yield X, y
+    else:
+        n_samples = X.shape[0]
+        for i in np.arange(0, n_samples, batch_size):
+            begin, end = i, min(i+batch_size, n_samples)  # 确保最后一部分也能被使用
+            yield X[begin:end], y[begin:end]
 
         
 class Dataloader():

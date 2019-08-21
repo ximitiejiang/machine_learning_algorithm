@@ -10,7 +10,7 @@ from sklearn.datasets.samples_generator import make_blobs
 from .base_dataset import BaseDataset
 
 class MultiClassDataset(BaseDataset):
-    """sklearn自带多分类数据集，可生成2-n任意类别数据集，基本是线性可分，但有可能部分点线性不可分
+    """sklearn自带多分类数据集，可生成2-n任意类别数据集
     
     """
     def __init__(self, n_samples=100, centers=3, n_features=4, 
@@ -39,7 +39,7 @@ class MultiClassDataset(BaseDataset):
                                      centers=self.centers, 
                                      n_features=self.n_features,
                                      center_box = self.center_box,
-                                     cluster_std = self.cluster_std)         # 可设置中心点范围和方差，这里用默认值
+                                     cluster_std = self.cluster_std)         # 可设置中心点范围和方差
         dataset['data'] = datas
         dataset['target'] = labels
         return dataset

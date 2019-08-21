@@ -72,6 +72,7 @@ def voc_colors(n_classes, norm=False):
         colors = np.array(colors).reshape(-1,3)
     return colors
 
+
 def generate_table(str_list):
     """用AsciiTable库生成表格，分三步
     1. 创建嵌套list[[]]，内层每个list就是一行
@@ -84,6 +85,7 @@ def generate_table(str_list):
     elif isinstance(str_list, list) and isinstance(str_list[0], list):  
         table = AsciiTable(str_list).table
     print(table)
+
 
 def vis_boundary(feats, labels, model, title = None, plot_step=0.02):
     """可视化分隔边界，可适用于线性可分和非线性可分特征，比较普适

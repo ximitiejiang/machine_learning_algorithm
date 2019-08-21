@@ -16,7 +16,7 @@ import pandas as pd
 
 if __name__ == "__main__":
     
-    dataset = '2class'
+    dataset = 'breastcancer'
     
     if dataset == '2class':      
         filename = '../dataset/simple/2classes_data.txt'  # 一个简单的2个特征的2分类数据集

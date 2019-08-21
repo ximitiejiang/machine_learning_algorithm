@@ -28,8 +28,6 @@ class MnistDataset(BaseDataset):
         
         if data_type == 'train':
             self.path = train_path
-#        elif data_type == 'binary':    # 废除这种转换binary的方式，统一在base model中转换
-#            self.path = train_binary_path
         elif data_type == 'test':
             self.path = test_path
         else:

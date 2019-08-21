@@ -7,6 +7,7 @@ Created on Mon Jul  8 18:16:38 2019
 """
 import numpy as np
 
+
 def label_transform(labels, label_transform_dict={1:1, -1:0, 0:0}):
     """默认不改变label的取值范围，但可以通过该函数修改labels的对应范围
     例如svm需要label为[-1,1]，则可修改该函数。
@@ -33,6 +34,7 @@ def label_to_onehot(labels):
 
 
 def onehot_to_label(one_hot_labels):
+    """把独热编码变回0-k的数字编码"""
     labels = np.argmax(one_hot_labels, axis=1)  # 提取最大值1所在列即原始从0开始的标签
     return labels
 

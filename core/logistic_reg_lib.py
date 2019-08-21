@@ -12,6 +12,7 @@ import math
 import torch
 import torch.nn as nn
 from .base_model import BaseModel
+from utils.dataloader import batch_iterator
 
 def cross_entropy(y_preds, y_labels):
     """二值交叉熵: loss = -(y*log(y') + (1-y)log(1-y'))，其中y为概率标签(0或1)，y'为预测概率(0~1)
@@ -60,28 +61,28 @@ class LogisticReg(BaseModel):
 #        self.W = np.ones((feats_with_one.shape[1], 1)) # (m_feat, 1)
         self.W = self.weight_init(feats_with_one.shape[1])  # return (n_feat, )
         self.losses = []
-        
-        n_samples = len(self.feats)
-        n_iter = self.n_epoch if self.batch_size==-1 else self.n_epoch * (n_samples // self.batch_size)        
-        for i in range(n_iter):
-            batch_feats, batch_labels = self.get_batch_data(
-                feats_with_one, labels, batch_size=self.batch_size, type='shuffle')
-            # w0*x0 + w1*x1 +...wn*xn = w0 + w1*x1 +...wn*xn, 然后通过sigmoid函数转换为概率(0-1)
-            # (n_sample, 1) 每个样本一个prob(0~1)，也就是作为2分类问题的预测概率
-            w_x = np.dot(batch_feats, self.W)  # w*x
-            y_probs = self.sigmoid(w_x)     # (455,31) dot (31,1) -> (455,)
-            
-            # 求损失loss=-(ylogy' + (1-y)log(1-y'))：(79,)*(79,) + （79,)*(79,) -> (79,)
-            # 注意：预测值y_probs如果接近0，则log(y_probs)趋近负无穷
-            iter_losses = cross_entropy(y_probs, batch_labels)
-            loss = np.mean(iter_losses)
-            self.losses.append([i,loss])
-            if i % 20 == 0 and i != 0:  # 每20个iter显示一次
-                print('iter: %d / %d, loss: %f'%(i, n_iter, loss))
-            
-            # 求梯度：grad = -(y-y')*x
-            gradient = - np.dot((batch_labels - y_probs), batch_feats)  # (79,)dot(79,3)->(1,79)dot(79,3)->(1,3)->(3,)
-            self.W -= self.lr * gradient   # W(m,1), gradient(m,1)
+ 
+        for i in range(self.n_epoch):
+            it = 1
+            for batch_feats, batch_labels in batch_iterator(feats_with_one, 
+                                                            labels,
+                                                            batch_size=self.batch_size):
+                # w0*x0 + w1*x1 +...wn*xn = w0 + w1*x1 +...wn*xn, 然后通过sigmoid函数转换为概率(0-1)
+                # (n_sample, 1) 每个样本一个prob(0~1)，也就是作为2分类问题的预测概率
+                w_x = np.dot(batch_feats, self.W)  # w*x
+                y_probs = self.sigmoid(w_x)     # (455,31) dot (31,1) -> (455,)
+                
+                # 求损失loss=-(ylogy' + (1-y)log(1-y'))：(79,)*(79,) + （79,)*(79,) -> (79,)
+                # 注意：预测值y_probs如果接近0，则log(y_probs)趋近负无穷
+                iter_losses = cross_entropy(y_probs, batch_labels)
+                loss = np.mean(iter_losses)
+                self.losses.append([i,loss])
+                if it % 20 == 0 and it != 0:  # 每20个iter显示一次
+                    print('iter %d / epoch %d, loss: %f'%(it, i, loss))
+                it += 1
+                # 求梯度：grad = -(y-y')*x
+                gradient = - np.dot((batch_labels - y_probs), batch_feats)  # (79,)dot(79,3)->(1,79)dot(79,3)->(1,3)->(3,)
+                self.W -= self.lr * gradient   # W(m,1), gradient(m,1)
         
         self.vis_loss(self.losses)
         if self.feats.shape[1] == 2:  # 如果是二维特征则显示分割直线

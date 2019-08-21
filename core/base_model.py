@@ -32,24 +32,7 @@ class BaseModel():
         self.n_samples = self.feats.shape[0]
         self.n_feats = self.feats.shape[1]
     
-    def get_batch_data(self, feats, labels, batch_size=-1, type='shuffle'):
-        """从特征数据中提取batch size个特征，并组合成一个特征数据
-        """
-        if batch_size==-1:
-            batch_feats = feats
-            batch_labels = labels
-        else:  
-            batch_idx = np.random.permutation(np.arange(len(labels)))[:batch_size]  # 随机出batch_size个idx
-            batch_feats_list = []
-            batch_labels_list = []
-            for idx in batch_idx:
-                batch_feats_list.append(feats[idx].reshape(1,-1))
-                batch_labels_list.append(labels[idx].reshape(-1,1))
-            batch_feats = np.concatenate(batch_feats_list, axis=0)                     # (n, m)
-            batch_labels = np.concatenate(batch_labels_list, axis=0).reshape(-1)       # (n, )
-        return batch_feats, batch_labels
-    
-    def train(self, feats, labels):
+    def train(self):
         """训练函数，需要实现"""
         raise NotImplementedError('the classify func is not implemented.')
     
@@ -82,8 +65,12 @@ class BaseModel():
     def vis_loss(self, losses):
         """可视化损失"""
         assert losses is not None and len(losses) != 0, 'can not visualize losses because losses is empty.'
-        x = np.array(losses)[:,0]
-        y = np.array(losses)[:,1]
+        if losses.ndim == 2:
+            x = np.array(losses)[:,0]
+            y = np.array(losses)[:,1]
+        else:
+            x = np.arange(len(losses))
+            y = np.array(losses)
         plt.figure()
         plt.subplot(1,2,1)
         plt.title('losses')

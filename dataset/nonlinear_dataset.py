@@ -35,7 +35,7 @@ class NonlinearDataset(BaseDataset):
             datas, labels = make_circles(n_samples=self.n_samples, 
                                                    noise=self.noise)
         else:
-            print('wrong type input.')
+            print('wrong dataset type input.')
         
         dataset = {}
         dataset['data'] = datas
