@@ -135,7 +135,7 @@ class MultilayerPerceptron():
             # ..............
 
             # HIDDEN LAYER
-            hidden_input = X.dot(self.W) + self.w0
+            hidden_input = X.dot(self.W) + self.w0  #(1079*64)(64,16)+(1,16) -> (1079,16)+(1,16)->(1079,16)
             hidden_output = self.hidden_activation(hidden_input)
             # OUTPUT LAYER
             output_layer_input = hidden_output.dot(self.V) + self.v0
@@ -147,11 +147,11 @@ class MultilayerPerceptron():
 
             # OUTPUT LAYER
             # Grad. w.r.t input of output layer
-            grad_wrt_out_l_input = self.loss.gradient(y, y_pred) * self.output_activation.gradient(output_layer_input)
-            grad_v = hidden_output.T.dot(grad_wrt_out_l_input)
-            grad_v0 = np.sum(grad_wrt_out_l_input, axis=0, keepdims=True)
+            grad_wrt_out_l_input = self.loss.gradient(y, y_pred) * self.output_activation.gradient(output_layer_input) #(1079,10)(1079,10)->(1079,10)
+            grad_v = hidden_output.T.dot(grad_wrt_out_l_input)    # (16,1079)(1079,10)->(16,10)
+            grad_v0 = np.sum(grad_wrt_out_l_input, axis=0, keepdims=True)  # (1,10)
             # HIDDEN LAYER
-            # Grad. w.r.t input of hidden layer
+            # Grad. w.r.t input of hidden layer     # (1079,10)
             grad_wrt_hidden_l_input = grad_wrt_out_l_input.dot(self.V.T) * self.hidden_activation.gradient(hidden_input)
             grad_w = X.T.dot(grad_wrt_hidden_l_input)
             grad_w0 = np.sum(grad_wrt_hidden_l_input, axis=0, keepdims=True)

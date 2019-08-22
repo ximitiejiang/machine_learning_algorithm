@@ -25,7 +25,7 @@ def train_test_split(X, y, test_size=0.3, shuffle=True, seed=None):
 
 
 def batch_iterator(X, y, batch_size=-1):
-    """最简版函数形式的dataloader"""
+    """最简版函数形式的dataloader"""   
     if batch_size == -1:
         yield X, y
     else:
