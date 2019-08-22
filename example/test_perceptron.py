@@ -60,7 +60,7 @@ if __name__ == "__main__":
     
     if dataset == 'mnist':        # 必须特征归一化，同时w必须初始化为0，否则会导致inf问题
         # acc = 0.985@lr0.00001/batch8/w0/norm
-        dataset = MnistDataset(data_type='train_binary')  # 采用mnist数据集
+        dataset = MnistDataset(data_type='train', binary=True)  # 采用mnist数据集
         train_feats, test_feats, train_labels, test_labels = train_test_split(dataset.datas, dataset.labels, test_size=0.3)
         
         # get model

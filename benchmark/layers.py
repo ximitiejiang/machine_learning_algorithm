@@ -246,15 +246,15 @@ class Conv2D(Layer):
         self.layer_input = X
         # Turn image shape into column shape
         # (enables dot product between input and weights)
-        self.X_col = image_to_column(X, self.filter_shape, stride=self.stride, output_shape=self.padding)
+        self.X_col = image_to_column(X, self.filter_shape, stride=self.stride, output_shape=self.padding) # (9,16384)
         # Turn weights into column shape
-        self.W_col = self.W.reshape((self.n_filters, -1))
+        self.W_col = self.W.reshape((self.n_filters, -1)) # (16,1,3,3) -> (16,9)
         # Calculate output
-        output = self.W_col.dot(self.X_col) + self.w0
+        output = self.W_col.dot(self.X_col) + self.w0  # (16,16384) + (16,1) -> (16,16384)
         # Reshape into (n_filters, out_height, out_width, batch_size)
-        output = output.reshape(self.output_shape() + (batch_size, ))
+        output = output.reshape(self.output_shape() + (batch_size, ))  # (16,8,8,256)
         # Redistribute axises so that batch size comes first
-        return output.transpose(3,0,1,2)
+        return output.transpose(3,0,1,2)  #(256,16,8,8)
 
     def backward_pass(self, accum_grad):
         # Reshape accumulated gradient into column shape
@@ -283,7 +283,7 @@ class Conv2D(Layer):
         return accum_grad
 
     def output_shape(self):
-        """计算每种layer的输出形状"""
+
         channels, height, width = self.input_shape
         pad_h, pad_w = determine_padding(self.filter_shape, output_shape=self.padding)
         output_height = (height + np.sum(pad_h) - self.filter_shape[0]) / self.stride + 1
@@ -316,7 +316,7 @@ class BatchNormalization(Layer):
 
         # Initialize running mean and variance if first run
         if self.running_mean is None:
-            self.running_mean = np.mean(X, axis=0)
+            self.running_mean = np.mean(X, axis=0)  # axis=0表示对batch张图求均值，得到(c,h,w)
             self.running_var = np.var(X, axis=0)
 
         if training and self.trainable:
@@ -597,11 +597,11 @@ class Dropout(Layer):
         c = (1 - self.p)
         if training:
             self._mask = np.random.uniform(size=X.shape) > self.p  # 取0-1之间的均匀分布的实数，大于0.75的位置为True
-            c = self._mask
+            c = self._mask               # dropout的前向计算很简单，做一个概率掩码，让feats对应位置置0即可。
         return X * c
 
     def backward_pass(self, accum_grad):
-        return accum_grad * self._mask
+        return accum_grad * self._mask  # dropout的反传也很简单，对应关闭的位置grad直接置0不再反传即可。
 
     def output_shape(self):
         return self.input_shape
@@ -674,20 +674,20 @@ def get_im2col_indices(images_shape, filter_shape, padding, stride=1):
     batch_size, channels, height, width = images_shape
     filter_height, filter_width = filter_shape
     pad_h, pad_w = padding
-    out_height = int((height + np.sum(pad_h) - filter_height) / stride + 1)
+    out_height = int((height + np.sum(pad_h) - filter_height) / stride + 1) # 基于标准卷积输出尺寸计算公式，得到h,w
     out_width = int((width + np.sum(pad_w) - filter_width) / stride + 1)
 
-    i0 = np.repeat(np.arange(filter_height), filter_width)
-    i0 = np.tile(i0, channels)
-    i1 = stride * np.repeat(np.arange(out_height), out_width)
-    j0 = np.tile(np.arange(filter_width), filter_height * channels)
-    j1 = stride * np.tile(np.arange(out_width), out_height)
-    i = i0.reshape(-1, 1) + i1.reshape(1, -1)
-    j = j0.reshape(-1, 1) + j1.reshape(1, -1)
+    i0 = np.repeat(np.arange(filter_height), filter_width)  #(9,) [0,0,0,1,1,1,2,2,2]
+    i0 = np.tile(i0, channels)                              #(9,) [0,0,0,1,1,1,2,2,2]
+    i1 = stride * np.repeat(np.arange(out_height), out_width)  #(64,)  [0...1...2...3...4...5...6...7...]
+    j0 = np.tile(np.arange(filter_width), filter_height * channels)#(9,) [0,1,2,0,1,2,0,1,2]
+    j1 = stride * np.tile(np.arange(out_width), out_height)       #(64,) [0,1,2,3,4,5,6,7...,0,1,2,3,4,5,6,7]
+    i = i0.reshape(-1, 1) + i1.reshape(1, -1)  #(9,64)
+    j = j0.reshape(-1, 1) + j1.reshape(1, -1)  #(9,64)
 
-    k = np.repeat(np.arange(channels), filter_height * filter_width).reshape(-1, 1)
+    k = np.repeat(np.arange(channels), filter_height * filter_width).reshape(-1, 1) # (9,1) [0,0,0,0,0,0,0,0,0]
 
-    return (k, i, j)
+    return (k, i, j)  # ((9,1), (9,64), (9,64))
 
 
 # Method which turns the image shaped input to column shape.
@@ -699,17 +699,17 @@ def image_to_column(images, filter_shape, stride, output_shape='same'):
     pad_h, pad_w = determine_padding(filter_shape, output_shape)
 
     # Add padding to the image
-    images_padded = np.pad(images, ((0, 0), (0, 0), pad_h, pad_w), mode='constant')
+    images_padded = np.pad(images, ((0, 0), (0, 0), pad_h, pad_w), mode='constant')  # (256,1,8,8)->(256,1,10,10)
 
     # Calculate the indices where the dot products are to be applied between weights
     # and the image
-    k, i, j = get_im2col_indices(images.shape, filter_shape, (pad_h, pad_w), stride)
+    k, i, j = get_im2col_indices(images.shape, filter_shape, (pad_h, pad_w), stride) # ((9,1), (9,64), (9,64))
 
     # Get content from image at those indices
-    cols = images_padded[:, k, i, j]
+    cols = images_padded[:, k, i, j]  # (256,1,10,10) -> (256, 9, 64)
     channels = images.shape[1]
     # Reshape content into column shape
-    cols = cols.transpose(1, 2, 0).reshape(filter_height * filter_width * channels, -1)
+    cols = cols.transpose(1, 2, 0).reshape(filter_height * filter_width * channels, -1) # (9,16384)
     return cols
 
 

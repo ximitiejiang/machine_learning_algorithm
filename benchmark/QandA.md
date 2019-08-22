@@ -386,6 +386,24 @@ sigma(0.01)较小时模型对训练集完全预测准确但对测试集却效果
 3. 如何选择正则化参数？
 
 
+**Q. 什么是动量momentu，在优化器SGD中如何应用？在batchnorm2d中如何应用？**
+<br>增加动量的必要性：如果不增加动量参数，
+参考：https://blog.csdn.net/ssswill/article/details/86686686 里边有可以绘制出动量影响的代码。
+```
+class SGDM():
+    def __init__(self, lr, momentum=0.9):
+        self.lr = lr
+        self.momentum = momentum
+        self.tmp_w = None
+    
+    def update(self, w, grad):
+        if self.tmp_w is None:
+            self.tmp_w = np.zeros_like(w)
+        self.tmp_w = self.momentum * self.tmp_w + (1 - self.momentum) * grad  # 计算更新m
+        w -= self.lr * self.tmp_w
+        return w
+```
+
 -------------------------------------------------------------------------------
 ## PART 1. knn classifier
 **Q. knn的超参数k怎么选择？**
@@ -774,14 +792,3 @@ C = (cov(X,X), cov(X,Y), cov(X,Z),
 
 
 
-## PART 20. NN
-
-**Q. 神经网络的基本原理**
-
-
-
-**Q. 卷积层的操作过程**
-<br>卷积的操作
-
-<br>卷积的尺寸计算
-<br>卷积的反向传播

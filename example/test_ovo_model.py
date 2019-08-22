@@ -6,7 +6,7 @@ Created on Sat Jun 22 09:04:13 2019
 @author: ubuntu
 """
 
-from core.multi_class_model import OVOModel
+from core.multi_class_model_wrapper import OVOModel
 from dataset.multi_class_dataset import MultiClassDataset
 from sklearn.model_selection import train_test_split
 

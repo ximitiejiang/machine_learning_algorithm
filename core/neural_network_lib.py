@@ -176,7 +176,7 @@ class Layer():
     
 class Linear(Layer):
     """全连接层: 要求输入必须是经过flatten的二维数据(n_samples, n_feats)"""
-    def __init__(self, in_features, out_features):  # 作为中间层，只需要输入output_channels(value)，而作为首层，则需同时输入output_channel和input_shape(b,c), 
+    def __init__(self, in_features, out_features):  
         self.out_features = out_features  # (m,)
         self.in_features = in_features    # (n,)
         self.trainable = True

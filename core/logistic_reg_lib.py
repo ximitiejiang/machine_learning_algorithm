@@ -207,7 +207,7 @@ class LogisticReg_pytorch(nn.Module):
         return probs
     
 
-import tensorflow as tf    
-class LogisticReg_tensorflow():
-    def __init__():
-        pass
+#import tensorflow as tf    
+#class LogisticReg_tensorflow():
+#    def __init__():
+#        pass

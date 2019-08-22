@@ -3,6 +3,8 @@
 """
 Created on Fri Aug  9 10:10:04 2019
 
+运行该文件，用于临时把repo根目录路径加入sys.path，从而在example文件夹中可以直接运行所有测试文件。
+
 @author: ubuntu
 """
 # %%
