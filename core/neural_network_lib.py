@@ -17,6 +17,7 @@ from core.loss_function_lib import CrossEntropy
 from core.optimizer_lib import Adam, SGDM
 
 from utils.dataloader import batch_iterator, train_test_split
+from utils.conv_operation import img2col, col2img
 from dataset.digits_dataset import DigitsDataset
 
 # %%  模型总成
@@ -239,29 +240,6 @@ class Conv2d(Layer):
     def backward_pass(self, grad):
         pass
     
-    def img2col(self, img, kernel_size, ):
-        """用于把图片数据转换成列数据
-        """
-        img_h = img.shape[2]  # 获得原图h,w
-        img_w = img.shape[2]
-        kernel_h, kernel_w = kernel_size.shape
-        pad_h = (img_h - kernel_h) + 
-        pad_w = 
-        padded = np.pad(img, ((0,0), (0,0)), mode="constant")  # (256,1,8,8)->(256,1,10,10)
-        
-        i, j, k = get_img2col_inds()
-        
-        cols = padded[:, k, i, j]    # (256,1,10,10) -> (256, 9, 64)这是把图片数据
-        cols = cols.transpose(1,2,0).reshape()  # (9,16384)
-        return cols
-        
-        
-        
-    def col2img(self):   
-        """用于把列数据转换回图片数据，col2img跟img2col互为逆运算"""
-        
-        
-        
 
 class Activation(Layer):
     """激活层: 基于输入的激活函数类型name来生成激活函数对象进行调用"""
