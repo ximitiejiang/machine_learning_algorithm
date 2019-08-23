@@ -59,4 +59,29 @@ class SGDM():
         self.tmp_w = self.momentum * self.tmp_w + (1 - self.momentum) * grad  # 计算更新m
         w -= self.lr * self.tmp_w
         return w
+
+
+class NM():
+    """NM=NewtonMethod牛顿法: 参数更新公式变为x_k+1 = x_k - H_xk(-1) * grad, 其中H_xk(-1)代表海森矩阵的逆矩阵
+    参考：https://blog.csdn.net/golden1314521/article/details/46225289，https://www.cnblogs.com/shixiangwan/p/7532830.html
+    """
+    def __init__(self):
+        pass
+    def update(self):
+        pass
+    
+    
+class BFGS():
+    """BFGS拟牛顿法: """
+    def __init__(self):
+        pass
+    def update(self):
+        pass
+    
+
+if __name__ == "__main__":
+    """尝试直接用optimizer做无约束极值问题"""
+    x=0
+    y=0
+    func = np.power(x, 2) + np.power(y, 2) * 50
     

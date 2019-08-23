@@ -703,7 +703,7 @@ def image_to_column(images, filter_shape, stride, output_shape='same'):
 
     # Calculate the indices where the dot products are to be applied between weights
     # and the image
-    k, i, j = get_im2col_indices(images.shape, filter_shape, (pad_h, pad_w), stride) # ((9,1), (9,64), (9,64))
+    k, i, j = get_im2col_indices(images.shape, filter_shape, (pad_h, pad_w), stride) # ((9,1),(9,64),(9,64))
 
     # Get content from image at those indices
     cols = images_padded[:, k, i, j]  # (256,1,10,10) -> (256, 9, 64)
