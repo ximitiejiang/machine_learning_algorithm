@@ -17,7 +17,7 @@ from core.loss_function_lib import CrossEntropy
 from core.optimizer_lib import Adam, SGDM
 
 from utils.dataloader import batch_iterator, train_test_split
-from utils.conv_operation import img2col, col2img
+from utils.matrix_operation import img2col, col2img
 from dataset.digits_dataset import DigitsDataset
 
 # %%  模型总成
@@ -41,13 +41,9 @@ class NeuralNetwork(BaseModel):
         self.layers = []
 
     def add(self, layer):
-        """用于模型添加层: 设置输入输出层数，初始化"""
-#        if self.layers:  # 如果不为空，说明不是第一层，则取前一层为该层输入
-#            layer.set_input_shape(shape=self.layers[-1].get_output_shape())
-        
+        """用于模型添加层: 设置输入输出层数，初始化"""      
         if hasattr(layer, "initialize"):
             layer.initialize(optimizer = self.optimizer)
-        
         self.layers.append(layer)
     
     def forward_pass(self, x):
@@ -119,7 +115,7 @@ class CNN(NeuralNetwork):
                          n_epochs=n_epochs, 
                          batch_size=batch_size)
         
-        self.add(Conv2d(in_channels=1, out_channels=16, kernel_size=(3,3), stride=1, padding='same'))
+        self.add(Conv2d(in_channels=1, out_channels=16, kernel_size=(3,3), stride=1, padding='same'))# w'=(8-3+2)/1 +1=8
         self.add(Activation('relu'))
         self.add(BatchNorm2d())
         self.add(Conv2d(in_channels=1, out_channels=32, kernel_sie=(3,3), stride=1, padding='same'))
@@ -229,15 +225,22 @@ class Conv2d(Layer):
         self.W0_optimizer = copy.copy(optimizer)
     
     def forward_pass(self, x):
-        self.x_col = img2col()
-        self.w_col
+        filter_h, filter_w = self.kernel_size
+        out_h = (x.shape[2] + 2*self.padding - filter_h)//self.stride + 1  # 计算输出图像实际尺寸
+        out_w = (x.shape[3] + 2*self.padding - filter_w)//self.stride + 1
+        batch_size = x.shape[0]
         
-        output = np.dot(self.w_col, self.x_col) + self.W0  #(16,9)*(9,16384)+(16,1) -> (16,16384) 列形式的w点积列形式的特征x
-        output = output.reshape()
+        self.x_col = img2col(x, filter_h, filter_w, self.stride, self.padding) # (16384, 9)表示每个滤波器要跟图像进行的滤波次数为16384，所以把每组9元素都准备出来。
+        self.w_col = self.W.reshape(-1, filter_h * filter_w)  # (16, 9)
+        output = np.dot(self.w_col, self.x_col.T) + self.W0  #(16,9)*(9,16384)+(16,1) -> (16,16384) 列形式的w点积列形式的特征x
+        output = output.reshape(self.out_channels,  out_h, out_w, batch_size)  # (16,8,8,256)
+        # Redistribute axises so that batch size comes first
+        return output.transpose(3,0,1,2)  #(256,16,8,8)
         
         return output
     
     def backward_pass(self, grad):
+        
         pass
     
 
@@ -263,7 +266,7 @@ class Activation(Layer):
         
     
 class BatchNorm2d(Layer):
-    
+    """归一化层"""
     def __init__(self):
         pass
     
@@ -276,7 +279,7 @@ class BatchNorm2d(Layer):
             
 
 class Flatten(Layer):
-    
+    """展平层"""
     def __init__():
         pass
     
@@ -285,7 +288,20 @@ class Flatten(Layer):
     
     def backward_pass(self):
         pass
+
+
+class Dropout(Layer):
+    """关闭神经元层"""
+    def __init__():
+        pass
     
+    def forward_pass(self):
+        pass
+    
+    def backward_pass(self):
+        pass
+
+
 
 # %% 调试
 if __name__ == "__main__":

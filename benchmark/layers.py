@@ -249,8 +249,8 @@ class Conv2D(Layer):
         self.X_col = image_to_column(X, self.filter_shape, stride=self.stride, output_shape=self.padding) # (9,16384)
         # Turn weights into column shape
         self.W_col = self.W.reshape((self.n_filters, -1)) # (16,1,3,3) -> (16,9)
-        # Calculate output
-        output = self.W_col.dot(self.X_col) + self.w0  # (16,16384) + (16,1) -> (16,16384)
+        # Calculate output: 表示16个9元素滤波器 dot 
+        output = self.W_col.dot(self.X_col) + self.w0  # (16,9)dot(9,16384) + (16,1) -> (16,16384)
         # Reshape into (n_filters, out_height, out_width, batch_size)
         output = output.reshape(self.output_shape() + (batch_size, ))  # (16,8,8,256)
         # Redistribute axises so that batch size comes first

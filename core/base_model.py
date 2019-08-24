@@ -132,7 +132,7 @@ class BaseModel():
         labels = np.array(self.labels)
         labels = labels.reshape(-1,1) if labels.ndim==1 else labels  # 统一成(10,1), (10,4)
         if labels.shape[1] > 1:  # (10,1), (10,4)
-            labels = onehot_to_label(labels)  # 如果是多列，则转换成独热编码
+            labels = onehot_to_label(labels)  # 如果是多列，则转换成原始编码
         labels = label_transform(labels.reshape(-1), label_transform_dict={1:1, -1:0, 0:0}).astype(np.int8)# 转换成0,1编码
         colors = city_colors(self.n_classes, norm=True)  # 返回array
         colors = colors[labels]       #获取每个label的颜色代码    
