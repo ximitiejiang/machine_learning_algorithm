@@ -8,8 +8,9 @@ Created on Fri Aug 23 23:28:38 2019
 import numpy as np
 
 def img2col(img, filter_h, filter_w, stride=1, pad=0):
-    """用于把图片matrix转换为列数据形式，便于跟权值W进行计算，避免卷积计算的复杂for循环。
-    参考：《Deep Learning from Scratch》, 7.4, 斋藤康毅，日本
+    """用于把图片matrix转换为列数据形式，便于跟权值W进行矩阵点积，本质就是把卷积计算转换为矩阵点积，避免卷积的复杂for循环。
+    参考：《Deep Learning from Scratch》, 7.4, 斋藤康毅，日本。
+    注意：相对源码做了修改，让输出变为(单滤波器元素，滤波器个数)，也就是每列是一个滤波操作，跟img2col的含义更匹配。
     Args:
         img : (b,c,h,w)4维数组构成的输入数据
         filter_h : 卷积核h
@@ -33,8 +34,8 @@ def img2col(img, filter_h, filter_w, stride=1, pad=0):
             x_max = x + stride*out_w  
             col[:, :, y, x, :, :] = img[:, :, y:y_max:stride, x:x_max:stride]  # 取每组滤波器对应像素
 
-    col = col.transpose(0, 4, 5, 1, 2, 3).reshape(N*out_h*out_w, -1)
-    return col  # (输出滤波器个数o_h*o_w，每个滤波器元素个数chw) 比如(16384, 9)
+    col = col.transpose(0, 4, 5, 1, 2, 3).reshape(N*out_h*out_w, -1).T
+    return col  # (每个滤波器元素个数chw, 输出滤波器个数o_h*o_w) 也就是每列就是一组滤波器数据，比如(9,16384)
 
 
 def col2img(col, input_shape, filter_h, filter_w, stride=1, pad=0):

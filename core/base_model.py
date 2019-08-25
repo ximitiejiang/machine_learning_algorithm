@@ -18,7 +18,7 @@ class BaseModel():
     """ 所有分类回归模型的基类
     """
     def __init__(self, feats, labels):
-        assert feats.ndim ==2, 'the feats should be (n_samples, m_feats), each sample should be 1-dim flatten data.'
+#        assert feats.ndim ==2, 'the feats should be (n_samples, m_feats), each sample should be 1-dim flatten data.'
         self.feats = feats
         self.labels = labels.astype(np.int8)
         self.trained = False
@@ -30,7 +30,7 @@ class BaseModel():
             self.classes_list = sorted(list(set(np.array(self.labels).reshape(-1).tolist())))  # classes_list为排序从小到大
         self.n_classes = len(self.classes_list)
         self.n_samples = self.feats.shape[0]
-        self.n_feats = self.feats.shape[1]
+        self.n_feats = self.feats.shape[1] if self.feats.ndim==2 else self.feats.shape[2] * self.feats.shape[3]
     
     def train(self):
         """训练函数，需要实现"""

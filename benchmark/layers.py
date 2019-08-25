@@ -258,12 +258,11 @@ class Conv2D(Layer):
 
     def backward_pass(self, accum_grad):
         # Reshape accumulated gradient into column shape
-        accum_grad = accum_grad.transpose(1, 2, 3, 0).reshape(self.n_filters, -1)
-
+        accum_grad = accum_grad.transpose(1, 2, 3, 0).reshape(self.n_filters, -1) # (256,16,8,8)->(16,8,8,256)->(16,16384)
         if self.trainable:
             # Take dot product between column shaped accum. gradient and column shape
             # layer input to determine the gradient at the layer with respect to layer weights
-            grad_w = accum_grad.dot(self.X_col.T).reshape(self.W.shape)
+            grad_w = accum_grad.dot(self.X_col.T).reshape(self.W.shape)  # (16,16384)dot(9,16384).T ->(16,9)->(16,1,3,3)
             # The gradient with respect to bias terms is the sum similarly to in Dense layer
             grad_w0 = np.sum(accum_grad, axis=1, keepdims=True)
 

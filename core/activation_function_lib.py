@@ -62,3 +62,15 @@ class LeakyRelu():
     def gradient(self, x):
         return np.where(x>=0, 1, self.alpha)
 
+class MSE():
+    """平方损失函数，多用来做回归损失函数"""
+    def __init__(self, regularization='l1'):
+        self.regularization
+    
+    def __call__(self, x):
+        pass
+    
+    def gradient(self, x):
+        pass
+    
+    

@@ -103,7 +103,6 @@ class NeuralNetwork(BaseModel):
         else:
             raise ValueError("model not trained, can not predict or evaluate.")
     
-     
     
 class CNN(NeuralNetwork):
     """基于神经网络结构的多层卷积神经网络"""
@@ -115,17 +114,17 @@ class CNN(NeuralNetwork):
                          n_epochs=n_epochs, 
                          batch_size=batch_size)
         
-        self.add(Conv2d(in_channels=1, out_channels=16, kernel_size=(3,3), stride=1, padding='same'))# w'=(8-3+2)/1 +1=8
+        self.add(Conv2d(in_channels=1, out_channels=16, kernel_size=(3,3), stride=1, padding=1))# w'=(8-3+2)/1 +1=8
         self.add(Activation('relu'))
         self.add(BatchNorm2d())
-        self.add(Conv2d(in_channels=1, out_channels=32, kernel_sie=(3,3), stride=1, padding='same'))
+        self.add(Conv2d(in_channels=16, out_channels=32, kernel_size=(3,3), stride=1, padding=1))
         self.add(Activation('relu'))
         self.add(BatchNorm2d())
         self.add(Flatten())
-        self.add(Linear(output_shape=(256,)))
+        self.add(Linear(in_features=2048, out_features=256))
         self.add(Activation('relu'))
         self.add(BatchNorm2d())
-        self.add(Linear(output_shpae=(10,)))
+        self.add(Linear(in_features=256, out_features=10))
         self.add(Activation('softmax'))
         
     
@@ -159,7 +158,11 @@ class SoftmaxReg(NeuralNetwork):
         n_classes = labels.shape[1]
         self.add(Linear(in_features=n_feats, out_features=n_classes))
         self.add(Activation('softmax'))
-        
+
+
+class LinearRegression():
+    """回归模型"""
+            
 
 # %% 单层模型
 class Layer():
@@ -206,7 +209,7 @@ class Linear(Layer):
     
         
 class Conv2d(Layer):
-    """卷积层: 当前仅支持stride=1"""
+    """卷积层"""
     def __init__(self, in_channels, out_channels, kernel_size, stride=1, padding=0):
         self.in_channels = in_channels
         self.out_channels = out_channels
@@ -229,20 +232,27 @@ class Conv2d(Layer):
         out_h = (x.shape[2] + 2*self.padding - filter_h)//self.stride + 1  # 计算输出图像实际尺寸
         out_w = (x.shape[3] + 2*self.padding - filter_w)//self.stride + 1
         batch_size = x.shape[0]
-        
-        self.x_col = img2col(x, filter_h, filter_w, self.stride, self.padding) # (16384, 9)表示每个滤波器要跟图像进行的滤波次数为16384，所以把每组9元素都准备出来。
+        # 特征数据从matrix(256,1,8,8)变为列数据(16384, 9)
+        self.x_col = img2col(x, filter_h, filter_w, self.stride, self.padding) # (9，16384)表示每个滤波器要跟图像进行的滤波次数为16384，所以把每组9元素都准备出来。
         self.w_col = self.W.reshape(-1, filter_h * filter_w)  # (16, 9)
-        output = np.dot(self.w_col, self.x_col.T) + self.W0  #(16,9)*(9,16384)+(16,1) -> (16,16384) 列形式的w点积列形式的特征x
+        output = np.dot(self.w_col, self.x_col) + self.W0  #(16,9)*(9,16384)+(16,1) -> (16,16384) 列形式的w点积列形式的特征x
         output = output.reshape(self.out_channels,  out_h, out_w, batch_size)  # (16,8,8,256)
         # Redistribute axises so that batch size comes first
         return output.transpose(3,0,1,2)  #(256,16,8,8)
-        
-        return output
     
-    def backward_pass(self, grad):
+    def backward_pass(self, accum_grad):
+        # 先获得反传梯度的分支到w
+        grad_w = np.dot(accum_grad, self.W)  # ()
+        grad_w0 = np.sum(accum_grad, axis=0)
+        # 更新w
+        self.W = self.W_optimizer.update(self.W, grad_w)
+        self.W0 = self.W0_optimizer.update(self.W0, grad_w0)
+        # 继续反传
+        accum_grad = accum_grad * self.W
+        # col形式转换回matrix
+        accum_grad = col2img(accum_grad, )
         
-        pass
-    
+        return accum_grad
 
 class Activation(Layer):
     """激活层: 基于输入的激活函数类型name来生成激活函数对象进行调用"""
@@ -270,43 +280,67 @@ class BatchNorm2d(Layer):
     def __init__(self):
         pass
     
-    def forward_pass(self):
+    def forward_pass(self, x):
         pass
     
-    def backward_pass(self):
+    def backward_pass(self, accum_grad):
         pass
     
             
 
 class Flatten(Layer):
     """展平层"""
-    def __init__():
-        pass
+    def __init__(self):
+        self.prev_shape = None
     
-    def forward_pass(self):
-        pass
+    def forward_pass(self, x):
+        self.prev_shape = x.shape  # 预留输入的维度信息为反传做准备
+        return x.reshape(x.shape[0], -1)
     
-    def backward_pass(self):
-        pass
+    def backward_pass(self, accum_grad):
+        return accum_grad.reshape(self.prev_shape) 
 
 
 class Dropout(Layer):
     """关闭神经元层"""
-    def __init__():
+    def __init__(self):
         pass
     
-    def forward_pass(self):
+    def forward_pass(self, x):
         pass
     
-    def backward_pass(self):
+    def backward_pass(self, accum_grad):
         pass
 
+
+class MaxPooling2d(Layer):
+    """最大池化层"""
+    def __init__(self):
+        pass
+    
+    def forward_pass(self, x):
+        pass
+    
+    def backward_pass(self, accum_grad):
+        pass
+    
+
+class AvgPooling2d(Layer):
+    """平均池化层"""
+    def __init__(self):
+        pass
+    
+    def forward_pass(self, x):
+        pass
+    
+    def backward_pass(self, accum_grad):
+        pass
 
 
 # %% 调试
 if __name__ == "__main__":
     
-    model = 'mlp'
+    model = 'cnn'
     
     if model == 'logi':  # 输入图片是(b,n)
     
@@ -346,7 +380,24 @@ if __name__ == "__main__":
         print("test acc: %f"%acc2)
     
     if model == "cnn":  # 输入图片必须是(b,c,h,w)
-        pass
-    
-    
+        dataset = DigitsDataset(norm=True, one_hot=True)
+        
+        train_x, test_x, train_y, test_y = train_test_split(dataset.datas, dataset.labels, test_size=0.3, shuffle=True)
+        
+        # 已展平数据转matrix
+        train_x = train_x.reshape(-1, 1, 8, 8)
+        test_x = test_x.reshape(-1, 1, 8, 8)
+        
+        optimizer = Adam(lr=0.001)
+        loss_func = CrossEntropy()
+        clf = CNN(train_x, train_y, 
+                  loss=loss_func, 
+                  optimizer= optimizer, 
+                  batch_size = 64, 
+                  n_epochs=200)
+        clf.train()
+        acc1, _ = clf.evaluation(train_x, train_y)
+        print("training acc: %f"%acc1)
+        acc2, _ = clf.evaluation(test_x, test_y)
+        print("test acc: %f"%acc2)
     

@@ -6,8 +6,51 @@ Created on Thu Aug 22 16:16:54 2019
 @author: ubuntu
 """
 import numpy as np
+import matplotlib.pyplot as plt
+from collections import OrderedDict
+# %% 优化器(用于更新权重): 优化器的核心是求函数loss(w)的极值，通过动态调整w的值(沿着梯度方向每次调整一点点)来求得loss的最小值。
 
-# %% 优化器(用于更新权重)
+class SGD():
+    """普通SGD梯度下降算法"""
+    def __init__(self, lr=0.001):
+        self.lr = lr
+    
+    def update(self, w, grad):
+        w -= self.lr * grad
+        return w
+
+
+class SGDM():
+    """SGDM梯度下降算法-带动量M的SGD算法"""
+    def __init__(self, lr, momentum=0.9):
+        self.lr = lr
+        self.momentum = momentum
+        self.tmp_w = None
+    
+    def update(self, w, grad):
+        if self.tmp_w is None:
+            self.tmp_w = np.zeros_like(w)
+        self.tmp_w = self.momentum * self.tmp_w + (1 - self.momentum) * grad  # 计算更新m
+        w -= self.lr * self.tmp_w
+        return w
+
+
+class AdaGrad():
+    def __init__(self, lr=0.01):
+        self.lr = lr
+        self.G = None # Sum of squares of the gradients
+        self.eps = 1e-8
+
+    def update(self, w, grad):
+        # If not initialized
+        if self.G is None:
+            self.G = np.zeros(np.shape(w))
+        # Add the square of the gradient of the loss function at w
+        self.G += np.power(grad, 2)
+        # Adaptive gradient with higher learning rate for sparse data
+        return w - self.lr * grad / np.sqrt(self.G + self.eps)
+
+
 class Adam():
     """Adam优化器：对梯度的一阶矩估计(梯度的均值)和二阶距估计(梯度的未中心化方差)进行综合考虑来更新步长。
     Args:
@@ -36,31 +79,6 @@ class Adam():
         return w
 
 
-class SGD():
-    """普通SGD梯度下降算法"""
-    def __init__(self, lr=0.001):
-        self.lr = lr
-    
-    def update(self, w, grad):
-        w -= self.lr * grad
-        return w
-
-
-class SGDM():
-    """SGDM梯度下降算法-带动量M的SGD算法"""
-    def __init__(self, lr, momentum=0.9):
-        self.lr = lr
-        self.momentum = momentum
-        self.tmp_w = None
-    
-    def update(self, w, grad):
-        if self.tmp_w is None:
-            self.tmp_w = np.zeros_like(w)
-        self.tmp_w = self.momentum * self.tmp_w + (1 - self.momentum) * grad  # 计算更新m
-        w -= self.lr * self.tmp_w
-        return w
-
-
 class NM():
     """NM=NewtonMethod牛顿法: 参数更新公式变为x_k+1 = x_k - H_xk(-1) * grad, 其中H_xk(-1)代表海森矩阵的逆矩阵
     参考：https://blog.csdn.net/golden1314521/article/details/46225289，https://www.cnblogs.com/shixiangwan/p/7532830.html
@@ -78,10 +96,85 @@ class BFGS():
     def update(self):
         pass
     
+    
+# %% 对优化器进行测试
+def test_optimizer():
+    """采用二元函数测试优化器算法"""
+    def f(x, y):    # 目标：求解一个函数的极小值，等价于在参数x,y变化情况下得到min f
+        return x**2 / 20.0 + y**2
+
+    def df(x, y):
+        return x / 10.0, 2.0*y
+
+    optimizers = OrderedDict()
+    optimizers["SGD"] = SGD(lr=0.95)
+    optimizers["SGDM"] = SGDM(lr=0.95, momentum=0.9)
+    optimizers["AdaGrad"] = AdaGrad(lr=1.5)
+    optimizers["Adam"] = Adam(lr=0.3)
+    
+    idx = 1
+    for key in optimizers:
+        optimizer = optimizers[key]
+        x_hist = []
+        y_hist = []
+        params = np.array([-7.0, 2.0])  # 指定一个初始x,y参数位置 
+        grads = np.ones((2,))       # 指定初始梯度
+        for i in range(30):
+            x_hist.append(params[0])
+            y_hist.append(params[1])
+            grads[0], grads[1] = df(params[0], params[1])
+            params = optimizer.update(params, grads)
+        
+        x = np.arange(-10, 10, 0.01)
+        y = np.arange(-5, 5, 0.01)
+        X, Y = np.meshgrid(x, y) 
+        Z = f(X, Y)
+        
+        # for simple contour line  
+        mask = Z > 7
+        Z[mask] = 0
+
+        plt.subplot(2, 2, idx)
+        idx += 1
+        plt.plot(x_hist, y_hist, 'o-', color="red") # 绘制所有x,y点
+        plt.contour(X, Y, Z)  # 绘制原函数的等高线
+        plt.ylim(-10, 10)
+        plt.xlim(-10, 10)
+        plt.plot(0, 0, '+')
+        plt.title(key)
+#        plt.xlabel("x")
+        plt.ylabel("y")
+        
+    plt.show()
+    
+
+def get_min_value():
+    """求解一个一元函数的极值"""
+    def fn(x):
+        return (x-1)**2 - 1
+    def df(x):
+        return 2*(x-1)
+    optimizer = SGD(lr=0.1)
+    params = -10
+    grads = 1
+    x_hist = []
+    n_epochs = 100
+    for _ in range(n_epochs):
+        grads = df(params)
+        params = optimizer.update(params, grads)
+        x_hist.append(params)
+    min_value = fn(x_hist[-1])
+    
+    print("min fn: %f, x value: %f"%(min_value, x_hist[-1]))
+    
+    
 
 if __name__ == "__main__":
     """尝试直接用optimizer做无约束极值问题"""
-    x=0
-    y=0
-    func = np.power(x, 2) + np.power(y, 2) * 50
+    id = 'all'
     
+    if id == 'all':
+        test_optimizer()
+        
+    if id == 'min':
+        get_min_value()

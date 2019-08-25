@@ -94,14 +94,14 @@ class Adam():
         self.b1 = b1
         self.b2 = b2
 
-    def update(self, w, grad_wrt_w):
+    def update(self, w, accum_grad):
         # If not initialized
         if self.m is None:
-            self.m = np.zeros(np.shape(grad_wrt_w))
-            self.v = np.zeros(np.shape(grad_wrt_w))
+            self.m = np.zeros(np.shape(accum_grad))
+            self.v = np.zeros(np.shape(accum_grad))
         
-        self.m = self.b1 * self.m + (1 - self.b1) * grad_wrt_w
-        self.v = self.b2 * self.v + (1 - self.b2) * np.power(grad_wrt_w, 2)
+        self.m = self.b1 * self.m + (1 - self.b1) * accum_grad
+        self.v = self.b2 * self.v + (1 - self.b2) * np.power(accum_grad, 2)
 
         m_hat = self.m / (1 - self.b1)
         v_hat = self.v / (1 - self.b2)
