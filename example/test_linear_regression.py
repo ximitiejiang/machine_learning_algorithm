@@ -26,7 +26,7 @@ def standardize(X):
 
 if __name__ == "__main__":
     
-    source = 'temp'
+    source = 'linear'
     
     if source == 'temp':
         data = pd.read_csv('../dataset/simple/TempLinkoping2016.txt', sep="\t")
@@ -43,7 +43,7 @@ if __name__ == "__main__":
         y_pred = model.evaluation(X_test, y_test, title="test")
         
     if source == 'linear':
-        dataset = RegressionDataset(n_samples=500, n_features=1, n_targets=1, noise=4)
+        dataset = RegressionDataset(n_samples=500, n_features=1, n_targets=1, noise=5)
         X = dataset.datas
         y = dataset.labels
 #        plt.scatter(X, y)

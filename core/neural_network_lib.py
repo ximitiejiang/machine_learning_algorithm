@@ -13,12 +13,14 @@ import math
 import copy
 from core.base_model import BaseModel
 from core.activation_function_lib import Relu, LeakyRelu, Elu, Sigmoid, Softmax
-from core.loss_function_lib import CrossEntropy
-from core.optimizer_lib import Adam, SGDM
+from core.loss_function_lib import CrossEntropy, SquareLoss
+from core.optimizer_lib import SGD, Adam, SGDM
 
 from utils.dataloader import batch_iterator, train_test_split
 from utils.matrix_operation import img2col, col2img
 from dataset.digits_dataset import DigitsDataset
+from dataset.regression_dataset import RegressionDataset
+import matplotlib.pyplot as plt
 
 # %%  模型总成
 class NeuralNetwork(BaseModel):
@@ -64,27 +66,34 @@ class NeuralNetwork(BaseModel):
         y_pred = self.forward_pass(x)
         losses = self.loss_function.loss(y, y_pred)
         loss = np.mean(losses)
+        acc = self.loss_function.acc(y, y_pred)
         # 反向传播
         loss_grad = self.loss_function.gradient(y, y_pred)
         self.backward_pass(grad = loss_grad)
-        return loss
+        return loss, acc
+    
+    def batch_operation_val(self, x, y):
+        """在每个batch做完都做一次验证，比较费时，但可实时看到验证集的acc变化：可用于评估是否过拟合"""
+        pass
     
     def train(self):
         total_iter = 1
         all_losses = []
+        all_accs = []
         for i in range(self.n_epochs):
             it = 1
             for x_batch, y_batch in batch_iterator(self.feats, self.labels, 
                                                    batch_size = self.batch_size):
-                loss = self.batch_operation(x_batch, y_batch)
+                loss, acc = self.batch_operation(x_batch, y_batch)
                 # 显示loss
                 if it % 5 == 0:
                     print("iter %d / epoch %d: loss=%f"%(it, i+1, loss))
                 all_losses.append([total_iter,loss])
+                all_accs.append([total_iter, acc])
                 it += 1
                 total_iter += 1
                 
-        self.vis_loss(all_losses)
+        self.vis_loss(all_losses, all_accs)
         self.trained = True  # 完成training则可以预测
         return all_losses
     
@@ -93,7 +102,7 @@ class NeuralNetwork(BaseModel):
         pass
     
     def evaluation(self, x, y):
-        """对一组数据进行精度"""
+        """对一组数据进行预测精度"""
         if self.trained:
             y_pred = self.forward_pass(x)  # (1280, 10)
             y_pred = np.argmax(y_pred, axis=1)  # (1280,)
@@ -160,9 +169,42 @@ class SoftmaxReg(NeuralNetwork):
         self.add(Activation('softmax'))
 
 
-class LinearRegression():
+class LinearRegression(NeuralNetwork):
     """回归模型"""
-            
+    def __init__(self, feats, labels, loss, optimizer, n_epochs, batch_size):
+        
+        super().__init__(feats=feats, labels=labels, 
+                       loss=loss, 
+                       optimizer=optimizer, 
+                       n_epochs=n_epochs, 
+                       batch_size=batch_size)
+        self.add(Linear(in_features=1, out_features=1))
+        
+    def batch_operation(self, x, y):
+        """基于每一个batch的数据分别进行前向计算和反向计算"""
+        # 前向计算
+        y_pred = self.forward_pass(x)  # 计算每一层的输出，这里就是linear层输出 (64,1)
+        # 生成正则项的输入: 这里正则化的处理是统一加在loss端的梯度上
+#        w_array = np.array([self.layers[0].W.item(), self.layers[0].W0.item()])  # W(1,1) & W0(1,1) -> (2,)
+        losses = self.loss_function.loss(y.reshape(-1, 1), y_pred)
+        loss = np.mean(losses)
+        # 反向传播
+        loss_grad = self.loss_function.gradient(y, y_pred)
+        self.backward_pass(grad = loss_grad)
+        return loss    
+    
+    def evaluation(self, x, y, title=None):
+        """回归的评估：没有acc可评估，直接绘制拟合曲线"""
+        y_pred = self.forward_pass(x)
+        plt.figure()
+        if title is None:
+            title = 'regression curve'
+        plt.title(title)
+        plt.scatter(x, y, label='raw data', color='red')
+        plt.plot(x, y_pred, label = 'y_pred', color='green')
+        plt.legend()
+        plt.grid()        
+
 
 # %% 单层模型
 class Layer():
@@ -185,7 +227,7 @@ class Linear(Layer):
     
     def initialize(self, optimizer):
         limit = 1 / math.sqrt(self.in_features)
-        self.W = np.random.uniform(-limit, limit, (self.in_features, self.out_features)) # w()
+        self.W = np.random.uniform(-limit, limit, (self.in_features, self.out_features)) # ()
         self.W0 = np.zeros((1, self.out_features))  # TODO  w0(1,10)
         self.W_optimizer = copy.copy(optimizer)
         self.W0_optimizer = copy.copy(optimizer)
@@ -340,15 +382,15 @@ class AvgPooling2d(Layer):
 # %% 调试
 if __name__ == "__main__":
     
-    model = 'cnn'
+    model = 'mlp'
     
-    if model == 'logi':  # 输入图片是(b,n)
+    if model == 'softmax':  # 输入图片是(b,n)
     
         dataset = DigitsDataset(norm=True, one_hot=True)
         
         train_x, test_x, train_y, test_y = train_test_split(dataset.datas, dataset.labels, test_size=0.3, shuffle=True)
         
-        optimizer = Adam(lr=0.001)
+        optimizer = SGDM(lr=0.001)
         loss_func = CrossEntropy()
         clf = SoftmaxReg(train_x, train_y, 
                          loss=loss_func, 
@@ -400,4 +442,31 @@ if __name__ == "__main__":
         print("training acc: %f"%acc1)
         acc2, _ = clf.evaluation(test_x, test_y)
         print("test acc: %f"%acc2)
-    
+        
+    if model == 'reg':
+        dataset = RegressionDataset(n_samples=500, n_features=1, n_targets=1, noise=4)
+        X = dataset.datas
+        y = dataset.labels
+        train_x, test_x, train_y, test_y = train_test_split(X, y, test_size=0.3)    
+        
+        train_x = train_x.reshape(-1, 1)
+        test_x = test_x.reshape(-1, 1)
+        train_y = train_y.reshape(-1, 1)
+        test_y = test_y.reshape(-1, 1)
+        
+        optimizer = SGD(lr=0.0001, weight_decay=0.1, regularization_type='l2')  # TODO: 这里暂时只有SGD/SGDM能够收敛，Adam不能
+        loss_func = SquareLoss()
+#        regularization = no_regularization()
+#        regularization = l2_regularization(weight_decay=0.1)
+        reg = LinearRegression(train_x, train_y, 
+                               loss=loss_func, 
+                               optimizer= optimizer, 
+                               batch_size = 64, 
+                               n_epochs=500)
+        reg.train()
+        reg.evaluation(train_x, train_y, "train")
+        reg.evaluation(test_x, test_y, "test")        
+        
+        
+        
+        

@@ -63,20 +63,28 @@ class BaseModel():
         
         return acc
     
-    def vis_loss(self, losses):
+    def vis_loss(self, losses, accs=None):
         """可视化损失"""
         assert losses is not None and len(losses) != 0, 'can not visualize losses because losses is empty.'
         if isinstance(losses[0], list) or isinstance(losses[0], tuple):  # 如果losses列表里边包含idx
             x = np.array(losses)[:,0]
-            y = np.array(losses)[:,1]
+            y_loss = np.array(losses)[:,1]
         else:  # 如果losses列表里边不包含idx只是单纯loss数值
             x = np.arange(len(losses))
-            y = np.array(losses)
-        plt.figure()
-        plt.subplot(1,2,1)
-        plt.title('losses')
-        plt.plot(x,y)
-    
+            y_loss = np.array(losses)
+        fig = plt.figure()
+        ax1 = fig.add_subplot(1,1,1)
+        ax1.set_title('losses & acc')
+        ax1.plot(x,y_loss, 'r', label='loss')
+        plt.legend()
+        
+        if accs is not None:
+            y_acc = np.array(accs)[:,-1]
+            ax2 = ax1.twinx()
+            ax2.plot(x, y_acc, 'g', label='acc')
+        plt.legend()
+        plt.grid()
+            
     def vis_points_line(self, feats, labels, W):
         """可视化二维点和分隔线(单组w)，可适用于模型是线性分割平面，比如logistic/perceptron
         """
@@ -94,7 +102,8 @@ class BaseModel():
             
         feats_with_one = np.concatenate([np.ones((len(feats),1)), feats], axis=1)
         
-        plt.subplot(1,2,2)
+        plt.figure()
+        plt.subplot(1,1,1)
         plt.title('points and divide hyperplane')
         color = [c*64 + 64 for c in labels.reshape(-1)]
         plt.scatter(feats_with_one[:,1], feats_with_one[:,2], c=color)

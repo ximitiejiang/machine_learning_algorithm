@@ -8,14 +8,73 @@ Created on Thu Aug 22 16:16:54 2019
 import numpy as np
 import matplotlib.pyplot as plt
 from collections import OrderedDict
-# %% 优化器(用于更新权重): 优化器的核心是求函数loss(w)的极值，通过动态调整w的值(沿着梯度方向每次调整一点点)来求得loss的最小值。
 
-class SGD():
+# %% 正则化
+class no_regularization():
+    """无正则化"""
+    def __init__(self, weight_decay=0.1):
+        pass
+    
+    def __call__(self, w):
+        return 0
+    
+    def gradient(self, w):
+        return 0        
+
+
+class l1_regularization():
+    """l1正则化"""
+    def __init__(self, weight_decay=0.1):
+        self.weight_decay = weight_decay
+        
+    def __call__(self, w):
+        return self.weight_decay * np.linalg.norm(w, 1)
+    
+    def gradient(self, w):
+        return self.weight_decay * np.sign(w)
+
+
+class l2_regularization():
+    """l2正则化"""
+    def __init__(self, weight_decay=0.1):
+        self.weight_decay = weight_decay
+        
+    def __call__(self, w):
+        return self.weight_decay * 0.5 * np.dot(w.T, w)
+    
+    def gradient(self, w):
+        return self.weight_decay * w   # 对原函数直接对w求导    
+    
+
+# %% 优化器(用于更新权重): 优化器的核心是求函数loss(w)的极值，通过动态调整w的值(沿着梯度方向每次调整一点点)来求得loss的最小值。
+class Optimizer():
+    """优化器基类："""
+    regularization_dict = {'l1': l1_regularization,
+                           'l2': l2_regularization,
+                           'no': no_regularization}
+    
+    def __init__(self, weight_decay=0.1, regularization_type='l2'):
+        self.regularization_type = regularization_type 
+        self.weight_decay = weight_decay
+        
+        if self.regularization_type is None or self.regularization_type == 'no':
+            self.regularization = self.regularization_dict['no']()
+        else:
+            self.regularization = self.regularization_dict[regularization_type]()
+        
+    def update(self):
+        raise NotImplementedError()
+
+
+class SGD(Optimizer):
     """普通SGD梯度下降算法"""
-    def __init__(self, lr=0.001):
+    def __init__(self, lr=0.001, 
+                 weight_decay=0.1, regularization_type='l2'):
+        super().__init__(weight_decay=weight_decay, regularization_type=regularization_type)
         self.lr = lr
     
     def update(self, w, grad):
+        grad += self.regularization(w)
         w -= self.lr * grad
         return w
 
@@ -36,6 +95,7 @@ class SGDM():
 
 
 class AdaGrad():
+    """自适应梯度调节："""
     def __init__(self, lr=0.01):
         self.lr = lr
         self.G = None # Sum of squares of the gradients
@@ -51,8 +111,29 @@ class AdaGrad():
         return w - self.lr * grad / np.sqrt(self.G + self.eps)
 
 
+class RMSprop():
+    """"""
+    def __init__(self, learning_rate=0.01, rho=0.9):
+        self.learning_rate = learning_rate
+        self.Eg = None # Running average of the square gradients at w
+        self.eps = 1e-8
+        self.rho = rho
+
+    def update(self, w, grad_wrt_w):
+        # If not initialized
+        if self.Eg is None:
+            self.Eg = np.zeros(np.shape(grad_wrt_w))
+
+        self.Eg = self.rho * self.Eg + (1 - self.rho) * np.power(grad_wrt_w, 2)
+
+        # Divide the learning rate for a weight by a running average of the magnitudes of recent
+        # gradients for that weight
+        return w - self.learning_rate *  grad_wrt_w / np.sqrt(self.Eg + self.eps)
+
+
 class Adam():
     """Adam优化器：对梯度的一阶矩估计(梯度的均值)和二阶距估计(梯度的未中心化方差)进行综合考虑来更新步长。
+    他是基于AdaGrad和RMSprop进行优化的产物。
     Args:
         lr：学习率
         b1/b2: 矩估计的指数衰减率 
@@ -96,6 +177,9 @@ class BFGS():
     def update(self):
         pass
     
+    
+
+
     
 # %% 对优化器进行测试
 def test_optimizer():
