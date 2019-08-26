@@ -73,7 +73,8 @@ class NeuralNetwork(BaseModel):
         return loss, acc
     
     def batch_operation_val(self, x, y):
-        """在每个batch做完都做一次验证，比较费时，但可实时看到验证集的acc变化：可用于评估是否过拟合"""
+        """在每个batch做完都做一次验证，比较费时，但可实时看到验证集的acc变化：
+        可用于评估是否过拟合"""
         pass
     
     def train(self):
@@ -138,11 +139,11 @@ class CNN(NeuralNetwork):
         
     
 class MLP(NeuralNetwork):
-    """基于神经网络结构的多层感知机"""
+    """基于神经网络结构的多层(2层)感知机"""
     def __init__(self, feats, labels, loss, optimizer, n_epochs, batch_size):
         
         super().__init__(feats=feats, labels=labels, 
-                         loss=loss, 
+                         loss=loss,
                          optimizer=optimizer, 
                          n_epochs=n_epochs, 
                          batch_size=batch_size)
@@ -170,7 +171,9 @@ class SoftmaxReg(NeuralNetwork):
 
 
 class LinearRegression(NeuralNetwork):
-    """回归模型"""
+    """回归模型: 本质上跟分类模型一样，都是通过损失函数来评价预测值y'与真值y之间的相关性。
+    线性回归模型本质上其实就是一层线性层，直接用输出作为回归预测，不需要任何激活函数。
+    """
     def __init__(self, feats, labels, loss, optimizer, n_epochs, batch_size):
         
         super().__init__(feats=feats, labels=labels, 
@@ -183,11 +186,9 @@ class LinearRegression(NeuralNetwork):
     def batch_operation(self, x, y):
         """基于每一个batch的数据分别进行前向计算和反向计算"""
         # 前向计算
-        y_pred = self.forward_pass(x)  # 计算每一层的输出，这里就是linear层输出 (64,1)
-        # 生成正则项的输入: 这里正则化的处理是统一加在loss端的梯度上
-#        w_array = np.array([self.layers[0].W.item(), self.layers[0].W0.item()])  # W(1,1) & W0(1,1) -> (2,)
-        losses = self.loss_function.loss(y.reshape(-1, 1), y_pred)
-        loss = np.mean(losses)
+        y_pred = self.forward_pass(x)  
+        losses = self.loss_function.loss(y, y_pred) 
+        loss = np.mean(losses)    # 跟分类的区别：去掉了acc的求解
         # 反向传播
         loss_grad = self.loss_function.gradient(y, y_pred)
         self.backward_pass(grad = loss_grad)

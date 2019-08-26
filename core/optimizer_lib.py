@@ -74,7 +74,7 @@ class SGD(Optimizer):
         self.lr = lr
     
     def update(self, w, grad):
-        grad += self.regularization(w)
+        grad += self.regularization(w)   # 梯度grad = grad + re' = grad + 
         w -= self.lr * grad
         return w
 
@@ -161,7 +161,7 @@ class Adam():
 
 
 class NM():
-    """NM=NewtonMethod牛顿法: 参数更新公式变为x_k+1 = x_k - H_xk(-1) * grad, 其中H_xk(-1)代表海森矩阵的逆矩阵
+    """NM=NewtonMethod牛顿法: 参数更新公式变为x_k+1 = x_k - Hk(-1) * grad, 其中Hk(-1)代表海森矩阵的逆矩阵
     参考：https://blog.csdn.net/golden1314521/article/details/46225289，https://www.cnblogs.com/shixiangwan/p/7532830.html
     """
     def __init__(self):
