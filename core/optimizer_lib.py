@@ -67,34 +67,44 @@ class Optimizer():
 
 
 class SGD(Optimizer):
-    """普通SGD梯度下降算法"""
+    """普通SGD梯度下降算法:梯度方向就是切线方向，比如在一维f(x)=x^2则在x>0时grad>0, x = x-lr*grad就一定是往减小到0的方向变动。
+    而到x<0时由于grad<0，所以同样的公式x=x-lr*grad也能让x往x=0的方向移动，两种情况都能让x往f(x)的极值点移动，这就是SGD梯度下降算法。
+    普通SGD算法的缺点是他只跟当前梯度相关，在训练初期针对每个特征的梯度不一样时，瞬时梯度大的梯度会占主导作用，
+    导致权重更新方向被大梯度主导，并没有朝向目标函数最小值的方向。
+    公式：w = w - lr * grad
+    """
     def __init__(self, lr=0.001, 
                  weight_decay=0.1, regularization_type='l2'):
         super().__init__(weight_decay=weight_decay, regularization_type=regularization_type)
         self.lr = lr
     
     def update(self, w, grad):
-        grad += self.regularization.gradient(w)   # 梯度grad = grad + re' = grad + 
+        grad += self.regularization.gradient(w)   
         w -= self.lr * grad
         return w
 
 
 class SGDM(Optimizer):
-    """SGDM梯度下降算法-带动量M的SGD算法"""
+    """SGDM梯度下降算法-带动量M的SGD算法：
+    相当于生成一个速度v变量，此时v = -lr*grad/(1-m)，该变量实际上体现了w的更新是原有SGD的10倍(m=0.9)或者100倍(m=0.99)
+    也就是说momentum值
+    公式: v = m*v - lr * grad  
+          w = w + v 
+    """
     def __init__(self, lr, momentum=0.9,
                  weight_decay=0.1, regularization_type='l2'):
         super().__init__(weight_decay=weight_decay, regularization_type=regularization_type)
         self.lr = lr
         self.momentum = momentum
-        self.tmp_w = None
+        self.v = None   #
     
     def update(self, w, grad):
         grad += self.regularization.gradient(w)  # 默认增加l2正则化
         
-        if self.tmp_w is None:
-            self.tmp_w = np.zeros_like(w)
-        self.tmp_w = self.momentum * self.tmp_w + (1 - self.momentum) * grad  # 计算更新m
-        w -= self.lr * self.tmp_w
+        if self.v is None:
+            self.v = np.zeros_like(w)
+        self.v = self.momentum * self.v + self.lr * grad  # 计算更新m
+        w -= self.v
         return w
 
 
@@ -182,7 +192,12 @@ class BFGS():
         pass
     
     
-
+class LBFGS():
+    """L_BFGS拟牛顿法: """
+    def __init__(self):
+        pass
+    def update(self):
+        pass
 
     
 # %% 对优化器进行测试
@@ -203,15 +218,15 @@ def test_optimizer():
     idx = 1
     for key in optimizers:
         optimizer = optimizers[key]
-        x_hist = []
-        y_hist = []
+        px_history = [] # param_x
+        py_history = [] # param_y
         params = np.array([-7.0, 2.0])  # 指定一个初始x,y参数位置 
         grads = np.ones((2,))       # 指定初始梯度
         for i in range(30):
-            x_hist.append(params[0])
-            y_hist.append(params[1])
-            grads[0], grads[1] = df(params[0], params[1])
-            params = optimizer.update(params, grads)
+            px_history.append(params[0])
+            py_history.append(params[1])
+            grads[0], grads[1] = df(params[0], params[1])  # 计算每个特征的梯度
+            params = optimizer.update(params, grads)  # 基于特征梯度更新参数，
         
         x = np.arange(-10, 10, 0.01)
         y = np.arange(-5, 5, 0.01)
@@ -224,7 +239,7 @@ def test_optimizer():
 
         plt.subplot(2, 2, idx)
         idx += 1
-        plt.plot(x_hist, y_hist, 'o-', color="red") # 绘制所有x,y点
+        plt.plot(px_history, py_history, 'o-', color="red") # 绘制所有x,y点
         plt.contour(X, Y, Z)  # 绘制原函数的等高线
         plt.ylim(-10, 10)
         plt.xlim(-10, 10)
@@ -238,15 +253,14 @@ def test_optimizer():
 
 def get_min_value():
     """求解一个一元函数的极值"""
-    def fn(x):
-        return (x-1)**2 - 1
-    def df(x):
-        return 2*(x-1)
-    optimizer = SGD(lr=0.1)
-    params = -10
-    grads = 1
-    x_hist = []
-    n_epochs = 100
+    def fn(x): # 原函数
+        return (x)**2
+    def df(x): # 导数
+        return 2*x
+    optimizer = SGDM(lr=0.1)  # 用最简函数研究SGDM的效果体现在什么地方：???
+    params = 10
+    x_hist = [params]
+    n_epochs = 5
     for _ in range(n_epochs):
         grads = df(params)
         params = optimizer.update(params, grads)
@@ -254,12 +268,29 @@ def get_min_value():
     min_value = fn(x_hist[-1])
     
     print("min fn: %f, x value: %f"%(min_value, x_hist[-1]))
+    # 绘制目标函数
+    x = np.arange(-12, 12, 1)
+    y = np.array([fn(xi) for xi in x])
+    plt.figure()
+    plt.plot(x,y,'r')
+    # 绘制散点
+    y_hist=[]
+    for i in range(len(x_hist)):
+        y_hist.append(fn(x_hist[i]))
+    plt.scatter(x_hist, y_hist, s=75,c='g')
+    # 绘制移动路径    
+    prev_x, prev_y = x_hist[0], y_hist[0]
+    for i in range(len(x_hist)-1):
+        x = x_hist[i+1] 
+        y = y_hist[i+1]
+        plt.plot([prev_x, x], [prev_y, y], 'g')
+        prev_x = x
+        prev_y = y
     
     
-
 if __name__ == "__main__":
     """尝试直接用optimizer做无约束极值问题"""
-    id = 'all'
+    id = 'min'
     
     if id == 'all':
         test_optimizer()

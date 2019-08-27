@@ -13,7 +13,7 @@ import math
 import copy
 from core.base_model import BaseModel
 from core.activation_function_lib import Relu, LeakyRelu, Elu, Sigmoid, Softmax
-from core.loss_function_lib import CrossEntropy, SquareLoss
+from core.loss_function_lib import CrossEntropy, L2Loss, L1Loss, SmoothL1Loss
 from core.optimizer_lib import SGD, Adam, SGDM, AdaGrad, RMSprop
 
 from utils.dataloader import batch_iterator, train_test_split
@@ -336,7 +336,7 @@ class BatchNorm2d(Layer):
     def __init__(self, in_features, momentum=0.99):  #参考pytorch的接口
         self.in_features = in_features  # 如果在卷积后边，这里in_features就是通道数C,如果在全连接后边，这里in_features就是特征列数
         self.momentum = momentum  #
-        self.running_mean =None # 均值: 用来保存训练的均值，便于在测试环节使用
+        self.running_mean = None # 均值: 用来保存训练的均值，便于在测试环节使用
         self.running_var = None # 方差: 用来保存训练的方差，便于在测试环节使用
         self.eps = 0.01
     
@@ -444,7 +444,7 @@ class AvgPooling2d(Layer):
 # %% 调试
 if __name__ == "__main__":
     
-    model = 'mlp'
+    model = 'reg'
     
     if model == 'softmax':  # 输入图片是(b,n)
     
@@ -452,7 +452,7 @@ if __name__ == "__main__":
         
         train_x, test_x, train_y, test_y = train_test_split(dataset.datas, dataset.labels, test_size=0.3, shuffle=True)
         
-        optimizer = SGD(lr=0.001)
+        optimizer = SGDM(lr=0.001)
         loss_func = CrossEntropy()
         clf = SoftmaxReg(train_x, train_y, 
                          loss=loss_func, 
@@ -470,8 +470,8 @@ if __name__ == "__main__":
         
         train_x, test_x, train_y, test_y = train_test_split(dataset.datas, dataset.labels, test_size=0.3, shuffle=True)
         
-#        optimizer = SGDM(lr=0.001, momentum=0.9)
-        optimizer = RMSprop(lr=0.001)
+        optimizer = SGDM(lr=0.001, momentum=0.9)
+#        optimizer = RMSprop(lr=0.001)
         loss_func = CrossEntropy()
         clf = MLP(train_x, train_y, 
                   loss=loss_func, 
@@ -517,10 +517,9 @@ if __name__ == "__main__":
         train_y = train_y.reshape(-1, 1)
         test_y = test_y.reshape(-1, 1)
         
-        optimizer = SGD(lr=0.0001, weight_decay=0.1, regularization_type='l2')  # TODO: 这里暂时只有SGD/SGDM能够收敛，Adam不能
-        loss_func = L2Loss()
-#        regularization = no_regularization()
-#        regularization = l2_regularization(weight_decay=0.1)
+        optimizer = SGDM(lr=0.0001, weight_decay=0.1, regularization_type='l2')  # TODO: 这里暂时只有SGD/SGDM能够收敛，Adam不能
+#        loss_func = L2Loss()
+        loss_func = SmoothL1Loss()  # 这里用smoothl1是收敛的，但l2loss暂时没法收敛
         reg = LinearRegression(train_x, train_y, 
                                loss=loss_func, 
                                optimizer= optimizer, 
