@@ -7,9 +7,10 @@ Created on Mon Jul 15 19:24:08 2019
 """
 import numpy as np
 import pandas as pd
-from dataset.regression_dataset import RegressionDataset
-from sklearn.model_selection import train_test_split
 import matplotlib.pyplot as plt
+
+from dataset.regression_dataset import RegressionDataset
+from utils.dataloader import train_test_split
 from core.linear_regression_lib import LinearRegression
 
 def standardize(X):

@@ -40,7 +40,7 @@ class l2_regularization():
         self.weight_decay = weight_decay
         
     def __call__(self, w):
-        return self.weight_decay * 0.5 * np.dot(w.T, w)
+        return self.weight_decay * 0.5 * np.dot(w, w.T)
     
     def gradient(self, w):
         return self.weight_decay * w   # 对原函数直接对w求导    
@@ -74,19 +74,23 @@ class SGD(Optimizer):
         self.lr = lr
     
     def update(self, w, grad):
-        grad += self.regularization(w)   # 梯度grad = grad + re' = grad + 
+        grad += self.regularization.gradient(w)   # 梯度grad = grad + re' = grad + 
         w -= self.lr * grad
         return w
 
 
-class SGDM():
+class SGDM(Optimizer):
     """SGDM梯度下降算法-带动量M的SGD算法"""
-    def __init__(self, lr, momentum=0.9):
+    def __init__(self, lr, momentum=0.9,
+                 weight_decay=0.1, regularization_type='l2'):
+        super().__init__(weight_decay=weight_decay, regularization_type=regularization_type)
         self.lr = lr
         self.momentum = momentum
         self.tmp_w = None
     
     def update(self, w, grad):
+        grad += self.regularization.gradient(w)  # 默认增加l2正则化
+        
         if self.tmp_w is None:
             self.tmp_w = np.zeros_like(w)
         self.tmp_w = self.momentum * self.tmp_w + (1 - self.momentum) * grad  # 计算更新m
@@ -113,22 +117,22 @@ class AdaGrad():
 
 class RMSprop():
     """"""
-    def __init__(self, learning_rate=0.01, rho=0.9):
-        self.learning_rate = learning_rate
+    def __init__(self, lr=0.01, rho=0.9):
+        self.lr = lr
         self.Eg = None # Running average of the square gradients at w
         self.eps = 1e-8
         self.rho = rho
 
-    def update(self, w, grad_wrt_w):
+    def update(self, w, grad):
         # If not initialized
         if self.Eg is None:
-            self.Eg = np.zeros(np.shape(grad_wrt_w))
+            self.Eg = np.zeros(np.shape(grad))
 
-        self.Eg = self.rho * self.Eg + (1 - self.rho) * np.power(grad_wrt_w, 2)
+        self.Eg = self.rho * self.Eg + (1 - self.rho) * np.power(grad, 2)
 
         # Divide the learning rate for a weight by a running average of the magnitudes of recent
         # gradients for that weight
-        return w - self.learning_rate *  grad_wrt_w / np.sqrt(self.Eg + self.eps)
+        return w - self.lr *  grad / np.sqrt(self.Eg + self.eps)
 
 
 class Adam():

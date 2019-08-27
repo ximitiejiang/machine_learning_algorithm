@@ -11,16 +11,17 @@ from dataset.loan_dataset import LoanDataset
 from dataset.iris_dataset import IrisDataset
 from dataset.nonlinear_dataset import NonlinearDataset
 from dataset.multi_class_dataset import MultiClassDataset
+from dataset.mnist_dataset import MnistDataset
 from core.random_forest_lib import RandomForest
 from core.gbdt_lib import GBDT
-from sklearn.model_selection import train_test_split
+from utils.dataloader import train_test_split
 import matplotlib.pyplot as plt
 from utils.transformer import label_transform, label_to_onehot, onehot_to_label
 
 
 if __name__ == "__main__":
     
-    source = 'moon'
+    source = '5class'
     
     if source == 'treedata':  # 2 classes: from book of zhaozhiyong
         data = []
@@ -105,6 +106,19 @@ if __name__ == "__main__":
         acc2 = gb.evaluation(test_x, test_y)
         print('test acc = %f'%(acc2))
         
+    if source == 'mnist':
+        dataset = MnistDataset(norm=True, one_hot=True)
+        x = dataset.datas
+        y = dataset.labels
+        train_x, test_x, train_y, test_y = train_test_split(x, y, test_size=0.3)
+        gb = GBDT(train_x, train_y,
+                  n_clfs=20, learning_rate=0.5,
+                  min_samples_split=3, max_depth=5,
+                  min_impurity_reduction=1e-7).train()
+        acc1 = gb.evaluation(train_x, train_y)
+        print('train acc = %f'%(acc1))
+        acc2 = gb.evaluation(test_x, test_y)
+        print('test acc = %f'%(acc2))
 
         
         

@@ -6,9 +6,9 @@ Created on Tue Jun 11 09:59:32 2019
 """
 
 import matplotlib.pyplot as plt
-from sklearn.preprocessing import scale
 import numpy as np
 import pandas as pd
+from utils.transformer import standardize, label_transform, label_to_onehot
 
 class BaseDataset():
     
@@ -24,7 +24,7 @@ class BaseDataset():
         [self.datas, self.labels, self.label_names, self.imgs, self.feat_names, self.classes, self.num_classes, self.num_features]
         
         数据集通过继承基类可获得支持如下变换：
-        - 归一化： norm=True
+        - 标准化： norm=True， 这里执行的是stardardization操作，即每列单独做(xi-mean_i)/std_i
         - 标签值变换: label_transform_dict = {1:1, 0:-1}
         - 标签独热编码: one_hot=True
         - 二分类化：binary=True
@@ -52,39 +52,15 @@ class BaseDataset():
             self.labels = self.labels[idx]
             self.imgs = self.imgs[idx] if self.imgs is not None else None
         if norm:
-            self.datas = scale(self.datas.astype(np.float64))
+#            self.datas = scale(self.datas.astype(np.float64))
+            self.datas = standardize(self.datas)
         if one_hot:
-            self.label_to_one_hot()
+            self.labels = label_to_onehot(self.labels)
         if binary:
             self.get_binary_dataset()
         # 标签变换放在binary之后，从而可以在二分类数据集创建后再改标签
         if label_transform_dict:  
-            self.label_transform(label_transform_dict)
-
-    def label_transform(self, label_transform_dict):
-        """默认不改变label的取值范围，但可以通过该函数修改labels的对应范围
-        例如svm需要label为[-1,1]，则可修改该函数。
-        """
-        if label_transform_dict is None:
-            pass
-        else:  # 如果指定了标签变换dict
-            self.labels = np.array(self.labels).reshape(-1)  #确保mat格式会转换成array才能操作
-            assert isinstance(label_transform_dict, dict), 'the label_transform_dict should be a dict.' 
-            for i, label in enumerate(self.labels):
-                new_label = label_transform_dict[label]
-                self.labels[i] = int(new_label)   # 比如{1:1, 0:-1}就是要把1变为1, 0变为-1
-    
-    def label_to_one_hot(self):
-        """标签转换为独热编码：输入的labels需要是从0开始的整数，比如[0,1,2,...]
-        输出的独热编码为[[1,0,0,...],
-                      [0,1,0,...],
-                      [0,0,1,...]]  分别代表0/1/2的独热编码
-        """
-        assert self.labels.ndim ==1, 'labels should be 1-dim array.'
-        n_col = np.max(self.labels) + 1   # 独热编码列数，这里可以额外增加列数，填0即可，默认是最少列数
-        one_hot = np.zeros((self.labels.shape[0], n_col))
-        one_hot[np.arange(self.labels.shape[0]), self.labels] = 1
-        self.labels = one_hot  # (n_samples, n_col)
+            self.labels = label_transform(self.labels, label_transform_dict)
     
     def get_binary_dataset(self):
         """从原多分类数据集随机提取其中两类得到二分类数据集"""
@@ -101,7 +77,8 @@ class BaseDataset():
         
         label_transform_dict={self.label_names[0]:0, self.label_names[1]:1}
         # 直接修改self.labels为[0,1]
-        self.label_transform(label_transform_dict = label_transform_dict)
+        self.labels = label_transform(self.labels, label_transform_dict = label_transform_dict)
+        print("the binary dataset labels has changed to [0,1]: ", label_transform_dict)  # 提醒用户标签字典的变更内容
     
     def get_dataset(self):
         raise NotImplementedError('the get_dataset function is not implemented.')
@@ -146,4 +123,6 @@ class BaseDataset():
             plt.imshow(img, cmap=plt.cm.gray)
         else:
             print('no imgs can be shown.')
+
+
 

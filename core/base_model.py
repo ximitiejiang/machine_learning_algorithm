@@ -63,26 +63,37 @@ class BaseModel():
         
         return acc
     
-    def vis_loss(self, losses, accs=None):
+    def vis_loss(self, losses, accs=None, title=None):
         """可视化损失"""
+        if title is None:
+            prefix = ""
+        else:
+            prefix = title
         assert losses is not None and len(losses) != 0, 'can not visualize losses because losses is empty.'
+        
         if isinstance(losses[0], list) or isinstance(losses[0], tuple):  # 如果losses列表里边包含idx
             x = np.array(losses)[:,0]
             y_loss = np.array(losses)[:,1]
         else:  # 如果losses列表里边不包含idx只是单纯loss数值
             x = np.arange(len(losses))
             y_loss = np.array(losses)
+        # 绘制loss
         fig = plt.figure()
         ax1 = fig.add_subplot(1,1,1)
-        ax1.set_title('losses & acc')
-        ax1.plot(x,y_loss, 'r', label='loss')
-        plt.legend()
-        
+        ax1.set_title(prefix + ' losses & acc')
+        ax1.set_ylabel('loss')
+        lines = ax1.plot(x,y_loss, 'r', label='loss')
+        # 绘制acc
         if accs is not None:
             y_acc = np.array(accs)[:,-1]
             ax2 = ax1.twinx()
-            ax2.plot(x, y_acc, 'g', label='acc')
-        plt.legend()
+            ax2.set_ylabel('acc')
+            l2 = ax2.plot(x, y_acc, 'g', label='acc')
+            lines += l2
+        # 提取合并的legend
+        legs = [l.get_label() for l in lines]     
+        # 显示合并的legend
+        ax1.legend(lines, legs, loc=0)
         plt.grid()
             
     def vis_points_line(self, feats, labels, W):
@@ -101,13 +112,13 @@ class BaseModel():
             labels = np.array(ori_labels)
             
         feats_with_one = np.concatenate([np.ones((len(feats),1)), feats], axis=1)
-        
+        # 绘制特征点
         plt.figure()
         plt.subplot(1,1,1)
         plt.title('points and divide hyperplane')
         color = [c*64 + 64 for c in labels.reshape(-1)]
         plt.scatter(feats_with_one[:,1], feats_with_one[:,2], c=color)
-        
+        # 绘制分隔线
         min_x = int(min(feats_with_one[:,1]))
         max_x = int(max(feats_with_one[:,1]))
         x = np.arange(min_x - 1, max_x + 1, 0.1)

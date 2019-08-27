@@ -14,7 +14,7 @@ import copy
 from core.base_model import BaseModel
 from core.activation_function_lib import Relu, LeakyRelu, Elu, Sigmoid, Softmax
 from core.loss_function_lib import CrossEntropy, SquareLoss
-from core.optimizer_lib import SGD, Adam, SGDM
+from core.optimizer_lib import SGD, Adam, SGDM, AdaGrad, RMSprop
 
 from utils.dataloader import batch_iterator, train_test_split
 from utils.matrix_operation import img2col, col2img
@@ -33,7 +33,8 @@ class NeuralNetwork(BaseModel):
         model_type: sl(shallow learning/supervised learning) or dl(deep learning)
     """
     def __init__(self, feats, labels, 
-                 loss, optimizer, n_epochs, batch_size):
+                 loss, optimizer, n_epochs, batch_size, 
+                 val_feats=None, val_labels=None):
         super().__init__(feats, labels)
         
         self.optimizer = optimizer
@@ -41,6 +42,9 @@ class NeuralNetwork(BaseModel):
         self.n_epochs = n_epochs
         self.batch_size = batch_size
         self.layers = []
+        self.val_feats = val_feats   # 用于每个batch的acc验证
+        self.val_labels = val_labels
+        self.trained = False  # 初始状态为未训练的无参状态，不能进行预测和验证
 
     def add(self, layer):
         """用于模型添加层: 设置输入输出层数，初始化"""      
@@ -48,10 +52,10 @@ class NeuralNetwork(BaseModel):
             layer.initialize(optimizer = self.optimizer)
         self.layers.append(layer)
     
-    def forward_pass(self, x):
+    def forward_pass(self, x, training):
         """前向计算每一层的输出"""
         for layer in self.layers:
-            layer_output = layer.forward_pass(x)
+            layer_output = layer.forward_pass(x, training=training)
             x = layer_output
         return layer_output
     
@@ -60,10 +64,10 @@ class NeuralNetwork(BaseModel):
         for layer in self.layers[::-1]:
             grad = layer.backward_pass(grad)  # 梯度的反向传播，且传播的是每一层的累积梯度
             
-    def batch_operation(self, x, y):
+    def batch_operation_train(self, x, y):
         """基于每一个batch的数据分别进行前向计算和反向计算"""
         # 前向计算
-        y_pred = self.forward_pass(x)
+        y_pred = self.forward_pass(x, training=True)
         losses = self.loss_function.loss(y, y_pred)
         loss = np.mean(losses)
         acc = self.loss_function.acc(y, y_pred)
@@ -72,31 +76,48 @@ class NeuralNetwork(BaseModel):
         self.backward_pass(grad = loss_grad)
         return loss, acc
     
-    def batch_operation_val(self, x, y):
-        """在每个batch做完都做一次验证，比较费时，但可实时看到验证集的acc变化：
-        可用于评估是否过拟合"""
-        pass
-    
+    def batch_operation_val(self, val_x, val_y):
+        """在每个batch做完都做一次验证，比较费时，但可实时看到验证集的acc变化，可用于评估是否过拟合。
+        注意：val操作时跟test一样，不需要反向传播。
+        """
+        # BN和dropout在训练和验证过程中需要有不同的操作差异，(其他层不受影响)，所以在val和test时，需要闯入training flag给每一个层。      
+        y_pred = self.forward_pass(val_x, training=False) # 在验证时是假定已经训练完成，但由于该步是在train中执行，必须手动设置trained=False
+        losses = self.loss_function.loss(val_y, y_pred)
+        loss = np.mean(losses)
+        acc = self.loss_function.acc(val_y, y_pred)
+        return loss, acc
+        
     def train(self):
         total_iter = 1
-        all_losses = []
-        all_accs = []
+        all_losses = {'train':[], 'val':[]}
+        all_accs = {'train':[], 'val':[]}
         for i in range(self.n_epochs):
             it = 1
             for x_batch, y_batch in batch_iterator(self.feats, self.labels, 
                                                    batch_size = self.batch_size):
-                loss, acc = self.batch_operation(x_batch, y_batch)
+                # 训练数据的计算
+                loss, acc = self.batch_operation_train(x_batch, y_batch)
+                all_losses['train'].append([total_iter,loss])
+                all_accs['train'].append([total_iter, acc])
+                show_result = "iter %d/epoch %d: train_loss=%f, train_acc=%f"%(it, i+1, loss, acc)
+                # 验证数据的计算
+                if self.val_feats is not None:
+                    val_loss, val_acc = self.batch_operation_val(self.val_feats, self.val_labels)
+                    all_losses['val'].append([total_iter, val_loss])
+                    all_accs['val'].append([total_iter, val_acc])
+                    show_result += ", val_loss=%f, val_acc=%f"%(val_loss, val_acc)
                 # 显示loss
                 if it % 5 == 0:
-                    print("iter %d / epoch %d: loss=%f"%(it, i+1, loss))
-                all_losses.append([total_iter,loss])
-                all_accs.append([total_iter, acc])
+                    print(show_result)
+
                 it += 1
                 total_iter += 1
                 
-        self.vis_loss(all_losses, all_accs)
+        self.vis_loss(all_losses['train'], all_accs['train'], title='train')
+        if self.val_feats is not None:
+            self.vis_loss(all_losses['val'], all_accs['val'], title='val')
         self.trained = True  # 完成training则可以预测
-        return all_losses
+        return all_losses, all_accs
     
     def summary(self):
         """用来显示模型结构"""
@@ -105,7 +126,7 @@ class NeuralNetwork(BaseModel):
     def evaluation(self, x, y):
         """对一组数据进行预测精度"""
         if self.trained:
-            y_pred = self.forward_pass(x)  # (1280, 10)
+            y_pred = self.forward_pass(x, training=False)  # (1280, 10)
             y_pred = np.argmax(y_pred, axis=1)  # (1280,)
             y_label = np.argmax(y, axis=1)      # (1280,)
             acc = np.sum(y_pred == y_label, axis=0) / len(y_label)
@@ -129,11 +150,11 @@ class CNN(NeuralNetwork):
         self.add(BatchNorm2d())
         self.add(Conv2d(in_channels=16, out_channels=32, kernel_size=(3,3), stride=1, padding=1))
         self.add(Activation('relu'))
-        self.add(BatchNorm2d())
+        self.add(BatchNorm2d(32))
         self.add(Flatten())
         self.add(Linear(in_features=2048, out_features=256))
         self.add(Activation('relu'))
-        self.add(BatchNorm2d())
+        self.add(BatchNorm2d(2048))
         self.add(Linear(in_features=256, out_features=10))
         self.add(Activation('softmax'))
         
@@ -182,21 +203,10 @@ class LinearRegression(NeuralNetwork):
                        n_epochs=n_epochs, 
                        batch_size=batch_size)
         self.add(Linear(in_features=1, out_features=1))
-        
-    def batch_operation(self, x, y):
-        """基于每一个batch的数据分别进行前向计算和反向计算"""
-        # 前向计算
-        y_pred = self.forward_pass(x)  
-        losses = self.loss_function.loss(y, y_pred) 
-        loss = np.mean(losses)    # 跟分类的区别：去掉了acc的求解
-        # 反向传播
-        loss_grad = self.loss_function.gradient(y, y_pred)
-        self.backward_pass(grad = loss_grad)
-        return loss    
     
     def evaluation(self, x, y, title=None):
         """回归的评估：没有acc可评估，直接绘制拟合曲线"""
-        y_pred = self.forward_pass(x)
+        y_pred = self.forward_pass(x, training=False)
         plt.figure()
         if title is None:
             title = 'regression curve'
@@ -210,7 +220,7 @@ class LinearRegression(NeuralNetwork):
 # %% 单层模型
 class Layer():
     """层的基类: 该基类不需要初始化，用于强制定义需要实施的方法，并把所有共有函数放在一起"""
-    def forward_pass(self, x):
+    def forward_pass(self, x, training):
         raise NotImplementedError()
     
     def backward_pass(self, accum_grad):
@@ -233,7 +243,7 @@ class Linear(Layer):
         self.W_optimizer = copy.copy(optimizer)
         self.W0_optimizer = copy.copy(optimizer)
     
-    def forward_pass(self, x):
+    def forward_pass(self, x, training=True):
         self.input_feats = x     # 保存输入，为反传预留
         return np.dot(x, self.W) + self.W0  # (8,64)(64,10)+(1,10) ->(8,10)+(1,10)
     
@@ -270,7 +280,7 @@ class Conv2d(Layer):
         self.W_optimizer = copy.copy(optimizer)
         self.W0_optimizer = copy.copy(optimizer)
     
-    def forward_pass(self, x):
+    def forward_pass(self, x, training=True):
         filter_h, filter_w = self.kernel_size
         out_h = (x.shape[2] + 2*self.padding - filter_h)//self.stride + 1  # 计算输出图像实际尺寸
         out_w = (x.shape[3] + 2*self.padding - filter_w)//self.stride + 1
@@ -309,7 +319,7 @@ class Activation(Layer):
         self.activation_func = self.activation_dict[name]()  # 创建激活函数对象
         self.trainable = True
     
-    def forward_pass(self, x):
+    def forward_pass(self, x, training=True):
         self.input_feats = x
         return self.activation_func(x)
     
@@ -319,24 +329,87 @@ class Activation(Layer):
         
     
 class BatchNorm2d(Layer):
-    """归一化层"""
-    def __init__(self):
-        pass
+    """归一化层
+    注意：bn层在训练时需要实时更新mean和var
+    但在测试时输入的特征不再用来更新mean,var，而是直接用训练时的mean,var做前向计算即可。
+    """
+    def __init__(self, in_features, momentum=0.99):  #参考pytorch的接口
+        self.in_features = in_features  # 如果在卷积后边，这里in_features就是通道数C,如果在全连接后边，这里in_features就是特征列数
+        self.momentum = momentum  #
+        self.running_mean =None # 均值: 用来保存训练的均值，便于在测试环节使用
+        self.running_var = None # 方差: 用来保存训练的方差，便于在测试环节使用
+        self.eps = 0.01
     
-    def forward_pass(self, x):
-        pass
+    def initialize(self, optimizer):
+        self.gamma = np.ones((self.in_features,))  # 默认参数设置为1和0相当于缩放比例1，平移0, 也就是不变。
+        self.beta = np.zeros((self.in_features,))
+        
+        self.gamma_optimizer = copy.copy(optimizer)
+        self.beta_optimizer = copy.copy(optimizer)
     
+    def forward_pass(self, x, training=True):
+        # 计算初始均值
+        if self.running_mean is None:
+            self.running_mean = np.mean(x, axis=0)  # 输入x(b,c,h,w)或(b,n)，均值为一张图整体均值，所以axis=0
+            self.running_var = np.var(x, axis=0)
+        if training: # 如果是训练状态
+            # 循环更新
+            mean = np.mean(x, axis=0)
+            var = np.var(x, axis=0)
+            self.running_mean = self.momentum * self.running_mean + (1 - self.momentum) * mean  # 更新时采用动量方式
+            self.running_var = self.momentum * self.running_var + (1 - self.momentum) * var
+        else:   # 如果是val状态或者test状态，输入的数据不再拿来更新模型的mean和std，而是用模型训练数据的mean,std
+            mean = self.running_mean
+            var = self.running_var
+        # 基于当前mean,var计算变换后的x = (x-mean)/std
+        self.x_ctr = x - mean  # x-mean表示变换后的中心
+        self.std_inv = 1 / np.sqrt(var + self.eps)  # 1/std 表示方差分之一
+        x_standard = self.x_ctr * self.std_inv    # 得到标准化输出x=(x-mean)*(1/std) 
+        output = self.gamma * x_standard + self.beta  # 得到gamma*x + beta
+        return output
+        
+        
     def backward_pass(self, accum_grad):
-        pass
-    
-            
+        # 预存一个gamma
+        tmp_gamma = self.gamma
+        #
+        x_standard = self.x_ctr * self.std_inv  # x = (x-mean)/std
+        # 计算gamma和beta的梯度
+        grad_gamma = np.sum(accum_grad * x_standard, axis=0)
+        grad_beta = np.sum(accum_grad, axis=0)
+        # 基于梯度更新gamma, beta
+        self.gamma = self.gamma_optimizer(self.gamma, grad_gamma)
+        self.beta = self.beta_optimizer(self.beta, grad_beta)
+        #
+        accum_grad = gamma
+        
+        return accum_grad
+        
 
+class Dropout(Layer):
+    """关闭神经元层"""
+    def __init__(self, p=0.3):  # p代表关闭的可能性
+        self.p = p
+        self.mask = None
+    
+    def forward_pass(self, x, training):
+        if training:  # 训练过程中
+            self.mask = np.random.uniform(size=x.shape) > self.p  # 0-1均匀分布，大于0.3为真，所以1表示打开，0表示关闭
+            close = self.mask    # 训练时x*close则部分输出直接变为0
+        else:   # val或test状态
+            close = 1 - self.p   # val/test时则不再直接置0，而是只去数值的百分之(1-p)，比如关闭率0.3，则取70%做val/test
+        return x * close
+            
+    def backward_pass(self, accum_grad):
+        return accum_grad * self.mask
+
+    
 class Flatten(Layer):
     """展平层"""
     def __init__(self):
         self.prev_shape = None
     
-    def forward_pass(self, x):
+    def forward_pass(self, x, training=True):
         self.prev_shape = x.shape  # 预留输入的维度信息为反传做准备
         return x.reshape(x.shape[0], -1)
     
@@ -344,24 +417,12 @@ class Flatten(Layer):
         return accum_grad.reshape(self.prev_shape) 
 
 
-class Dropout(Layer):
-    """关闭神经元层"""
-    def __init__(self):
-        pass
-    
-    def forward_pass(self, x):
-        pass
-    
-    def backward_pass(self, accum_grad):
-        pass
-
-
 class MaxPooling2d(Layer):
     """最大池化层"""
     def __init__(self):
         pass
     
-    def forward_pass(self, x):
+    def forward_pass(self, x, training=True):
         pass
     
     def backward_pass(self, accum_grad):
@@ -373,7 +434,7 @@ class AvgPooling2d(Layer):
     def __init__(self):
         pass
     
-    def forward_pass(self, x):
+    def forward_pass(self, x, training=True):
         pass
     
     def backward_pass(self, accum_grad):
@@ -391,7 +452,7 @@ if __name__ == "__main__":
         
         train_x, test_x, train_y, test_y = train_test_split(dataset.datas, dataset.labels, test_size=0.3, shuffle=True)
         
-        optimizer = SGDM(lr=0.001)
+        optimizer = SGD(lr=0.001)
         loss_func = CrossEntropy()
         clf = SoftmaxReg(train_x, train_y, 
                          loss=loss_func, 
@@ -409,7 +470,8 @@ if __name__ == "__main__":
         
         train_x, test_x, train_y, test_y = train_test_split(dataset.datas, dataset.labels, test_size=0.3, shuffle=True)
         
-        optimizer = SGDM(lr=0.001, momentum=0.9)
+#        optimizer = SGDM(lr=0.001, momentum=0.9)
+        optimizer = RMSprop(lr=0.001)
         loss_func = CrossEntropy()
         clf = MLP(train_x, train_y, 
                   loss=loss_func, 
@@ -456,7 +518,7 @@ if __name__ == "__main__":
         test_y = test_y.reshape(-1, 1)
         
         optimizer = SGD(lr=0.0001, weight_decay=0.1, regularization_type='l2')  # TODO: 这里暂时只有SGD/SGDM能够收敛，Adam不能
-        loss_func = SquareLoss()
+        loss_func = L2Loss()
 #        regularization = no_regularization()
 #        regularization = l2_regularization(weight_decay=0.1)
         reg = LinearRegression(train_x, train_y, 

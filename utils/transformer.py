@@ -7,17 +7,36 @@ Created on Mon Jul  8 18:16:38 2019
 """
 import numpy as np
 
+def standardize(X):
+    """ 标准化到标准正态分布N(0,1): x-mean / std """
+    X_std = X
+    mean = X.mean(axis=0)    # 按列求均值
+    std = X.std(axis=0)      # 按列求标准差
+    for col in range(np.shape(X)[1]):
+        if std[col]:
+            X_std[:, col] = (X_std[:, col] - mean[col]) / std[col]  # 每一列特征单独做自己的标准化(减列均值，除列标准差)
+    # X_std = (X - X.mean(axis=0)) / X.std(axis=0)
+    return X_std
+
+def normalize(X):
+    """归一化到[0-1]之间：x / 255"""
+    return X / 255
+
 
 def label_transform(labels, label_transform_dict={1:1, -1:0, 0:0}):
     """默认不改变label的取值范围，但可以通过该函数修改labels的对应范围
     例如svm需要label为[-1,1]，则可修改该函数。
-    """
-    new_labels = np.zeros(labels.shape)
-    for i, label in enumerate(labels):
-        new_label = label_transform_dict.get(label, label) # 获取标签，如果是dict里边有的就替换，否则保持原样
-        new_labels[i] = int(new_label)   # 比如{1:1, 0:-1}就是要把1变为1, 0变为-1
-    return new_labels
-        
+    """   
+    if label_transform_dict is None:
+            pass
+    else:  # 如果指定了标签变换dict
+        labels = np.array(labels).reshape(-1)  #确保mat格式会转换成array才能操作
+        assert isinstance(label_transform_dict, dict), 'the label_transform_dict should be a dict.' 
+        for i, label in enumerate(labels):
+            new_label = label_transform_dict[label]
+            labels[i] = int(new_label)   # 比如{1:1, 0:-1}就是要把1变为1, 0变为-1
+    return labels
+
 
 def label_to_onehot(labels):
     """标签转换为独热编码：输入的labels需要是从0开始的整数，比如[0,1,2,...]
