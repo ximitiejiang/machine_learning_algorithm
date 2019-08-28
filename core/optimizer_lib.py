@@ -86,8 +86,16 @@ class SGD(Optimizer):
 
 class SGDM(Optimizer):
     """SGDM梯度下降算法-带动量M的SGD算法：
-    相当于生成一个速度v变量，此时v = -lr*grad/(1-m)，该变量实际上体现了w的更新是原有SGD的10倍(m=0.9)或者100倍(m=0.99)
-    也就是说momentum值
+    相当于生成一个速度v变量，该变量v是在保留大部分上一次的更新基础上进行本次更新，也就是说如果本次
+    更新跟历史更新方向一致，就会叠加而加快更新速度让w更快到达极值点。这种历史梯度的累积更新，相比于
+    SGD来说考虑了更多历史指导信息而不是只考虑当前梯度，一方面能更快更新，另一方面能抑制其他方向异常大
+    梯度的影响从而防止权值更新的波动。
+    从另一个角度，如果历史累积v足够大使得增加的一点梯度对实际步长已经没什么影响，也就是v(i+1)=vi，
+    则vi+1=-lr*grad/(1-m)，这个v就是权重w的最大更新步长，从中可看出来m的取值实际上体现了w的极限更新步长
+    是原有SGD更新步长(-lr*grad)的多少倍数，比如10倍(m=0.9)或者100倍(m=0.99)
+    另外：这里v的更新是直接叠加，为了防止v过大，也可借用指数移动平均(RMSprop)的概念，让v的更新变为
+    v = m*v + (1-m)(-lr*grad)，这样如果新的梯度变小，也会动态调整v的值。
+    
     公式: v = m*v - lr * grad  
           w = w + v 
     """
@@ -98,18 +106,26 @@ class SGDM(Optimizer):
         self.momentum = momentum
         self.v = None   #
     
-    def update(self, w, grad):
+    def update(self, w, grad): 
         grad += self.regularization.gradient(w)  # 默认增加l2正则化
         
         if self.v is None:
             self.v = np.zeros_like(w)
-        self.v = self.momentum * self.v + self.lr * grad  # 计算更新m
+        self.v = self.momentum * self.v + self.lr * grad  # 计算更新v
         w -= self.v
         return w
 
 
 class AdaGrad():
-    """自适应梯度调节："""
+    """自适应梯度调节：由于SGD/SGDM都需要调参lr，于是AdaGrad建立了一个不需要lr调参的方式，只需要
+    设置一个全局学习率lr,并通过每次更新参数时自动调整这个lr，所以叫自适应梯度。实现方法是通过增加
+    一个变量G来累积历史梯度的平方，然后作为分母来修正每次的学习率：如果历史更新过大，则学习率会变小，
+    从而抑制那些过大调节的权重。
+    (抑制过大调节，促进过小调节，就类似于归一化的效果，只要相对关系正确就可以保证优化方向正确，而不要过大过小的调节导致的波动)
+    但AdaGrad有个缺点就是到后期累积平方梯度过大，会导致学习率接近于0，从而无法更新。
+    公式：G = G + grad^2
+         w = w - lr/sqrt(G) * grad
+    """
     def __init__(self, lr=0.01):
         self.lr = lr
         self.G = None # Sum of squares of the gradients
@@ -126,39 +142,47 @@ class AdaGrad():
 
 
 class RMSprop():
-    """"""
-    def __init__(self, lr=0.01, rho=0.9):
+    """本质上跟AdaGrad一样，都是为了自适应调整学习率，但为了克服AdaGrad的缺陷防止后期学习率接近于0，
+    采用指数移动平均的方式来计算梯度的累积平方和，即引入参数m类似于动量的概念，保留大部分累积梯度平方和，
+    但又加入一部分新的累积平方和，这样即使到后期梯度变小阶段，也会动态减小G,　从而让学习率不至于变为0。
+    公式：G = m*G + (1-m)*grad^2
+         w = w - lr/sqrt(G) * grad
+    """
+    def __init__(self, lr=0.01, m=0.9):
         self.lr = lr
-        self.Eg = None # Running average of the square gradients at w
+        self.G = None   # 累积梯度平方
+        self.m = m      # 类似于动量，保留主要部分的G, 加入一部分新的G
         self.eps = 1e-8
-        self.rho = rho
 
     def update(self, w, grad):
         # If not initialized
-        if self.Eg is None:
-            self.Eg = np.zeros(np.shape(grad))
+        if self.G is None:
+            self.G = np.zeros(np.shape(grad))
 
-        self.Eg = self.rho * self.Eg + (1 - self.rho) * np.power(grad, 2)
+        self.G = self.m * self.G + (1 - self.m) * np.power(grad, 2)
 
         # Divide the learning rate for a weight by a running average of the magnitudes of recent
         # gradients for that weight
-        return w - self.lr *  grad / np.sqrt(self.Eg + self.eps)
+        return w - self.lr *  grad / np.sqrt(self.G + self.eps)
 
 
 class Adam():
     """Adam优化器：对梯度的一阶矩估计(梯度的均值)和二阶距估计(梯度的未中心化方差)进行综合考虑来更新步长。
-    他是基于AdaGrad和RMSprop进行优化的产物。
-    Args:
-        lr：学习率
-        b1/b2: 矩估计的指数衰减率 
+    他是基于SGDM和RMSprop进行优化的产物，既有SGDM的，也有RMSprop的指数移动平均+累积梯度平方和
+    公式: m = b1*m + (1-b1)*grad
+          v = b2*v + (1-b2)*grad^2
+          m' = m/(1-b1)
+          v' = v/(1-b2)
+          w = w - lr * m'/sqrt(v')
+    
     """
     def __init__(self, lr=0.001, b1=0.9, b2=0.999):
         self.lr = lr
         self.eps = 1e-8
-        self.m = None  # 梯度的一阶矩
+        self.m = None  # 梯度的一阶矩：相当于梯度的累加(指数移动平均方式)
         self.v = None  # 梯度的二阶距
-        self.b1 = b1
-        self.b2 = b2
+        self.b1 = b1   # 移动平均系数
+        self.b2 = b2   # 移动平均系数
     
     def update(self, w, grad):
         if self.m is None:
