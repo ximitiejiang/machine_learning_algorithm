@@ -26,6 +26,8 @@ class Loss():
 # %% 分类损失
 class CrossEntropy(Loss):
     """交叉熵损失函数，通过评价两个分布y,y'的相关性来评价分类结果的准确性，而相关性指标采用交叉熵
+    注意：这是原始交叉熵公式，所以对于y,p都必须是概率输入，即y是独热编码形式的概率，p是softmax或sigmoid输出形式的概率。
+    
     公式：loss = -(y*log(y') + (1-y)*log(1-y'))
     梯度：loss对y'求导 = -y/y' - (1-y)/(1-y')
     """
@@ -44,8 +46,15 @@ class CrossEntropy(Loss):
 
 
 class FocalLoss(Loss):
-    """focal loss多用于物体检测的分类部分"""
-    def __init__(self):
+    """focal loss多用于物体检测的分类部分: 本质是在交叉熵损失函数基础上进行优化。
+    由于在检测任务中存在样本不平衡问题，即负样本远远多于正样本，从而各个权重的梯度方向基本被负样本主导，
+    而得不到正确的梯度更新方向，这是因为w = w -lr*grad, 而这个grad在SGDM中是历史梯度的累积之和，如果都是
+    负样本生成的其他方向梯度，累积之后的grad也会很大导致即使来了一个正样本产生的梯度也不足以把方向拉回到
+    正确的梯度下降方向，所以导致loss无法收敛到最小值。
+    公式: loss = 
+    
+    """
+    def __init__(self, gamma):
         pass
     
     def loss(self, y, p):
@@ -53,6 +62,24 @@ class FocalLoss(Loss):
     
     def gradient(self, y, p):
         pass
+
+
+
+def sigmoid_focal_loss(pred,
+                       target,
+                       weight,
+                       gamma=2.0,
+                       alpha=0.25,
+                       reduction='elementwise_mean'):
+    """带sigmoid的focal loss实现：
+    """
+    pred_sigmoid = pred.sigmoid()
+    pt = (1 - pred_sigmoid) * target + pred_sigmoid * (1 - target)  # pt = (1-p)*
+    weight = (alpha * target + (1 - alpha) * (1 - target)) * weight
+    weight = weight * pt.pow(gamma)
+    return F.binary_cross_entropy_with_logits(
+        pred, target, weight, reduction=reduction)
+
 
 # %% 回归损失
 class L2Loss(Loss):

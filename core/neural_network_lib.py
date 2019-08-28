@@ -67,7 +67,7 @@ class NeuralNetwork(BaseModel):
     def batch_operation_train(self, x, y):
         """基于每一个batch的数据分别进行前向计算和反向计算"""
         # 前向计算
-        y_pred = self.forward_pass(x, training=True)
+        y_pred = self.forward_pass(x=x, training=True)
         losses = self.loss_function.loss(y, y_pred)
         loss = np.mean(losses)
         acc = self.loss_function.acc(y, y_pred)
@@ -295,8 +295,8 @@ class Conv2d(Layer):
     
     def backward_pass(self, accum_grad):
         # 先获得反传梯度的分支到w
-        grad_w = np.dot(accum_grad, self.W)  # ()
-        grad_w0 = np.sum(accum_grad, axis=0)
+        grad_w = np.dot(accum_grad, self.x_col.T).reshape(self.W.shape)  # ()
+        grad_w0 = np.sum(accum_grad, axis=0, keepdim=True)
         # 更新w
         self.W = self.W_optimizer.update(self.W, grad_w)
         self.W0 = self.W0_optimizer.update(self.W0, grad_w0)

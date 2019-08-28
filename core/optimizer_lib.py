@@ -98,6 +98,10 @@ class SGDM(Optimizer):
     
     公式: v = m*v - lr * grad  
           w = w + v 
+    另一个写法的公式如下，是pytorch采用的方式，实际上是统一成一阶矩梯度累积，这里采用这种方式定义SGDM。
+    这种写法还有一个理解好处就是，SGDM+RMSprop就是完整的Adam算法
+         v = m*v - (1-m)*grad   # 用指数移动平均方式更新v
+         w = w + lr*v           # 带学习率更新参数 
     """
     def __init__(self, lr, momentum=0.9,
                  weight_decay=0.1, regularization_type='l2'):
@@ -111,8 +115,8 @@ class SGDM(Optimizer):
         
         if self.v is None:
             self.v = np.zeros_like(w)
-        self.v = self.momentum * self.v + self.lr * grad  # 计算更新v
-        w -= self.v
+        self.v = self.momentum * self.v + (1 - self.momentum) * grad  # 计算更新v
+        w -= self.lr * self.v
         return w
 
 
@@ -169,12 +173,12 @@ class RMSprop():
 class Adam():
     """Adam优化器：对梯度的一阶矩估计(梯度的均值)和二阶距估计(梯度的未中心化方差)进行综合考虑来更新步长。
     他是基于SGDM和RMSprop进行优化的产物，既有SGDM的，也有RMSprop的指数移动平均+累积梯度平方和
-    公式: m = b1*m + (1-b1)*grad
-          v = b2*v + (1-b2)*grad^2
+    同时还带有对一阶矩和二阶距的参数校正。
+    公式: m = b1*m + (1-b1)*grad       #一阶矩主要是优化梯度grad：即采用指数移动平均的累积梯度代替当前梯度，加快学习速率
+          v = b2*v + (1-b2)*grad^2     #二阶距主要是优化学习率：即采用指数移动平均的累积梯度平方来缩减学习率，减小波动
           m' = m/(1-b1)
           v' = v/(1-b2)
-          w = w - lr * m'/sqrt(v')
-    
+          w = w - lr/sqrt(v')  * m'
     """
     def __init__(self, lr=0.001, b1=0.9, b2=0.999):
         self.lr = lr
@@ -193,7 +197,7 @@ class Adam():
         
         m_hat = self.m / (1 - self.b1)    # 计算偏置修正一阶矩mt' = mt/(1-b1)
         v_hat = self.v / (1 - self.b2)    # 计算偏置修正二阶距vt' = vt/(1-b2)
-        self.w_update = self.lr * m_hat / (np.sqrt(v_hat) + self.eps)  # 更新参数w = w - lr*mt'/(sqrt(vt') + eps)
+        self.w_update = self.lr * m_hat / (np.sqrt(v_hat) + self.eps)  # 更新参数
         w -= self.w_update
         return w
 
@@ -236,7 +240,7 @@ def test_optimizer():
     optimizers = OrderedDict()
     optimizers["SGD"] = SGD(lr=0.95)
     optimizers["SGDM"] = SGDM(lr=0.95, momentum=0.9)
-    optimizers["AdaGrad"] = AdaGrad(lr=1.5)
+    optimizers["RMSprop"] = RMSprop(lr=0.3)
     optimizers["Adam"] = Adam(lr=0.3)
     
     idx = 1
@@ -244,7 +248,7 @@ def test_optimizer():
         optimizer = optimizers[key]
         px_history = [] # param_x
         py_history = [] # param_y
-        params = np.array([-7.0, 2.0])  # 指定一个初始x,y参数位置 
+        params = np.array([-7.0, 2.0])  # 指定一个初始x,y参数位置: 相当于单样本 
         grads = np.ones((2,))       # 指定初始梯度
         for i in range(30):
             px_history.append(params[0])
@@ -314,7 +318,7 @@ def get_min_value():
     
 if __name__ == "__main__":
     """尝试直接用optimizer做无约束极值问题"""
-    id = 'min'
+    id = 'all'
     
     if id == 'all':
         test_optimizer()

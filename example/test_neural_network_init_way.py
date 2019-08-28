@@ -49,11 +49,11 @@ class MLP5L(NeuralNetwork):
         self.add(Linear(in_features=100, out_features=10))
         self.add(Activation('softmax'))
     
-    def forward_pass(self, x):
+    def forward_pass(self, x, training):
         """重写前向计算，提取激活值"""
         self.activations = []
         for i, layer in enumerate(self.layers):
-            layer_output = layer.forward_pass(x)
+            layer_output = layer.forward_pass(x, training=training)
             x = layer_output
             
             if i % 2 == 1: # 奇数层
