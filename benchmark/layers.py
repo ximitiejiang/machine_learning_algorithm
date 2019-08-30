@@ -245,7 +245,7 @@ class Conv2D(Layer):
         batch_size, channels, height, width = X.shape
         self.layer_input = X
         # Turn image shape into column shape
-        # (enables dot product between input and weights)
+        # (enables dot product between input and weights)  (64,1,8,8)->(9,4096) 以及 (64,16,8,8)->(144, 4096)
         self.X_col = image_to_column(X, self.filter_shape, stride=self.stride, output_shape=self.padding) # (9,16384)
         # Turn weights into column shape
         self.W_col = self.W.reshape((self.n_filters, -1)) # (16,1,3,3) -> (16,9)
@@ -375,14 +375,14 @@ class PoolingLayer(Layer):
         self.trainable = True
 
     def forward_pass(self, X, training=True):
-        self.layer_input = X
+        self.layer_input = X  # 预保存输入
 
         batch_size, channels, height, width = X.shape
 
         _, out_height, out_width = self.output_shape()
 
-        X = X.reshape(batch_size*channels, 1, height, width)
-        X_col = image_to_column(X, self.pool_shape, self.stride, self.padding)
+        X = X.reshape(batch_size*channels, 1, height, width) # (b,c,h,w)->(bc, 1, h, w)
+        X_col = image_to_column(X, self.pool_shape, self.stride, self.padding) # ()
 
         # MaxPool or AveragePool specific method
         output = self._pool_forward(X_col)

@@ -23,6 +23,7 @@ class Loss():
         acc = np.sum(p == y, axis=0) / len(y)
         return acc
 
+
 # %% 分类损失
 class CrossEntropy(Loss):
     """交叉熵损失函数，通过评价两个分布y,y'的相关性来评价分类结果的准确性，而相关性指标采用交叉熵

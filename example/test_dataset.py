@@ -19,6 +19,7 @@ from dataset.diabetes_dataset import DiabetesDataset
 from dataset.pima_indians_diabetes_dataset import PimaIndiansDiabetesDataset
 from dataset.loan_dataset import LoanDataset
 from dataset.regression_dataset import RegressionDataset
+from dataset.cifar_dataset import Cifar10Dataset, Cifar100Dataset
 
 # 1
 #bost = BostonHousePriceDataset()
@@ -107,6 +108,14 @@ from dataset.regression_dataset import RegressionDataset
 #print('label is: %d'%label)
 
 # 15
-reg = RegressionDataset(n_features=2, n_samples=100, noise=1)
-datas = reg.datas
-labels = reg.labels
+#reg = RegressionDataset(n_features=2, n_samples=100, noise=1)
+#datas = reg.datas
+#labels = reg.labels
+
+#16
+cifar = Cifar10Dataset()
+datas = cifar.datas
+labels = cifar.labels
+import cv2
+cv2.imshow('pic', datas[0].transpose(1,2,0)[2,1,0])
+

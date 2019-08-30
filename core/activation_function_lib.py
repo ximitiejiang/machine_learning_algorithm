@@ -11,7 +11,12 @@ import numpy as np
 # %%激活函数
        
 class Sigmoid():
-    """sigmoid函数的计算及梯度计算: 对sigmoid函数直接可求导"""
+    """sigmoid函数的计算及梯度计算: 对sigmoid函数直接可求导
+    缺点：在输入值过大或过小时，初始会变为0和1造成梯度grad=0也就是梯度消失；
+         同时输出永远大于0，导致原来0均值特征不再为0均值，即特征偏移。
+    公式：sigmoid = 1 / (1+exp(-x))
+    求导：sigmoid' = sigmoid * (1- sigmoid)
+    """
     def __call__(self, x):
         return 1 / (1 + np.exp(-x)) 
     
@@ -28,7 +33,19 @@ class Softmax():
     def gradient(self, x):
         y_p = self.__call__(x)  # 先求得输出y'
         return y_p * (1 - y_p)  # grad = y'*(1-y')
-    
+
+
+class Tanh():
+    """正切函数作为激活函数: 比sigmoid改进的地方是输出变为对称的，不再有特征偏移问题。
+    公式：tanh = (exp(x) - exp(-x)) / (exp(x) + exp(-x))
+    求导：tanh'= (1-tanh^2)
+    """
+    def __call__(self, x):
+        return 2 / (1 + np.exp(-2*x)) - 1
+
+    def gradient(self, x):
+        return 1 - np.power(self.__call__(x), 2)
+        
     
 class Relu():
     """relu函数的计算及梯度计算：对relu函数直接可求导, 但负区间还是可能梯度消失"""

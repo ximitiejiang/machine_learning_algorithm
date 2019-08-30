@@ -60,7 +60,7 @@ class Optimizer():
         if self.regularization_type is None or self.regularization_type == 'no':
             self.regularization = self.regularization_dict['no']()
         else:
-            self.regularization = self.regularization_dict[regularization_type]()
+            self.regularization = self.regularization_dict[regularization_type](self.weight_decay)
         
     def update(self):
         raise NotImplementedError()
@@ -192,8 +192,8 @@ class Adam():
         if self.m is None:
             self.m = np.zeros(w.shape)  # 初始化一阶矩为0
             self.v = np.zeros(w.shape)  # 初始化二阶距为0
-        self.m = self.b1 * self.m + (1 - self.b1) * grad               # 一阶矩迭代更新mt = b1*mt-1 + (1-b1)*g
-        self.v = self.b2 * self.v + (1 - self.b2) * np.power(grad, 2)  # 二阶距迭代更新vt = b2*bt-1 + (1-b2)*g^2
+        self.m = self.b1 * self.m + (1 - self.b1) * grad               # 一阶矩有偏估计迭代更新mt = b1*mt-1 + (1-b1)*g
+        self.v = self.b2 * self.v + (1 - self.b2) * np.power(grad, 2)  # 二阶距有偏估计迭代更新vt = b2*bt-1 + (1-b2)*g^2
         
         m_hat = self.m / (1 - self.b1)    # 计算偏置修正一阶矩mt' = mt/(1-b1)
         v_hat = self.v / (1 - self.b2)    # 计算偏置修正二阶距vt' = vt/(1-b2)

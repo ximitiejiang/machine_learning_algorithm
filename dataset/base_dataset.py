@@ -9,6 +9,13 @@ import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
 from utils.transformer import standardize, label_transform, label_to_onehot
+##########################################
+# Dataset Interface:                     #
+#   self.datas, self.labels              #
+#   self.feat_names, self.label_names    #
+#   self.classes                         #
+#   self.num_classes, self.num_features  #
+##########################################
 
 class BaseDataset():
     
