@@ -17,7 +17,7 @@ class MnistDataset(BaseDataset):
     另一个外部转换过的train_binary.cvs数据集是把tarin.csv的label列进行转换，原来label=0不变，原来label>0的改为1
     从而变成一个二分类数据集(两个类别是0或非零)
     """
-    def __init__(self, root_path='./source/mnist/', data_type='train',
+    def __init__(self, root_path='../dataset/source/mnist/', data_type='train',
                  norm=None, label_transform_dict=None, one_hot=None, 
                  binary=None, shuffle=None):
         """可设置data_type = train, test分别调用训练集/测试集"""      

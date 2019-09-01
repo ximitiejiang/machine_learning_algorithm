@@ -19,6 +19,7 @@ from core.optimizer_lib import SGD, Adam, SGDM, AdaGrad, RMSprop
 from utils.dataloader import batch_iterator, train_test_split
 from utils.matrix_operation import img2col, col2img
 from dataset.digits_dataset import DigitsDataset
+from dataset.mnist_dataset import MnistDataset
 from dataset.regression_dataset import RegressionDataset
 import matplotlib.pyplot as plt
 
@@ -131,15 +132,17 @@ class NeuralNetwork(BaseModel):
             title = "evaluate"
         if self.trained:
             y_pred = self.forward_pass(x, training=False)  # (1280, 10)
+            loss = self.loss_function.loss(y, y_pred).mean()
+            acc = self.loss_function.acc(y, y_pred)
             
-            # 用损失函数的acc功能也算一下acc看看结果
-#            loss_acc = self.loss_function.acc(y, y_pred)
-#            print("loss acc: %f"%loss_acc)
+            # 比较一下如果用train模块出来的acc
+            y_pred1 = self.forward_pass(x=x, training=True)
+            losses1 = self.loss_function.loss(y, y_pred1)
+            loss1 = np.mean(losses1)
+            acc1 = self.loss_function.acc(y, y_pred1)
+            print('training params acc: %f, loss: %f'%(acc1, loss1))
             
-            y_pred = np.argmax(y_pred, axis=1)  # (1280,)
-            y_label = np.argmax(y, axis=1)      # (1280,)
-            acc = np.sum(y_pred == y_label, axis=0) / len(y_label)
-            print(title + " acc: %f"%acc)
+            print(title + " acc: %f, loss: %f"%(acc, loss))
             return acc, y_pred
         else:
             raise ValueError("model not trained, can not predict or evaluate.")
@@ -171,6 +174,34 @@ class CNN(NeuralNetwork):
         self.add(BatchNorm2d(256))
         self.add(Linear(in_features=256, out_features=10))
         self.add(Activation('softmax'))
+
+
+class CNN3(NeuralNetwork):
+    """一个完整包含3种典型层(卷积+池化+全连接)的卷积神经网络
+    在cpu上跑包含卷积的模型，由于卷积需要的计算量和内存空间都远超过全连接，所以不能训练大图。
+    只能在digits这种8*8的小图上跑比较合适，连mnist这种28*28的图都会很慢。
+    """
+    def __init__(self, feats, labels, loss, optimizer, n_epochs, batch_size,
+                 val_feats=None, val_labels=None):
+        super().__init__(feats=feats, labels=labels, 
+                         loss=loss, 
+                         optimizer=optimizer, 
+                         n_epochs=n_epochs, 
+                         batch_size=batch_size,
+                         val_feats=val_feats,
+                         val_labels=val_labels)
+        # 假定输入(b,1,8,8), 卷积后w = (8-3+2)/1 +1=8         
+        self.add(Conv2d(in_channels=1, out_channels=16, kernel_size=(3,3), stride=1, padding=1)) #(b,16,8,8)
+        self.add(Activation('relu'))
+        self.add(BatchNorm2d(16))
+        # 池化后w= (28-2+0)/2 + 1=14
+        self.add(MaxPool2d(kernel_size=(2,2), stride=2, padding=0))# (b,16,4,4)
+        self.add(Flatten())   # (b,256)
+        self.add(Linear(in_features=256, out_features=256)) # (b,256)
+        self.add(Activation('relu'))
+        self.add(BatchNorm2d(256)) 
+        self.add(Linear(in_features=256, out_features=10))  # (b, 10)
+        self.add(Activation('softmax'))
         
     
 class MLP(NeuralNetwork):
@@ -185,7 +216,7 @@ class MLP(NeuralNetwork):
         n_feats = feats.shape[1]
         n_classes = labels.shape[1]
         self.add(Linear(in_features=n_feats, out_features=16))
-        self.add(Activation('elu'))
+        self.add(Activation('sigmoid'))
         self.add(Linear(in_features=16, out_features=n_classes))
         self.add(Activation('softmax'))
 
@@ -259,7 +290,6 @@ class Linear(Layer):
     def initialize(self, optimizer):
         limit = math.sqrt(2.) / math.sqrt(self.in_features)  # 从xavier初始化改成了kaiming初始化
         self.W = np.random.uniform(-limit, limit, (self.in_features, self.out_features))
-#        self.W = np.random.uniform(-limit, limit, (self.in_features, self.out_features))
         self.W0 = np.zeros((1, self.out_features))  # TODO  w0(1,10)
         
         self.W_optimizer = copy.copy(optimizer)
@@ -284,7 +314,10 @@ class Linear(Layer):
     
         
 class Conv2d(Layer):
-    """卷积层"""
+    """卷积层
+    注意：在img2col/col2img以及结果reshape时，要确保合并的时候维度是什么顺序，
+    分离的时候就必须用相同的顺序，否则可能造成结果不匹配。
+    """
     def __init__(self, in_channels, out_channels, kernel_size, stride=1, padding=0):
         self.in_channels = in_channels
         self.out_channels = out_channels
@@ -311,7 +344,7 @@ class Conv2d(Layer):
         # 特征数据从matrix(b,c,h,w)变为列数据(卷积核元素个数，卷积次数), 每列就是一个卷积核的数据
         #img(b,c,h,w)变成col(c*kerh*kerw, b*oh*ow)，其中c*kerh*kerw代表一个立体卷积核元素个数，b*oh*ow代表卷积次数
         self.x_col = img2col(x, filter_h, filter_w, 
-                             self.stride, self.padding) # (9，4096)表示每个滤波器要跟图像进行的滤波次数为16384，所以把每组9元素都准备出来。
+                             self.stride, self.padding) # (9，4096)表示每个滤波器要跟图像进行的滤波次数为4096，所以把每组9元素都准备出来。
         self.w_col = self.W.reshape(self.out_channels, -1)  # (16, 9)
         output = np.dot(self.w_col, self.x_col) + self.W0  #(16,9)*(9,4096)+(16,1) -> (16,4096) 列形式的w点积列形式的特征x
         output = output.reshape(self.out_channels,  out_h, out_w, batch_size)  # (16,8,8,64)
@@ -330,8 +363,9 @@ class Conv2d(Layer):
         # 继续反传
         accum_grad = np.dot(self.w_col.T, accum_grad)  # (32,144).T dot(32,4096)->(144,4096)
         # col形式转换回matrix
+        filter_h, filter_w = self.kernel_size
         accum_grad = col2img(accum_grad, self.input_feats.shape,
-                             self.kernel_size[0], self.kernel_size[1],
+                             filter_h, filter_w,
                              self.stride, self.padding)
         return accum_grad
 
@@ -407,13 +441,14 @@ class BatchNorm2d(Layer):
         #
         x_norm = self.x_ctr * self.std_inv  # x = (x-mean)/std
         # 计算gamma和beta的梯度
-        grad_gamma = np.sum(accum_grad * x_norm, axis=0)
-        grad_beta = np.sum(accum_grad, axis=0)
+        grad_gamma = np.sum(accum_grad * x_norm, axis=0)  #dloss/dgamma = (dloss/dy)*(dy/dgamma)=accum_grad * x_norm
+        grad_beta = np.sum(accum_grad, axis=0)            #dloss/dbata = (dloss/dy)*(dy/dgamma)=accum_grad * 1
         # 基于梯度更新gamma, beta
-        self.gamma = self.gamma_optimizer.update(self.gamma, grad_gamma)
+        self.gamma = self.gamma_optimizer.update(self.gamma, grad_gamma)  
         self.beta = self.beta_optimizer.update(self.beta, grad_beta)
-        #
+        
         batch_size = accum_grad.shape[0]
+        # dloss/dx = (dloss/dx_norm)*(dx_norm/dx) 
         accum_grad = (1 / batch_size) * tmp_gamma * self.std_inv * \
             (batch_size * accum_grad - np.sum(accum_grad, axis=0)  \
             - self.x_ctr * self.std_inv**2 * np.sum(accum_grad * self.x_ctr, axis=0))
@@ -471,19 +506,19 @@ class MaxPool2d(Layer):
         # 由于maxpool的核是二维核，只针对一个通道的平面数据进行取最大值(相比之下卷积核是三维核可针对输入多通道一次完成卷积)
         # 所以maxpool列表化时需要把b和c合在一起，把层数定义成1
         x = x.reshape(self.batch_size*self.channels, 1, self.in_h, self.in_w)
-        x_col = img2col(x, f_h, f_w, self.stride, self.padding)  # 变成col(c*kerh*kerw, b*oh*ow)
+        x_col = img2col(x, f_h, f_w, self.stride, self.padding)  # 变成col(c*kerh*kerw, b*oh*ow)=(4,64*16*14*14=200704) 
         # 每一列提取最大值idx(0到8),并作为self变量预存
         self.arg_max = np.argmax(x_col, axis=0).flatten()  # (16384,)
         # 提取最大值
         output = x_col[self.arg_max, range(self.arg_max.size)] # 两个维度同时索引(注意不是切片)，得到交叉点，等效于取每一列的最大值。
-        # col转换成matrix
+        # col转换成matrix (200704)
         output = output.reshape(out_h, out_w, self.batch_size, self.channels).transpose(2, 3, 0, 1)  # (b,c,oh,ow)
         return output
         
     def backward_pass(self, accum_grad):
         # maxpool的操作是提取最大值，这种方法是不能直接求导的，也就不能直接通过导数公式反传梯度
         # 解决方式是把每个梯度值放入原grad_w的对应位置，其他没有对应梯度的位置全都置0，保证前后梯度的总和是一样的。
-        accum_grad = accum_grad.reshape(2, 3, 0, 1).flatten()  # (b,c,oh,ow) -> (oh,ow,b,c)->(oh*ow*b*c)
+        accum_grad = accum_grad.transpose(2, 3, 0, 1).flatten()  # (b,c,oh,ow) -> (oh,ow,b,c)->(oh*ow*b*c)
         # 创建全0列元素, 把max_id对应位置写入grad_w梯度，其他位置保持0
         accum_grad_col = np.zeros((np.prod(self.kernel_size), accum_grad.size)) # 每一个梯度都是由一个kernel的所有元素生成，所以先得到一组全0
         accum_grad_col[self.arg_max, range(accum_grad.size)] = accum_grad
@@ -585,8 +620,8 @@ if __name__ == "__main__":
                   batch_size = 64, 
                   n_epochs=200)
         clf.train()
-        acc1, _ = clf.evaluation(train_x, train_y, "train")
-        acc2, _ = clf.evaluation(test_x, test_y, "test")
+        acc1, _ = clf.evaluation(train_x[:64], train_y, "train")
+        acc2, _ = clf.evaluation(test_x[:64], test_y, "test")
 
     
     if model == "cnn":  # 输入图片必须是(b,c,h,w)
@@ -609,15 +644,33 @@ if __name__ == "__main__":
                   n_epochs=5)
         clf.train()
 #        acc1, _ = clf.evaluation(train_x, train_y, "train")
-        accs = []
-        for i in range(130):
-            test_batch_size=i+1
-            acc, _ = clf.evaluation(test_x[:test_batch_size], test_y[:test_batch_size], "test"+str(i))
-            accs.append(acc)
-        plt.figure()
-        plt.plot(range(len(accs)), accs)
 
+        acc, _ = clf.evaluation(test_x, test_y, "test")
+
+
+    if model == 'cnn3':
+        dataset = DigitsDataset(norm=True, one_hot=True)
         
+        train_x, test_x, train_y, test_y = train_test_split(dataset.datas, dataset.labels, test_size=0.3, shuffle=True)
+#        test_x, val_x, test_y, val_y = train_test_split(test_x, test_y, test_size=0.3, shuffle=True)
+        
+        # 已展平数据转matrix
+        train_x = train_x.reshape(-1, 1, 8, 8)
+        test_x = test_x.reshape(-1, 1, 8, 8)
+#        val_x = val_x.reshape(-1, 1, 28, 28)
+        
+        optimizer = SGDM(lr=0.01, momentum=0.9)
+        loss_func = CrossEntropy()
+        clf = CNN3(train_x, train_y, 
+                  loss=loss_func, 
+                  optimizer= optimizer, 
+                  batch_size = 64, 
+                  n_epochs=20)
+        clf.train()
+#        clf.evaluation(train_x, train_y, "train")
+        clf.evaluation(test_x, test_y, "test") 
+
+    
     if model == 'reg':
         dataset = RegressionDataset(n_samples=500, n_features=1, n_targets=1, noise=4)
         X = dataset.datas

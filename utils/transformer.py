@@ -6,6 +6,7 @@ Created on Mon Jul  8 18:16:38 2019
 @author: ubuntu
 """
 import numpy as np
+import cv2
 
 def standardize(X):
     """ 标准化到标准正态分布N(0,1): x-mean / std 
@@ -60,6 +61,36 @@ def onehot_to_label(one_hot_labels):
     return labels
 
 
+def imresize(img, size, interpolation='bilinear', return_scale=False):
+    """把图片img尺寸变换成指定尺寸
+    img输入为(h,w,c)这种标准格式
+    size输入为(h,w)
+    """
+    interp_codes = {
+    'nearest': cv2.INTER_NEAREST,
+    'bilinear': cv2.INTER_LINEAR,
+    'bicubic': cv2.INTER_CUBIC,
+    'area': cv2.INTER_AREA,
+    'lanczos': cv2.INTER_LANCZOS4}
+    
+    h, w = img.shape[:2]
+    resized_img = cv2.resize(
+        img, size, interpolation=interp_codes[interpolation])
+    if not return_scale:
+        return resized_img
+    else:
+        h_scale = size[0] / h
+        w_scale = size[1] / w
+        return resized_img, w_scale, h_scale
+
+
 if __name__ == "__main__":
-    labels = np.array([[0,1,0],[0,0,1]])
-    new_labels = onehot_to_label(labels)
+#    labels = np.array([[0,1,0],[0,0,1]])
+#    new_labels = onehot_to_label(labels)
+    
+    img = cv2.imread('./test.jpg')
+    cv2.imshow('original', img)
+    new_img = imresize(img, (14,14), interpolation='bilinear')
+    cv2.imshow('show', new_img)
+
+

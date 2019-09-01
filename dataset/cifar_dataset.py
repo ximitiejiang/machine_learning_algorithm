@@ -51,7 +51,7 @@ class Cifar10Dataset(BaseDataset):
         datas = []
         labels = []
         # 获取标签
-        with open(self.meta_path, 'rb') as f:
+        with open(self.meta_path, 'rb') as f:  # 参考cifar源网站的python代码
             dict = pickle.load(f, encoding='bytes')
             label_names = dict[b'label_names']
         # 获取数据    
