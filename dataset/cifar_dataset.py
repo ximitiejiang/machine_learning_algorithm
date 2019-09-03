@@ -39,7 +39,7 @@ class Cifar10Dataset(BaseDataset):
             self.path = test_path
         else:
             raise ValueError('wrong data type, only support train/test.')
-        self.meta_path = [root_path + 'batches.meta']    
+        self.meta_path = root_path + 'batches.meta'    
         
         super().__init__(norm=norm, 
                          label_transform_dict=label_transform_dict, 

@@ -9,7 +9,7 @@ import numpy as np
 import cv2
 
 def standardize(X):
-    """ 标准化到标准正态分布N(0,1): x-mean / std 
+    """ 标准化到标准正态分布N(0,1): x-mean / std, 每列特征分别做标准化 
     注意：当前standardize跟normalize的说法有混淆的情况，比如batchnorm做的是standardize，但却叫norm
     """
     X_std = X
