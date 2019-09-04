@@ -5,7 +5,7 @@ Created on Tue Jun 11 14:50:44 2019
 
 @author: ubuntu
 """
-from dataset.breast_cancer_dataset import BreastCancerDataset
+#from dataset.breast_cancer_dataset import BreastCancerDataset
 from dataset.mnist_dataset import MnistDataset
 from dataset.digits_dataset import DigitsDataset
 from core.logistic_reg_lib import LogisticReg, LogisticReg_autograd, LogisticReg_pytorch
@@ -16,7 +16,7 @@ import pandas as pd
 
 if __name__ == "__main__":
     
-    dataset = 'breastcancer'
+    dataset = '2class'
     
     if dataset == '2class':      
         filename = '../dataset/simple/2classes_data.txt'  # 一个简单的2个特征的2分类数据集
