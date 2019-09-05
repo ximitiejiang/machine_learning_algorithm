@@ -98,6 +98,7 @@ class SGDM(Optimizer):
     
     公式: v = m*v - lr * grad  
           w = w + v 
+          
     另一个写法的公式如下，是pytorch采用的方式，实际上是统一成一阶矩梯度累积，这里采用这种方式定义SGDM。
     这种写法还有一个理解好处就是，SGDM+RMSprop就是完整的Adam算法
          v = m*v - (1-m)*grad   # 用指数移动平均方式更新v
