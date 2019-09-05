@@ -11,17 +11,18 @@ mainly refer to https://github.com/eriklindernoren/ML-From-Scratch
 import numpy as np
 import math
 import copy
+import matplotlib.pyplot as plt
+
+
 from core.base_model import BaseModel
 from core.activation_function_lib import Relu, LeakyRelu, Elu, Sigmoid, Softmax, Tanh
 from core.loss_function_lib import CrossEntropy, L2Loss, L1Loss, SmoothL1Loss
 from core.optimizer_lib import SGD, Adam, SGDM, AdaGrad, RMSprop
-
 from utils.dataloader import batch_iterator, train_test_split
 from utils.matrix_operation import img2col, col2img
 from dataset.digits_dataset import DigitsDataset
 from dataset.mnist_dataset import MnistDataset
 from dataset.regression_dataset import RegressionDataset
-import matplotlib.pyplot as plt
 
 # %%  模型总成
 class NeuralNetwork(BaseModel):
