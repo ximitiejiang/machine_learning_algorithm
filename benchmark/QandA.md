@@ -878,6 +878,10 @@ gain = 0.5*(Gl^2/(Hl)
 2. 
 
 
+**Q. 什么是空洞卷积, 目的是什么？**
+1. 空洞卷积也就是dilation conv，动态过程参考https://www.zhihu.com/question/54149221
+
+2. 
 
 -------------------------------------------------------------------------------
 ## PART 1x. linear regressor/lasso regressor/rigid regressor
