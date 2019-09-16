@@ -394,7 +394,13 @@ class Activation(Layer):
         
     
 class BatchNorm2d(Layer):
-    """归一化层
+    """归一化层: 
+    参考：https://blog.csdn.net/liuxiao214/article/details/81037416
+    TODO: 如下的实现在计算归一化范围时跟原理可能有偏差，这里bn基于axis=0即batch轴方向计算均值，得到mean(c,h,w)
+        但一些文章上提到的bn均值计算方式是基于axis=(0,2,3)，也就是得到mean(c,)
+        
+    bn所求的均值是一个batch的均值，也就是b轴缩减，得到的mean(c,h,w)，
+    本质上就是得到一个均值图片，图片中每个像素点都是一个batch中同样位置其他图片的均值。
     注意：bn层在训练时需要实时更新mean和var
     但在测试时输入的特征不再用来更新mean,var，而是直接用训练时的mean,var做前向计算即可。
     """
@@ -414,14 +420,14 @@ class BatchNorm2d(Layer):
     
     def forward_pass(self, x, training):
         if self.gamma is None:
-            self.gamma = np.ones((x.shape[1:]))  # 每个batch(c,h,w)乘以gamma, 所以在卷积后边(c,h,w) or 在全连接后边(n,)
+            self.gamma = np.ones((x.shape[1:]))  # 每个batch(c,h,w)乘以gamma, 所以在卷积后边gamma为(c,h,w) or 在全连接后边(n,)
             self.beta = np.zeros((x.shape[1:]))
         # 计算初始均值
         if self.running_mean is None:
             self.running_mean = np.mean(x, axis=0)  # 输入x(b,c,h,w)或(b,n)，均值为一张图整体均值，所以axis=0
             self.running_var = np.var(x, axis=0)
         if training: # 如果是训练状态
-            mean = np.mean(x, axis=0)
+            mean = np.mean(x, axis=0)  # 在batch轴求均值，相当于一张图一个均值
             var = np.var(x, axis=0)
             self.running_mean = self.momentum * self.running_mean + (1 - self.momentum) * mean  # 更新时采用移动平均
             self.running_var = self.momentum * self.running_var + (1 - self.momentum) * var
@@ -429,7 +435,7 @@ class BatchNorm2d(Layer):
             mean = self.running_mean
             var = self.running_var
         # 基于当前mean,var计算变换后的x = (x-mean)/std
-        self.x_ctr = x - mean  # x-mean表示变换后的中心
+        self.x_ctr = x - mean  # x-mean表示变换后的中心  (b,c,h,w)-(c,h,w)
         self.std_inv = 1 / np.sqrt(var + self.eps)  # 1/std 表示标准差分之一
         x_norm = self.x_ctr * self.std_inv        # 得到标准化输出x=(x-mean)*(1/std)   (64,16,8,8)
         output = self.gamma * x_norm + self.beta  # 得到gamma*x + beta

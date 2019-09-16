@@ -470,8 +470,8 @@ class SGDM():
 有个疑问：既然全连接串联多次依然相当于线性变换，那为什么多层感知机却能够实现异或这种非线性分类？
 
 参考：https://cloud.tencent.com/developer/news/235905
-参考：https://blog.csdn.net/kangyi411/article/details/78969642
-<br>激活函数的作用：整个神经网络作为一个万能函数，激活函数提供非线性能力。
+参考：https：整个神://blog.csdn.net/kangyi411/article/details/78969642
+<br>激活函数的作用经网络作为一个万能函数，激活函数提供非线性能力。
 因为一般的神经网络比如全连接，在一维是w*x，这只是一个线性变换，即使串联无数层，也等于一个线性变换w(w(w*x+w0)+w0)+w0，展开还是一个线性公式。
 而加入激活函数，就是加入非线性变换的过程，极大提高神经网络的学习能力。
 
@@ -882,6 +882,12 @@ gain = 0.5*(Gl^2/(Hl)
 1. 空洞卷积也就是dilation conv，动态过程参考https://www.zhihu.com/question/54149221
 
 2. 
+
+
+**Q. 什么是batchnorm层，BN/LN/GN有什么区别？**
+参考：https://blog.csdn.net/liuxiao214/article/details/81037416 (每种的代码都不多，很好理解)
+1. 有个问题是：到底batchnorm在计算均值时，是以哪个轴为基础？是axis=0, 还是axis=(0,2,3)?
+
 
 -------------------------------------------------------------------------------
 ## PART 1x. linear regressor/lasso regressor/rigid regressor

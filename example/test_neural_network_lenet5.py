@@ -31,7 +31,7 @@ class LeNet5(NeuralNetwork):
                          val_feats=val_feats,
                          val_labels=val_labels)
         afn = 'relu'  
-        self.add(Conv2d(in_channels=3, out_channels=16, kernel_size=(5,5), stride=1, padding=1))# w'=(8-3+2)/1 +1=8
+        self.add(Conv2d(in_channels=1, out_channels=16, kernel_size=(5,5), stride=1, padding=1))# w'=(8-3+2)/1 +1=8
         self.add(BatchNorm2d(16))
         self.add(Activation(afn))
 
