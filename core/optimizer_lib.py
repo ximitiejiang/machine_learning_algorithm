@@ -103,6 +103,10 @@ class SGDM(Optimizer):
     这种写法还有一个理解好处就是，SGDM+RMSprop就是完整的Adam算法
          v = m*v - (1-m)*grad   # 用指数移动平均方式更新v
          w = w + lr*v           # 带学习率更新参数 
+    上面写法中，v是负梯度-grad的累积，也可以写成梯度的累积，此时公式就变成：
+        v = m*v + (1-m)*grad
+        w = w - lr*v
+    这种写法更好理解，并且w的计算公式就统一成w = w - lr*v， 本SGDM就是采用这种写法
     """
     def __init__(self, lr, momentum=0.9,
                  weight_decay=0.1, regularization_type='l2'):
