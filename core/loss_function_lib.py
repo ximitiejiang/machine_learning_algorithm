@@ -38,12 +38,12 @@ class CrossEntropy(Loss):
     def loss(self, y, p):
         # Avoid division by zero
         p = np.clip(p, 1e-15, 1 - 1e-15)
-        return - y * np.log(p) - (1 - y) * np.log(1 - p)  # 计算损失loss = -(y*log(y') + (1-y)*log(1-y'))
+        return - y * np.log(p) - (1 - y) * np.log(1 - p)  # 计算损失loss = -(t*log(p) + (1-t)*log(1-p))
 
     def gradient(self, y, p):
         # Avoid division by zero
         p = np.clip(p, 1e-15, 1 - 1e-15)
-        return - (y / p) + (1 - y) / (1 - p)  # 计算该级梯度grad = loss' = -y/y' + (1-y)/(1-y')
+        return - (y / p) + (1 - y) / (1 - p)  # 计算该级梯度grad = loss' = -y/p + (1-y)/(1-p)
 
 
 class FocalLoss(Loss):
@@ -118,10 +118,12 @@ class L1Loss(Loss):
         pass
     
     def loss(self, y, p):
-        pass
+        diff = np.abs(p - y)
+        return diff
     
     def gradient(self, y, p):
-        pass
+        diff = np.abs(p - y)
+        return np.where(diff < 0, -1, 1)
 
 class SmoothL1Loss(Loss):
     """带平滑区域的l1 loss，参考：https://www.zhihu.com/question/58200555

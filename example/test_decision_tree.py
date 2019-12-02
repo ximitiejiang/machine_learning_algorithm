@@ -18,7 +18,7 @@ import pandas as pd
 
 if __name__ == "__main__":
     
-    source = 'moon'
+    source = 'loan'
     
     if source == 'treedata':  # 2 classes: from book of zhaozhiyong
         data = []
@@ -46,8 +46,11 @@ if __name__ == "__main__":
         y = dataset.labels
 #        train_x, test_x, train_y, test_y = train_test_split(x, y, test_size=0.3)
         
+        id3 = ID3Clf(x, y).train()
+        acc1 = id3.evaluation(x, y)
+        
         cart = CARTClf(x, y).train()
-        cart.evaluation(x, y)
+        acc2 = cart.evaluation(x, y)
         print("final tree depth: %d, final gini: %d"%(cart.tree_final_params['final_depth'],
                                                       cart.tree_final_params['final_gini']))
     

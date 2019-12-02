@@ -129,7 +129,7 @@ class BaseTree(BaseModel):
             sample_value = sample[tree.feat_id]
             if sample_value >= tree.feat_value:  # 如果大于等于节点特征值，则进左树
                 branch = tree.left
-            else:                               # 如果不等于节点特征值，则进右树
+            else:                               # 如果小于节点特征值，则进右树
                 branch = tree.right
             return self.get_single_tree_result(sample, branch)
     
